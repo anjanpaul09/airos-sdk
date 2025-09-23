@@ -1,0 +1,140 @@
+#ifndef DS_LIST_H_INCLUDED
+#define DS_LIST_H_INCLUDED
+
+#include <stddef.h>
+#include <stdbool.h>
+#include <stddef.h>
+
+#include "ds.h"
+
+/*
+ * ============================================================
+ *  Macros
+ * ============================================================
+ */
+
+/*
+ * Static initializer -- can be used to initialize global structures.
+ *
+ * ds_list_t a = DS_LIST_INIT;
+ */
+#define DS_LIST_INIT(type, elem)        \
+{                                       \
+    .ol_cof     = offsetof(type, elem), \
+    .ol_root    = { .oln_next = NULL }, \
+    .ol_tail    = NULL,                 \
+    .ol_ndel    = 0,                    \
+}
+
+/*
+ * Dynamic initializer, used to initialize a list run-time.
+ */
+#define ds_list_init(list, type, elem)  __ds_list_init(list, offsetof(type, elem))
+
+/*
+ * The ever popular foreach statement
+ */
+#define ds_list_foreach(list, elem)     \
+    for ((elem) = ds_list_head(list); (elem) != NULL; (elem) = ds_list_next(list, elem))
+
+#define ds_list_foreach_iter(list, elem, iter)     \
+    for ((elem) = ds_list_ifirst(&iter, list); (elem) != NULL; (elem) = ds_list_inext(&iter))
+
+#define ds_list_foreach_iter_err(list, elem, iter)     \
+    for ((elem) = ds_list_ifirst(&iter, list); (elem) != NULL; (elem) = ds_list_inext_err(&iter))
+
+/*
+ * Same as ds_list_foreach() except it is safe to remove the _current_ element
+ * from the list. This foreach statement requires two additional parameters for
+ * temporary storage.
+ *
+ * Note: Use with care, this macro will not detect any iteration errors
+ * (for example, if the next element is removed somewhere inside the foreach
+ * loop)
+ */
+#define ds_list_foreach_safe(list, cur, prev, next)                                         \
+    for ((prev) = NULL, (cur) = ds_list_head(list), (next) = ds_list_next((list), (cur));   \
+                (cur) != NULL;                                                              \
+                (prev) = (cur), (cur) = (next), (next) = ds_list_next(list, cur))
+
+/*
+ * Convenience macro for removing the current element within a
+ * `ds_dlist_foreach_safe()` loop
+ */
+#define ds_list_remove_safe(list, cur, prev)            \
+do                                                      \
+{                                                       \
+    if (prev == NULL)                                   \
+        ds_list_remove_head(list);                      \
+    else                                                \
+        ds_list_remove_after(list, prev);               \
+}                                                       \
+while (0)
+
+/*
+ * ============================================================
+ *  Typedefs
+ * ============================================================
+ */
+typedef struct ds_list              ds_list_t;
+typedef struct ds_list_node         ds_list_node_t;
+typedef struct ds_list_iter         ds_list_iter_t;
+
+/*
+ * ============================================================
+ *  Structs
+ * ============================================================
+ */
+struct ds_list_node
+{
+    ds_list_node_t*                 oln_next;       /* Next node pointer                    */
+};
+
+struct ds_list
+{
+    size_t                          ol_cof;         /* Offset of the container structure    */
+    ds_list_node_t                  ol_root;        /* Dummy root element                   */
+    ds_list_node_t*                 ol_tail;        /* Tail of the list                     */
+    uint32_t                        ol_ndel;        /* Number of deletions                  */
+};
+
+struct ds_list_iter
+{
+    ds_list_t*                      oli_list;       /* Root of the list                     */
+    ds_list_node_t*                 oli_prev;       /* Prev element -- needed for deletion  */
+    ds_list_node_t*                 oli_curr;       /* Current element -- null on remove    */
+    ds_list_node_t*                 oli_next;       /* Next element                         */
+    uint32_t                        oli_ndel;       /* Number of deletions                  */
+};
+
+static inline void __ds_list_init(ds_list_t *list, size_t cof);
+
+/*
+ * ===========================================================================
+ *  Public API
+ * ===========================================================================
+ */
+
+static inline bool   ds_list_is_empty(ds_list_t *list);
+static inline void  *ds_list_next(ds_list_t *list, void *curr);
+static inline void  *ds_list_head(ds_list_t *list);
+static inline void  *ds_list_tail(ds_list_t *list);
+static inline void   ds_list_insert_head(ds_list_t *list, void *data);
+static inline void   ds_list_insert_tail(ds_list_t *list, void *data);
+static inline void   ds_list_insert_after(ds_list_t *list, void *after, void *data);
+static inline void  *ds_list_remove_after(ds_list_t *list, void *after);
+static inline void  *ds_list_remove_head(ds_list_t* list);
+
+/*
+ * ===========================================================================
+ *  Iterator API
+ * ===========================================================================
+ */
+static inline void  *ds_list_ifirst(ds_list_iter_t* iter, ds_list_t* list);
+static inline void  *ds_list_inext(ds_list_iter_t* iter);
+static inline void  *ds_list_iinsert(ds_list_iter_t *iter, void *data);
+static inline void  *ds_list_iremove(ds_list_iter_t* iter);
+
+#include "../src/ds_list.c.h"
+
+#endif /* DS_LIST_H_INCLUDED */

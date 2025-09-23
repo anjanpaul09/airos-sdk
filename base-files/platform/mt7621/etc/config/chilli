@@ -1,0 +1,239 @@
+config chilli 'cp_phy0_ap0'
+    option disabled '1'
+    option swapoctets    '1'
+    #option debug '1'
+    
+    ######## TUN and DHCP Parameters ########
+    option tundev        'tun0'
+    option dhcpif        'phy0-ap0'
+    option net           '192.168.15.0'
+    option lease         '3600'
+    option dns1          '8.8.8.8'
+    option uamlisten     '192.168.15.1'
+    option uamport       '3990'
+    option ipup          '/etc/chilli/up.sh'
+    option ipdown        '/etc/chilli/down.sh'
+    
+    ######## Radius parameters ########
+    option radiusserver1 '69.30.254.180'
+    option radiusauthport '1812'
+    option radiusacctport '1813'
+    option radiussecret   'testing123'
+    #option radiusnasid   'openwrt-hotspot'
+    
+    ######## UAM (captive-portal) parameters ########
+    option uamserver     'http://69.30.254.180:8014/uam/login?type=django'
+    option uamsecret     'uamtesting123'
+    option uamanydns     '0'
+    option uamaliasname  'login'
+    option nouamsuccess  '1'
+
+config chilli 'cp_phy1_ap0'
+    option disabled '1'
+    option swapoctets    '1'
+    #option debug '1'
+    
+    ######## TUN and DHCP Parameters ########
+    option tundev        'tun0'
+    option dhcpif        'phy1-ap0'
+    option net           '192.168.15.0'
+    option lease         '3600'
+    option dns1          '8.8.8.8'
+    option uamlisten     '192.168.15.1'
+    option uamport       '3990'
+    option ipup          '/etc/chilli/up.sh'
+    option ipdown        '/etc/chilli/down.sh'
+    
+    ######## Radius parameters ########
+    option radiusserver1 '69.30.254.180'
+    option radiusauthport '1812'
+    option radiusacctport '1813'
+    option radiussecret   'testing123'
+    #option radiusnasid   'openwrt-hotspot'
+    
+    ######## UAM (captive-portal) parameters ########
+    option uamserver     'http://69.30.254.180:8014/uam/login?type=django'
+    option uamsecret     'uamtesting123'
+    option uamanydns     '0'
+    option uamaliasname  'login'
+    option nouamsuccess  '1'
+    
+config chilli 'cp_phy0_ap1'
+    option disabled '1'
+    option swapoctets    '1'
+    #option debug '1'
+    
+    ######## TUN and DHCP Parameters ########
+    option tundev        'tun0'
+    option dhcpif        'phy0-ap1'
+    option net           '192.168.15.0'
+    option lease         '3600'
+    option dns1          '8.8.8.8'
+    option uamlisten     '192.168.15.1'
+    option uamport       '3990'
+    option ipup          '/etc/chilli/up.sh'
+    option ipdown        '/etc/chilli/down.sh'
+    
+    ######## Radius parameters ########
+    option radiusserver1 '69.30.254.180'
+    option radiusauthport '1812'
+    option radiusacctport '1813'
+    option radiussecret   'testing123'
+    #option radiusnasid   'openwrt-hotspot'
+    
+    ######## UAM (captive-portal) parameters ########
+    option uamserver     'http://69.30.254.180:8014/uam/login?type=django'
+    option uamsecret     'uamtesting123'
+    option uamanydns     '0'
+    option uamaliasname  'login'
+    option nouamsuccess  '1'
+
+config chilli 'cp_phy1_ap1'
+    option disabled '1'
+    option swapoctets    '1'
+    #option debug '1'
+    
+    ######## TUN and DHCP Parameters ########
+    option tundev        'tun0'
+    option dhcpif        'phy1-ap1'
+    option net           '192.168.15.0'
+    option lease         '3600'
+    option dns1          '8.8.8.8'
+    option uamlisten     '192.168.15.1'
+    option uamport       '3990'
+    option ipup          '/etc/chilli/up.sh'
+    option ipdown        '/etc/chilli/down.sh'
+    
+    ######## Radius parameters ########
+    option radiusserver1 '69.30.254.180'
+    option radiusauthport '1812'
+    option radiusacctport '1813'
+    option radiussecret   'testing123'
+    #option radiusnasid   'openwrt-hotspot'
+    
+    ######## UAM (captive-portal) parameters ########
+    option uamserver     'http://69.30.254.180:8014/uam/login?type=django'
+    option uamsecret     'uamtesting123'
+    option uamanydns     '0'
+    option uamaliasname  'login'
+    option nouamsuccess  '1' 
+  
+config chilli 'cp_phy0_ap2'
+    option disabled '1'
+    option swapoctets    '1'
+    #option debug '1'
+    
+    ######## TUN and DHCP Parameters ########
+    option tundev        'tun0'
+    option dhcpif        'phy0-ap2'
+    option net           '192.168.15.0'
+    option lease         '3600'
+    option dns1          '8.8.8.8'
+    option uamlisten     '192.168.15.1'
+    option uamport       '3990'
+    option ipup          '/etc/chilli/up.sh'
+    option ipdown        '/etc/chilli/down.sh'
+    
+    ######## Radius parameters ########
+    option radiusserver1 '69.30.254.180'
+    option radiusauthport '1812'
+    option radiusacctport '1813'
+    option radiussecret   'testing123'
+    #option radiusnasid   'openwrt-hotspot'
+    
+    ######## UAM (captive-portal) parameters ########
+    option uamserver     'http://69.30.254.180:8014/uam/login?type=django'
+    option uamsecret     'uamtesting123'
+    option uamanydns     '0'
+    option uamaliasname  'login'
+    option nouamsuccess  '1'
+
+config chilli 'cp_phy1_ap2'
+    option disabled '1'
+    option swapoctets    '1'
+    #option debug '1'
+    
+    ######## TUN and DHCP Parameters ########
+    option tundev        'tun0'
+    option dhcpif        'phy1-ap2'
+    option net           '192.168.15.0'
+    option lease         '3600'
+    option dns1          '8.8.8.8'
+    option uamlisten     '192.168.15.1'
+    option uamport       '3990'
+    option ipup          '/etc/chilli/up.sh'
+    option ipdown        '/etc/chilli/down.sh'
+    
+    ######## Radius parameters ########
+    option radiusserver1 '69.30.254.180'
+    option radiusauthport '1812'
+    option radiusacctport '1813'
+    option radiussecret   'testing123'
+    #option radiusnasid   'openwrt-hotspot'
+    
+    ######## UAM (captive-portal) parameters ########
+    option uamserver     'http://69.30.254.180:8014/uam/login?type=django'
+    option uamsecret     'uamtesting123'
+    option uamanydns     '0'
+    option uamaliasname  'login'
+    option nouamsuccess  '1'  
+  
+config chilli 'cp_phy0_ap3'
+    option disabled '1'
+    option swapoctets    '1'
+    #option debug '1'
+    
+    ######## TUN and DHCP Parameters ########
+    option tundev        'tun0'
+    option dhcpif        'phy0-ap3'
+    option net           '192.168.15.0'
+    option lease         '3600'
+    option dns1          '8.8.8.8'
+    option uamlisten     '192.168.15.1'
+    option uamport       '3990'
+    option ipup          '/etc/chilli/up.sh'
+    option ipdown        '/etc/chilli/down.sh'
+    
+    ######## Radius parameters ########
+    option radiusserver1 '69.30.254.180'
+    option radiusauthport '1812'
+    option radiusacctport '1813'
+    option radiussecret   'testing123'
+    #option radiusnasid   'openwrt-hotspot'
+    
+    ######## UAM (captive-portal) parameters ########
+    option uamserver     'http://69.30.254.180:8014/uam/login?type=django'
+    option uamsecret     'uamtesting123'
+    option uamanydns     '0'
+    option uamaliasname  'login'
+    option nouamsuccess  '1'
+
+config chilli 'cp_phy1_ap3'
+    option disabled '1'
+    option swapoctets    '1'
+    #option debug '1'
+    
+    ######## TUN and DHCP Parameters ########
+    option tundev        'tun0'
+    option dhcpif        'phy1-ap3'
+    option net           '192.168.15.0'
+    option lease         '3600'
+    option dns1          '8.8.8.8'
+    option uamlisten     '192.168.15.1'
+    option uamport       '3990'
+    option ipup          '/etc/chilli/up.sh'
+    option ipdown        '/etc/chilli/down.sh'
+    
+    ######## Radius parameters ########
+    option radiusserver1 '69.30.254.180'
+    option radiusauthport '1812'
+    option radiusacctport '1813'
+    option radiussecret   'testing123'
+    #option radiusnasid   'openwrt-hotspot'
+    
+    ######## UAM (captive-portal) parameters ########
+    option uamserver     'http://69.30.254.180:8014/uam/login?type=django'
+    option uamsecret     'uamtesting123'
+    option uamanydns     '0'
+    option uamaliasname  'login'
+    option nouamsuccess  '1'

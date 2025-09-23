@@ -1,0 +1,23 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008 Jo-Philipp Wich <jow@openwrt.org>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%+header%>
+<nav class="navbar mb-2" style="background-color: #fff;">
+	<div class="container-fluid">
+		<div class="navbar-brand">
+			<h2><%:System Log%></h2>
+		</div>
+	</div>
+</nav>
+<div class="card mb-2">
+    <div class="card-body cbi-section">
+        <div id="content_syslog">
+            <textarea readonly="readonly" wrap="off" rows="<%=syslog:cmatch("\n")+2%>" id="syslog"><%=syslog:pcdata()%></textarea>
+        </div>
+    </div>
+</div>
+
+<%+footer%>

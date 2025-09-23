@@ -1,0 +1,557 @@
+#include <stdio.h>
+
+#include "os.h"
+#include "log.h"
+#include "mosqev.h"
+#include "util.h"
+#include "memutil.h"
+
+#include <resolv.h>
+
+
+#define MOSQEV_TIMER_POLL  0.2  /**< Timer poll in seconds -- float */
+#define MOSQEV_KEEPALIVE   180
+static void mosqev_watcher_io_cbk(struct ev_loop *ev, struct ev_io *wio, int event);
+
+/*
+ * Restart the IO watcher flag in case some parameters like sockets and flags have changed
+ */
+bool mosqev_watcher_io_set(mosqev_t *self, int fd, int flags)
+{
+    /*
+     * Check if we have to stop the watcher
+     */
+    if (ev_is_active(&self->me_wio))
+    {
+        if (self->me_wio_fd == fd &&
+            self->me_wio_flags == flags)
+        {
+            /* Watcher is active and the FD and flags match, nothing to do */
+            return true;
+        }
+
+        /* Stop the watcher */
+        ev_io_stop(self->me_ev, &self->me_wio);
+    }
+
+    /*
+     * At this point the watcher is stopped -- restart it
+     */
+    self->me_wio_fd = fd;
+    self->me_wio_flags = flags;
+
+    /* Check if the descriptor is valid */
+    if (self->me_wio_fd >= 0)
+    {
+        ev_io_set(&self->me_wio, self->me_wio_fd, self->me_wio_flags);
+        ev_io_start(self->me_ev, &self->me_wio);
+    }
+
+    return true;
+}
+
+/*
+ * Publish a message
+ */
+bool mosqev_publish(mosqev_t *self,
+                    int *mid,
+                    const char *topic,
+                    size_t msglen,
+                    void *msg,
+                    int qos,
+                    bool retain)
+{
+    int rc;
+
+    rc = mosquitto_publish(self->me_mosq, mid, topic, msglen, msg, qos, retain);
+    if (rc != MOSQ_ERR_SUCCESS)
+    {
+        printf("Message publish failed: Topic: %s\n", topic);
+        return false;
+    }
+    printf("Anjan: Message publised: Topic:%s Buf:%s Len=%ld\n", topic, (char *)msg, msglen);
+
+    mosquitto_loop(self->me_mosq, 0, 1);
+
+    /* Start monitoring WRITE events if data is still pending to be sent */
+    if (mosquitto_want_write(self->me_mosq))
+    {
+        mosqev_watcher_io_set(self, mosquitto_socket(self->me_mosq), EV_READ | EV_WRITE);
+    }
+
+    return true;
+}
+
+
+/*
+ * Check status of the Mosquitto connection -- set the I/O watcher modes accordingly
+ */
+void mosqev_wio_check(mosqev_t *self)
+{
+    /*
+     * Restart the I/O watcher to include write requests
+     */
+
+    /*
+     * mosquitto_can_write() returns always true during the whole process of a SSL connection, for
+     * this reason we should stick to polling until we are connected (self->me_connected == true)
+     */
+    if (mosquitto_want_write(self->me_mosq) && self->me_connected)
+    {
+        mosqev_watcher_io_set(self, mosquitto_socket(self->me_mosq), EV_READ | EV_WRITE);
+    }
+    else
+    {
+        mosqev_watcher_io_set(self, mosquitto_socket(self->me_mosq), EV_READ);
+    }
+}
+
+/*
+ * Poll the socket status, update the I/O watcher, if necessary
+ *
+ * Do not use mosquitto_loop_misc/read/write -- they are broken for the TLS case!!!
+ */
+void mosqev_watcher_io_cbk(struct ev_loop *ev, struct ev_io *wio, int event)
+{
+    (void)ev;
+    (void)event;
+
+    mosqev_t *self = (mosqev_t *)(wio->data);
+
+    mosquitto_loop(self->me_mosq, 0, 1);
+
+    mosqev_wio_check(self);
+}
+
+/*
+ * Call the subscribe callback
+ */
+void mosqev_mosquitto_unsubscribe_cbk(struct mosquitto *mosq, void *__self, int mid)
+{
+    (void)mosq;
+
+    mosqev_t *self = (mosqev_t *)__self;
+
+    printf("Unsubscribed %s:%d -- %s, mid: %d\n",
+            self->me_host, self->me_port, self->me_cid, mid);
+
+    if (self->me_unsubscribe_cbk != NULL)
+    {
+        self->me_unsubscribe_cbk(self, self->me_publish_cbk, mid);
+    }
+}
+
+/*
+ * Call the subscribe callback
+ */
+void mosqev_mosquitto_subscribe_cbk(struct mosquitto *mosq, void *__self, int mid, int qos_n, const int *qos_v)
+{
+    (void)mosq;
+
+    mosqev_t *self = (mosqev_t *)__self;
+
+    printf("Subscribe %s:%d -- %s, mid: %d\n",
+            self->me_host, self->me_port, self->me_cid, mid);
+
+    if (self->me_subscribe_cbk != NULL)
+    {
+        self->me_subscribe_cbk(self, self->me_publish_cbk, mid, qos_n, qos_v);
+    }
+}
+
+/*
+ * Call the message callback
+ */
+void mosqev_mosquitto_message_cbk(struct mosquitto *mosq, void *__self, const struct mosquitto_message *msg)
+{
+    (void)mosq;
+
+    mosqev_t *self = (mosqev_t *)__self;
+
+    if (self->me_message_cbk != NULL)
+    {
+        self->me_message_cbk(self, self->me_data, msg->topic, msg->payload, msg->payloadlen);
+    }
+}
+/*
+ * Call the publish callback
+ */
+void mosqev_mosquitto_publish_cbk(struct mosquitto *mosq, void *__self, int mid)
+{
+    (void)mosq;
+
+    mosqev_t *self = (mosqev_t *)__self;
+
+    if (self->me_publish_cbk != NULL)
+    {
+        self->me_publish_cbk(self, self->me_publish_cbk, mid);
+    }
+}
+
+/*
+ * Mark the connection as connected -- this allows us to register for write events on the socket
+ */
+void mosqev_mosquitto_disconnect_cbk(struct mosquitto *mosq, void *__self, int rc)
+{
+    (void)mosq;
+
+    mosqev_t *self = (mosqev_t *)__self;
+
+    printf("Disconnected from %s:%d -- %s: Reason %s (%d)\n",
+            self->me_host, self->me_port, self->me_cid, mosquitto_strerror(rc), rc);
+
+    self->me_connected = false;
+    self->me_connecting = false;
+
+    if (self->me_disconnect_cbk != NULL)
+    {
+        self->me_disconnect_cbk(self, self->me_data, rc);
+    }
+}
+
+/*
+ * Mark the connection as connected -- this allows us to register for write events on the socket
+ */
+void mosqev_mosquitto_connect_cbk(struct mosquitto *mosq, void *__self, int rc)
+{
+    (void)mosq;
+
+    mosqev_t *self = (mosqev_t *)__self;
+
+    if (!self->me_connecting)
+        printf("Unexpected connect callback\n");
+
+    self->me_connecting = false;
+
+    if (rc == 0)
+    {
+        self->me_connected = true;
+        printf("Connected to %s:%d -- %s\n", self->me_host, self->me_port, self->me_cid);
+    }
+    else
+    {
+        printf("Connection error: %s:%d -- %s\n", self->me_host, self->me_port, self->me_cid);
+        self->me_connected = false;
+    }
+
+    if (self->me_connect_cbk != NULL)
+    {
+        self->me_connect_cbk(self, self->me_data, rc);
+    }
+}
+
+static void mosqev_init_cbk(mosqev_t *self)
+{
+    /*
+     * Take over mosquitto callbacks -- we need to handle some of them internally
+     */
+    mosquitto_connect_callback_set(self->me_mosq, mosqev_mosquitto_connect_cbk);
+    mosquitto_disconnect_callback_set(self->me_mosq, mosqev_mosquitto_disconnect_cbk);
+    mosquitto_publish_callback_set(self->me_mosq, mosqev_mosquitto_publish_cbk);
+    mosquitto_message_callback_set(self->me_mosq, mosqev_mosquitto_message_cbk);
+    mosquitto_subscribe_callback_set(self->me_mosq, mosqev_mosquitto_subscribe_cbk);
+    mosquitto_unsubscribe_callback_set(self->me_mosq, mosqev_mosquitto_unsubscribe_cbk);
+}
+
+/*
+ * Returns true whether we have an active connection to the MQTT broker.
+ */
+bool mosqev_is_connected(mosqev_t *self)
+{
+    return self->me_connected;
+}
+
+/*
+ * Stop watching a connection
+ */
+bool mosqev_watcher_stop(struct mosqev *self)
+{
+    if (ev_is_active(&self->me_wtimer))
+    {
+        ev_timer_stop(self->me_ev, &self->me_wtimer);
+    }
+
+    if (ev_is_active(&self->me_wio))
+    {
+        ev_io_stop(self->me_ev, &self->me_wio);
+    }
+
+    return true;
+}
+
+/*
+ * Delete a mosqev instance
+ */
+void mosqev_del(mosqev_t *self)
+{
+    mosqev_watcher_stop(self);
+
+    if (self->me_mosq != NULL)
+    {
+        if (self->me_connected)
+        {
+            if (mosquitto_disconnect(self->me_mosq) != MOSQ_ERR_SUCCESS)
+            {
+                printf("Unable to disconnect Mosquitto connection: %s:%d:%s\n",
+                        self->me_host, self->me_port, self->me_cid);
+            }
+        }
+
+        mosquitto_destroy(self->me_mosq);
+    }
+}
+
+void mosqev_watcher_timer_cbk(struct ev_loop *ev, struct ev_timer *wtime, int event)
+{
+    (void)ev;
+    (void)event;
+
+    mosqev_t   *self = (mosqev_t *)(wtime->data);
+
+    mosquitto_loop(self->me_mosq, 0, 1);
+
+    mosqev_wio_check(self);
+}
+
+bool mosqev_init(mosqev_t *self, const char *cid, struct ev_loop *ev, void *data)
+{
+    /*
+     * Note that there's no way to check if libmosquitto is already initialized -- how to handle this properly?
+     */
+    memset(self, 0, sizeof(*self));
+
+    self->me_ev = ev;
+    strcpy(self->me_cid, cid);
+    self->me_data = data;
+
+    strcpy(self->me_host, "unkown");
+    self->me_port = -1;
+
+     /*
+     * Initialize watchers
+     * */
+    ev_timer_init(&self->me_wtimer, mosqev_watcher_timer_cbk, MOSQEV_TIMER_POLL, MOSQEV_TIMER_POLL);
+    self->me_wtimer.data = self;
+    ev_io_init(&self->me_wio, mosqev_watcher_io_cbk, 0, EV_READ);
+    self->me_wio.data = self;
+
+    /*
+     * Instantiate a new Mosquitto structure --
+     * The 2nd paramater is the "clean_session" parameter, needs to be true if cid is NULL
+     */
+    self->me_mosq = mosquitto_new(cid, true, self);
+    if (self->me_mosq == NULL)
+    {
+        printf("Error initializing Mosquitto instance: CID: %s\n", cid);
+        return false;
+    }
+
+    mosqev_init_cbk(self);
+
+    return true;
+}
+
+/*
+ * Start watching a mosquitto connection; must be called after mosquitto_connect()
+ */
+bool mosqev_watcher_start(mosqev_t *self)
+{
+    (void)self;
+
+    printf("Starting event monitoring.\n");
+
+    ev_timer_start(self->me_ev, &self->me_wtimer);
+
+    mosqev_watcher_io_set(self, mosquitto_socket(self->me_mosq), EV_READ);
+
+    return true;
+}
+
+static int mosqev_reinit_settings(mosqev_t *self)
+{
+    return 0; //Anjan: tls disabled
+    int rc;
+
+    printf("Reinit: cafile=%s capath=%s certfile=%s keyfile=%s pwcb=%p certreqs=%d tls=%s ciphers=%s\n",
+        self->me_cafile,
+        self->me_capath,
+        self->me_certfile,
+        self->me_keyfile,
+        (void *)self->me_pw_callback,
+        self->me_cert_reqs,
+        self->me_tls_version,
+        self->me_ciphers);
+
+    rc = mosquitto_tls_set(self->me_mosq,
+                           self->me_cafile,
+                           self->me_capath,
+                           self->me_certfile,
+                           self->me_keyfile,
+                           (void *)self->me_pw_callback);
+    if (rc) {
+        printf("Failed to set tls: %s\n", mosquitto_strerror(rc));
+        return rc;
+    }
+
+    rc = mosquitto_tls_opts_set(self->me_mosq,
+                                self->me_cert_reqs,
+                                self->me_tls_version,
+                                self->me_ciphers);
+    if (rc) {
+        printf("Failed to set tls opts: %s\n", mosquitto_strerror(rc));
+        return rc;
+    }
+
+    return 0;
+}
+
+
+static int mosqev_reinit(mosqev_t *self)
+{
+    int rc;
+
+    mosquitto_reinitialise(self->me_mosq, self->me_cid, true, self);
+    mosqev_init_cbk(self);
+
+    rc = mosqev_reinit_settings(self);
+    if (rc) {
+        printf("Failed to reinit settings: %s\n", mosquitto_strerror(rc));
+        return rc;
+    }
+
+    return 0;
+}
+
+
+
+/*
+ * Connect to a mosquitto broker -- this is a BLOCKING call
+ */
+bool mosqev_connect(mosqev_t *self, char *host, int port)
+{
+    int rc;
+
+    strcpy(self->me_host, host);
+    self->me_port = port;
+
+    printf("Connecting to: %s:%d:%s\n", host, port, self->me_cid);
+
+    if (self->me_connecting)
+        printf("Previous session was still connecting\n");
+
+    if (self->me_connected)
+        printf("Previous session was still connected\n");
+
+    rc = mosqev_reinit(self);
+    if (rc) {
+        printf("Connection failed due to reinit: %s\n", mosquitto_strerror(rc));
+        return rc;
+    }
+
+    self->me_connecting = false;
+    self->me_connected = false;
+
+    mosqev_watcher_stop(self);
+
+    rc = mosquitto_connect(self->me_mosq, self->me_host, self->me_port, MOSQEV_KEEPALIVE);
+    if (rc != MOSQ_ERR_SUCCESS)
+    {
+        printf("Connection failed: %s:%d:%s: Error %s\n", host, port, self->me_cid, mosquitto_strerror(rc));
+
+        return false;
+    }
+
+    self->me_connecting = true;
+
+     /* Start watching the connection */
+    if (!mosqev_watcher_start(self))
+    {
+        printf("Error starting watchers: %s:%d:%s\n", self->me_host, self->me_port, self->me_cid);
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * Disconnect
+ */
+bool mosqev_disconnect(mosqev_t *self)
+{
+    int rc;
+
+    printf("Disconnecting from: %s:%d:%s\n", self->me_host, self->me_port, self->me_cid);
+
+    rc = mosquitto_disconnect(self->me_mosq);
+    if (rc != MOSQ_ERR_SUCCESS)
+    {
+        printf("Re-connection failed: %s:%d:%s: Error %s\n", self->me_host, self->me_port, self->me_cid,
+                 mosquitto_strerror(rc));
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * Enable TLS mode; must be called before mosqev_connect() -- just a wrapper around mosquitto_tls_set()
+ */
+bool mosqev_tls_set(mosqev_t *self,
+                    const char *cafile,
+                    const char *capath,
+                    const char *certfile,
+                    const char *keyfile,
+                    mosqev_pwd_cbk_t *pw_callback)
+{
+    int rc;
+
+    printf("CAFILE:%s CAPATH:%s CERTFILE:%s KEYFILE:%s PWCBK:%p\n", cafile, capath, certfile, keyfile, pw_callback);
+    rc = mosquitto_tls_set(self->me_mosq, cafile, capath,
+            certfile, keyfile, (void *)pw_callback);
+
+    if (cafile)
+        strcpy(self->me_cafile, cafile);
+    if (capath)
+        strcpy(self->me_capath, capath);
+    if (certfile)
+        strcpy(self->me_certfile, certfile);
+    if (keyfile)
+        strcpy(self->me_keyfile, keyfile);
+    self->me_pw_callback = pw_callback;
+
+    if (rc != MOSQ_ERR_SUCCESS)
+    {
+        printf("Error setting TLS: %s\n", mosquitto_strerror(rc));
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * Set TLS options; must be called before mosqev_connect() -- just a wrapper around mosquitto_tls_opts_set()
+ */
+bool mosqev_tls_opts_set(mosqev_t   *self,
+                         int         cert_reqs,
+                         const char *tls_version,
+                         const char *ciphers)
+{
+    int rc;
+
+    rc = mosquitto_tls_opts_set(self->me_mosq, cert_reqs,
+            tls_version, ciphers);
+
+    self->me_cert_reqs = cert_reqs;
+    if (tls_version)
+        strcpy(self->me_tls_version, tls_version);
+    if (ciphers)
+        strcpy(self->me_ciphers, ciphers);
+
+    if (rc != MOSQ_ERR_SUCCESS)
+    {
+        printf("Error setting TLS options: %s\n", mosquitto_strerror(rc));
+        return false;
+    }
+
+    return true;
+}

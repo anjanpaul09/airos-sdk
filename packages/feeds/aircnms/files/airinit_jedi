@@ -1,0 +1,114 @@
+#!/bin/sh /etc/rc.common
+
+START=96
+STOP=10
+
+TARGET_DEVICE_ID="XXXXXXXXXX"
+
+# Function to extract and format the last two bytes of the MAC address
+get_mac_suffix() {
+    local iface=$1
+    local mac_address=$(cat /sys/class/net/$iface/address)
+    local mac_suffix=$(echo $mac_address | awk -F':' '{print toupper($5$6)}')
+    echo $mac_suffix
+}
+
+# Function to check device ID from /etc/config/aircnms
+check_device_id() {
+    local device_id=$(uci get aircnms.@aircnms[0].device_id 2>/dev/null)
+    if [ "$device_id" = "$TARGET_DEVICE_ID" ]; then
+        return 0 # Match found
+    else
+        return 1 # No match
+    fi
+}
+
+start() {
+
+    # Check if the device_id is present or not
+    if ! check_device_id; then
+        echo "Device ID does not match. Default SSID configuration skipped."
+        return 1
+    fi
+
+    sleep 3
+
+    Default
+
+    # Set the configuration file paths (as strings)
+    config_file_2g="/etc/wireless/mediatek/mt7915.dbdc.b0.dat"
+    config_file_5g="/etc/wireless/mediatek/mt7915.dbdc.b1.dat"
+
+    # Set the SSID index and the new SSID value.
+    SSID_NUM=1
+
+    # For the 2G interface (e.g. ra0)
+    mac_suffix_phy0=$(get_mac_suffix ra0)
+    new_ssid_phy0="AIR-2G-$mac_suffix_phy0"
+
+    # Update UCI settings for wlan1 (2G)
+    uci set wireless.wlan1.ssid="$new_ssid_phy0"
+    uci set wireless.wlan1.network="nat_network"
+
+    # Construct and execute the command for 2G
+    command="wificonf -f ${config_file_2g} set SSID${SSID_NUM} '$new_ssid_phy0'"
+    echo "Executing: $command"
+    eval "$command"
+
+    command="wificonf -f ${config_file_2g} set AuthMode 'WPA2PSK;WPA2PSK;WPA2PSK;WPA2PSK'"
+    echo "Executing: $command"
+    eval "$command"
+
+    command="wificonf -f ${config_file_2g} set EncrypType 'TKIP;TKIP;TKIP;TKIP'"
+    echo "Executing: $command"
+    eval "$command"
+
+    command="wificonf -f ${config_file_2g} set WPAPSK${SSID_NUM} '12345678'"
+    echo "Executing: $command"
+    eval "$command"
+
+    # For the 5G interface (e.g. rax0)
+    mac_suffix_phy1=$(get_mac_suffix rax0)
+    new_ssid_phy1="AIR-5G-$mac_suffix_phy1"
+
+    # Update UCI settings for wlan2 (5G)
+    uci set wireless.wlan2.ssid="$new_ssid_phy1"
+    uci set wireless.wlan2.network="nat_network"
+
+    # Construct and execute the command for 5G
+    command="wificonf -f ${config_file_5g} set SSID${SSID_NUM} '$new_ssid_phy1'"
+    echo "Executing: $command"
+    eval "$command"
+
+    command="wificonf -f ${config_file_5g} set AuthMode 'WPA2PSK;WPA2PSK;WPA2PSK;WPA2PSK'"
+    echo "Executing: $command"
+    eval "$command"
+
+    command="wificonf -f ${config_file_5g} set EncrypType 'TKIP;TKIP;TKIP;TKIP'"
+    echo "Executing: $command"
+    eval "$command"
+
+    command="wificonf -f ${config_file_5g} set WPAPSK${SSID_NUM} '12345678'"
+    echo "Executing: $command"
+    eval "$command"
+
+    # Commit changes
+    uci commit wireless
+
+    # Restart Wi-Fi to apply changes
+    wifi reload
+
+    ifconfig ra1 down
+    ifconfig rax1 down
+    ifconfig ra2 down
+    ifconfig rax2 down
+    ifconfig ra3 down
+    ifconfig rax3 down
+}
+
+stop() {
+    # No specific stop actions needed for this script
+    return 0
+}
+
+

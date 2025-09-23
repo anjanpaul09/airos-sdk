@@ -1,0 +1,14 @@
+config aircnms
+        option cloud_url 'http://69.30.254.180:8000/api/device_registration/v1/devices'
+        option ipaddr '69.30.254.180'
+        option port '35930'
+        option interval '30'
+        option device_id 'XXXXXXXXXX'
+        option serial_num 'XXXXXXXXXX'
+        option macaddr 'XXXXXXXXXX'
+        option debug '0'
+
+config device
+
+config stats-topic
+

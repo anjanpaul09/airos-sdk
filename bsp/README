@@ -1,0 +1,7 @@
+── bsp/                            # Board Support Package
+│   ├── ipq5018/                   # IPQ5018 platform
+│   │   |___
+│   │   │   ├── dts/               # Device tree files
+│   │   │   ├── drivers/           # Platform-specific drivers
+│   │   │   ├── patches/           # Kernel patches
+│   │   │   └── config/            # Platform configs

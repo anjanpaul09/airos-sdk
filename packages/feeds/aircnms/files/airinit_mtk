@@ -1,0 +1,60 @@
+#!/bin/sh /etc/rc.common
+
+START=96
+STOP=10
+
+TARGET_DEVICE_ID="XXXXXXXXXX"
+
+# Function to extract and format the last two bytes of the MAC address
+get_mac_suffix() {
+    local iface=$1
+    local mac_address=$(cat /sys/class/net/$iface/address)
+    local mac_suffix=$(echo $mac_address | awk -F':' '{print toupper($5$6)}')
+    echo $mac_suffix
+}
+
+# Function to check device ID from /etc/config/aircnms
+check_device_id() {
+    local device_id=$(uci get aircnms.@aircnms[0].device_id 2>/dev/null)
+    if [ "$device_id" = "$TARGET_DEVICE_ID" ]; then
+        return 0 # Match found
+    else
+        return 1 # No match
+    fi
+}
+
+start() {
+
+    # Check if the device_id is present or not
+    if ! check_device_id; then
+        echo "Device ID does not match. Default SSID configuration skipped."
+        return 1
+    fi
+
+    sleep 3
+
+    # Set SSID for wlan0
+    local mac_suffix_phy0=$(get_mac_suffix phy0-ap0)
+    local new_ssid_phy0="AIR-2G-$mac_suffix_phy0"
+    uci set wireless.wlan1.ssid="$new_ssid_phy0"
+    uci set wireless.wlan1.network="nat_network"
+
+    # Set SSID for wlan1
+    local mac_suffix_phy1=$(get_mac_suffix phy1-ap0)
+    local new_ssid_phy1="AIR-5G-$mac_suffix_phy1"
+    uci set wireless.wlan2.ssid="$new_ssid_phy1"
+    uci set wireless.wlan2.network="nat_network"
+
+    # Commit changes
+    uci commit wireless
+
+    # Restart Wi-Fi to apply changes
+    wifi
+}
+
+stop() {
+    # No specific stop actions needed for this script
+    return 0
+}
+
+
