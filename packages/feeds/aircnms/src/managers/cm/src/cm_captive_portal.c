@@ -63,8 +63,8 @@ int get_ssid_interface(const char *ssid, const char *wifi, char *ifname, size_t 
 
 int cm_enable_captive_portal(char *cp_ifname, struct airpro_mgr_wlan_vap_params *vap_params)
 {
-    char cmd[256];
-    char result[256];
+    char cmd[512];
+    char result[512];
 
     memset(cmd, 0, sizeof(cmd));
     snprintf(cmd, sizeof(cmd),
@@ -93,11 +93,23 @@ int cm_enable_captive_portal(char *cp_ifname, struct airpro_mgr_wlan_vap_params 
 
     memset(cmd, 0, sizeof(cmd));
     snprintf(cmd, sizeof(cmd),
-             "uci set chilli.cp_%s.uamserver=%s",
+             "uci set chilli.cp_%s.uamserver='%s'",
              cp_ifname, vap_params->auth_url);
     system(cmd);
 
     system("uci commit chilli");
+
+    memset(cmd, 0, sizeof(cmd));
+    snprintf(cmd, sizeof(cmd),
+             "uci set wireless.%s.network='lan'",
+             vap_params->record_id);
+    system(cmd);
+
+    system("uci commit wireless");
+            
+    sprintf(cmd, "wifi reload %s", vap_params->record_id);
+    system(cmd);
+
     return 0;
 }
 
@@ -118,8 +130,8 @@ int cm_disable_captive_portal(char *cp_ifname, struct airpro_mgr_wlan_vap_params
 
 int cm_check_captive_portal_config(char *cp_ifname, struct airpro_mgr_wlan_vap_params *vap_params)
 {
-    char cmd[256];
-    char result[256];
+    char cmd[512];
+    char result[512];
 
     memset(cmd, 0, sizeof(cmd));
     snprintf(cmd, sizeof(cmd),
@@ -128,8 +140,26 @@ int cm_check_captive_portal_config(char *cp_ifname, struct airpro_mgr_wlan_vap_p
     result[strcspn(result, "\n")] = '\0';
 
     if (strcmp(vap_params->auth_url, result) != 0) {
-        cm_check_captive_portal_config(cp_ifname, vap_params); 
+        cm_enable_captive_portal(cp_ifname, vap_params); 
     }
+    
+    memset(cmd, 0, sizeof(cmd));
+    char uamlisten[24];
+    snprintf(cmd, sizeof(cmd),
+             "uci get chilli.cp_%s.uamlisten", cp_ifname);
+    execute_uci_command(cmd, uamlisten, sizeof(uamlisten));
+    uamlisten[strcspn(uamlisten, "\n")] = '\0'; 
+
+    memset(cmd, 0, sizeof(cmd));
+    snprintf(cmd, sizeof(cmd),
+             "uci get network.nat_network.ipaddr");
+    execute_uci_command(cmd, result, sizeof(result));
+    result[strcspn(result, "\n")] = '\0';
+
+    if (strcmp(uamlisten, result) != 0) {
+        cm_enable_captive_portal(cp_ifname, vap_params); 
+    }
+
 
     return 0;
 }

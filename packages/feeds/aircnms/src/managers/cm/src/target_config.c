@@ -212,9 +212,10 @@ bool target_config_vif_set(vif_record_t *record)
         if ( record->vif_param[vid].status == VIF_ADD ) {
             //ADD 1
             memset(vif_name, 0, sizeof(vif_name));
-            memset(&vif_params, 0, sizeof(struct airpro_mgr_wlan_vap_params));
+            memset(&vif_params, 0, sizeof(vif_params));
             
             strlcpy(vif_name, record->vif_param[vid].record_id, sizeof(vif_name));
+            strlcpy(vif_params.record_id, record->vif_param[vid].record_id, sizeof(vif_params.record_id));
             
             strlcpy(vif_params.ssid, record->vif_param[vid].ssid, sizeof(vif_params.ssid));
             
@@ -257,6 +258,7 @@ bool target_config_vif_set(vif_record_t *record)
                     memset(cmd, 0, sizeof(cmd));
                     sprintf(cmd, "uci del wireless.%s.acct_server", vif_name);
                     rc = system(cmd);
+                    
             }
 
 #ifdef CONFIG_PLATFORM_MTK 
@@ -273,11 +275,19 @@ bool target_config_vif_set(vif_record_t *record)
                 }
             }
 
-            if( strcmp(vif_params.forward_type, "NAT") == 0) {
-                strlcpy(vif_params.network, "nat_network", sizeof(vif_params.network)); 
+            if( strcmp(vif_params.forward_type, "NAT") == 0 && (record->vif_param[vid].is_auth == false)) {
+                printf("Ankit: nat true auth false\n");
+                strlcpy(vif_params.network, "nat_network", sizeof(vif_params.network));
+                rc = system("ifup nat_network");
+                if (rc == 0) {
+                    sleep(3);
+                }
+            } else {
+                strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
             }
 #endif
-            uci_set_vap_params(vif_name, &vif_params);
+            
+            rc = uci_set_vap_params(vif_name, &vif_params);
 
             memset(cmd, 0, sizeof(cmd));
             sprintf(cmd, "wifi reload %s", vif_name);
@@ -322,8 +332,10 @@ bool target_config_vif_set(vif_record_t *record)
         } else if( record->vif_param[vid].status == VIF_DISABLE ) {
             //DISABLE 2
             memset(vif_name, 0, sizeof(vif_name));
-            memset(&vif_params, 0,sizeof(struct airpro_mgr_wlan_vap_params));
+            memset(&vif_params, 0, sizeof(vif_params));
+            
             strlcpy(vif_name, record->vif_param[vid].record_id, sizeof(vif_name));
+            strlcpy(vif_params.record_id, record->vif_param[vid].record_id, sizeof(vif_params.record_id));
             
             strlcpy(vif_params.disabled, "1", sizeof(vif_params.disabled));
             //CAPTIVE PORTAL
@@ -343,9 +355,10 @@ bool target_config_vif_set(vif_record_t *record)
         } else if( record->vif_param[vid].status == VIF_MODIFY ) {
             //MODIFY 3
             memset(vif_name, 0, sizeof(vif_name));
-            memset(&vif_params, 0,sizeof(struct airpro_mgr_wlan_vap_params));
+            memset(&vif_params, 0, sizeof(vif_params));
             
             strlcpy(vif_name, record->vif_param[vid].record_id, sizeof(vif_name));
+            strlcpy(vif_params.record_id, record->vif_param[vid].record_id, sizeof(vif_params.record_id));
             
             strlcpy(vif_params.ssid, record->vif_param[vid].ssid, sizeof(vif_params.ssid));
             
@@ -404,8 +417,15 @@ bool target_config_vif_set(vif_record_t *record)
                 }
             }
 
-            if( strcmp(record->vif_param[vid].forward_type, "NAT") == 0) {
-                strlcpy(vif_params.network, "nat_network", sizeof(vif_params.network)); 
+            if( strcmp(vif_params.forward_type, "NAT") == 0 && (record->vif_param[vid].is_auth == false)) {
+                printf("Ankit: nat true auth false\n");
+                strlcpy(vif_params.network, "nat_network", sizeof(vif_params.network));
+                rc = system("ifup nat_network");
+                if (rc == 0) {
+                    sleep(3);
+                }
+            } else {
+                strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
             }
 #endif
 

@@ -48,3 +48,10 @@ config dhcp 'nat'
 	option limit '150'
 	option leasetime '1h'
 
+config dhcp 'mgmt'
+        option interface 'mgmt'
+        option start '100'
+        option limit '150'
+        option leasetime '12h'
+        option ignore '0'
+

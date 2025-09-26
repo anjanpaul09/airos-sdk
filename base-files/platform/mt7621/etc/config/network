@@ -45,6 +45,6 @@ config device
 
 config interface 'mgmt'
 	option proto 'static'
-	option ipaddr '192.168.100.10'
+	option ipaddr '192.168.188.253'
 	option netmask '255.255.255.0'
 	option device 'br-mgmt'

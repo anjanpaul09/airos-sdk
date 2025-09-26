@@ -304,6 +304,7 @@ int cm_handle_nat_config(nat_config_t *config)
         //set network flag
         //set_flag(&flags, FLAG_NETWORK_CHANGE);
     }
+    //ret = system("ifup nat_network");
 
     return 0;
 }
