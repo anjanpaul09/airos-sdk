@@ -11,7 +11,7 @@ static int              cm_dequeue_timer_interval;
 
 bool cm_process_msg(cm_item_t *qi)
 {
-    char data[5000];
+    char data[8192];
     long mlen = qi->size;
     void *mbuf = qi->buf;
     cm_request_t req = qi->req;

@@ -96,7 +96,7 @@ bool qm_parse_device_newjson(device_report_data_t *device, char *data)
 
     // Copy JSON to the provided buffer
     strcpy(data, json_str);
-    LOG(INFO, "DEVICE JSON:\n %s\n", json_str);
+    //LOG(INFO, "DEVICE JSON:\n %s\n", json_str);
 
     // Cleanup
     free(json_str);
@@ -177,7 +177,7 @@ bool qm_parse_vif_newjson(vif_report_data_t *vif, char *data)
 
     /* Copy JSON string safely */
     strncpy(data, json_str, strlen(json_str) + 1);  // Ensure `data` is large enough!
-    LOG(INFO, "VIF JSON:\n %s\n", json_str);
+    //LOG(INFO, "VIF JSON:\n %s\n", json_str);
 
     /* Cleanup */
     free(json_str);
@@ -264,7 +264,7 @@ bool qm_parse_client_newjson(client_report_data_t *client, char *data)
     strcpy(data, json_str);
     
     // Print serialized JSON string
-    LOG(INFO, "CLIENT JSON:\n %s\n", json_str);
+    //LOG(INFO, "CLIENT JSON:\n %s\n", json_str);
 
     // Cleanup
     free(json_str);
@@ -300,7 +300,7 @@ int qm_parse_config_newjson(device_conf_t *conf, char *data)
     strcpy(data, json_str);
     
     // Print serialized JSON string
-    LOG(INFO, "DEVICE_CONF JSON:\n %s\n", json_str);
+    //LOG(INFO, "DEVICE_CONF JSON:\n %s\n", json_str);
 
     // Cleanup
     free(json_str);
@@ -454,7 +454,7 @@ bool qm_parse_neighbor_newjson(neighbor_report_data_t *rpt, char *data)
     strcpy(data, json_str);
 
     // Print serialized JSON
-    LOG(INFO, "NEIGHBOUR JSON:\n%s\n", json_str);
+    //LOG(INFO, "NEIGHBOUR JSON:\n%s\n", json_str);
 
     // Cleanup
     free(json_str);

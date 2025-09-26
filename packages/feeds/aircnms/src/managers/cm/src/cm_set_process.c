@@ -127,10 +127,11 @@ bool cm_process_vif_list(json_t *vif_list)
             }
         }
 
+        record->vif_param[i].is_uprate = false;
         attr_value = json_object_get(vif, "uprate");
         if (attr_value != NULL && json_is_string(attr_value)) {
             const char *value = json_string_value(attr_value);
-            if (value != NULL) {
+            if (value != NULL && strlen(value) > 0) {
                 int uprate = atoi(value);
                 if (uprate >= 0) {
                     record->vif_param[i].is_uprate = true;
@@ -139,10 +140,11 @@ bool cm_process_vif_list(json_t *vif_list)
             }
         }
 
+        record->vif_param[i].is_downrate = false;
         attr_value = json_object_get(vif, "downrate");
         if (attr_value != NULL && json_is_string(attr_value)) {
             const char *value = json_string_value(attr_value);
-            if (value != NULL) {
+            if (value != NULL && strlen(value) > 0) {
                 int downrate = atoi(value);
                 if (downrate >= 0) {
                     record->vif_param[i].is_downrate = true;
@@ -151,10 +153,11 @@ bool cm_process_vif_list(json_t *vif_list)
             }
         }
 
+        record->vif_param[i].is_wlan_uprate = false;
         attr_value = json_object_get(vif, "wlanUprate");
         if (attr_value != NULL && json_is_string(attr_value)) {
             const char *value = json_string_value(attr_value);
-            if (value != NULL) {
+            if (value != NULL && strlen(value) > 0) {
                 int uprate = atoi(value);
                 if (uprate >= 0) {
                     record->vif_param[i].is_wlan_uprate = true;
@@ -163,10 +166,11 @@ bool cm_process_vif_list(json_t *vif_list)
             }
         }
 
+        record->vif_param[i].is_wlan_downrate = false;
         attr_value = json_object_get(vif, "wlanDownrate");
         if (attr_value != NULL && json_is_string(attr_value)) {
             const char *value = json_string_value(attr_value);
-            if (value != NULL) {
+            if (value != NULL && strlen(value) > 0) {
                 int downrate = atoi(value);
                 if (downrate >= 0) {
                     record->vif_param[i].is_wlan_downrate = true;
@@ -409,7 +413,6 @@ int cm_process_set_msg(char* buf)
     int ret;
     json_error_t error;
     json_t *root = json_loads(buf, 0, &error);
-
     if (!root) {
         fprintf(stderr, "Error parsing JSON: %s\n", error.text);
         return false;

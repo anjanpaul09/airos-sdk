@@ -187,7 +187,7 @@ bool qm_publish_json(char *data, char *topic)
     uint64_t time_diff = (prev_timestamp > 0) ? (current_timestamp - prev_timestamp) : 0;
     prev_timestamp = current_timestamp;  // Update previous timestamp
     
-    LOGI("MQTT: Publishing %zu bytes topic-%s | Time since last publish: %" PRIu64 " ms", mlen, topic, time_diff);
+    LOG(INFO,"MQTT: Publishing %zu bytes topic-%s | Time since last publish: %" PRIu64 " ms", mlen, topic, time_diff);
 
     //LOGI("MQTT: Publishing %zu bytes topic-%s", mlen, topic);
     ret = mosqev_publish(mqtt, NULL, topic, mlen, mbuf, 1, false);

@@ -25,7 +25,7 @@ struct airpro_mgr_wlan_vap_params {
     char wifi_device[8]; //wifi0, wifi1, wifi2
     char network[16];
     bool is_auth;
-    char auth_url[256];
+    char auth_url[512];
     bool is_uprate;
     int  uprate;
     bool is_downrate;
