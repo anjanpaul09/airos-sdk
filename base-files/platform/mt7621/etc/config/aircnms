@@ -7,6 +7,7 @@ config aircnms
         option serial_num 'XXXXXXXXXX'
         option macaddr 'XXXXXXXXXX'
         option debug '0'
+        option log_size '15360'
 
 config device
 
