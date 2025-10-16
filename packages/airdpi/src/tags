@@ -1,0 +1,884 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_EXCMD	mixed	/number, pattern, mixed, or combineV2/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
+!_TAG_PROC_CWD	/home/anjan/projects/airpro/mtk/mt7621/24.10/openwrt/package/feeds/airdpi/src/	//
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	5.9.0	//
+ACL_RULE_IP	adpi/air_common.h	/^    ACL_RULE_IP    = 1,$/;"	e	enum:rule_type
+ACL_RULE_MAC	adpi/air_common.h	/^    ACL_RULE_MAC   = 2,$/;"	e	enum:rule_type
+ACL_RULE_NONE	adpi/air_common.h	/^    ACL_RULE_NONE  = 0,$/;"	e	enum:rule_type
+ACL_RULE_PROTO	adpi/air_common.h	/^    ACL_RULE_PROTO = 3,$/;"	e	enum:rule_type
+ACTION_DENY	adpi/air_common.h	/^    ACTION_DENY   =0,$/;"	e	enum:action
+ACTION_PERMIT	adpi/air_common.h	/^    ACTION_PERMIT =1,$/;"	e	enum:action
+AIRPRO_IS_BROADCAST	adpi/air_common.h	/^#define AIRPRO_IS_BROADCAST(/;"	d
+AIRPRO_RADIO_24	adpi/air_coplane.h	/^    AIRPRO_RADIO_24 = 0,$/;"	e	enum:airpro_radio_mapping
+AIRPRO_RADIO_5	adpi/air_coplane.h	/^    AIRPRO_RADIO_5 = 1,$/;"	e	enum:airpro_radio_mapping
+AIRPRO_RADIO_6	adpi/air_coplane.h	/^    AIRPRO_RADIO_6 = 2,$/;"	e	enum:airpro_radio_mapping
+AIR_ACTION_CONTINUE	adpi/air_common.h	/^    AIR_ACTION_CONTINUE = 0,$/;"	e	enum:__anon39e19c0c0103
+AIR_ACTION_DROP	adpi/air_common.h	/^    AIR_ACTION_DROP,$/;"	e	enum:__anon39e19c0c0103
+AIR_COMMON_H	adpi/air_common.h	/^#define AIR_COMMON_H$/;"	d
+AIR_RL_DIR_DOWNLINK	adpi/air_coplane.h	/^    AIR_RL_DIR_DOWNLINK,$/;"	e	enum:__anon59b237050103
+AIR_RL_DIR_MAX	adpi/air_coplane.h	/^    AIR_RL_DIR_MAX$/;"	e	enum:__anon59b237050103
+AIR_RL_DIR_UPLINK	adpi/air_coplane.h	/^    AIR_RL_DIR_UPLINK,$/;"	e	enum:__anon59b237050103
+ARP_HWLEN_IPv4	adpi/proto/arp.h	/^#define ARP_HWLEN_IPv4 /;"	d
+ARP_HWTYPE_ETHERNET	adpi/proto/arp.h	/^#define ARP_HWTYPE_ETHERNET /;"	d
+ARP_OPCODE_REPLY	adpi/proto/arp.h	/^#define ARP_OPCODE_REPLY /;"	d
+ARP_OPCODE_REQ	adpi/proto/arp.h	/^#define ARP_OPCODE_REQ /;"	d
+ARP_PROTO_IP	adpi/proto/arp.h	/^#define ARP_PROTO_IP /;"	d
+ATH_LIST_HEAD	adpi/queue.h	/^#define    ATH_LIST_HEAD(/;"	d
+BCAST_MAC	adpi/proto/ethernet.h	/^#define BCAST_MAC /;"	d
+BOOTP_HWTYPE_ETHERNET	adpi/dhcp.h	/^#define BOOTP_HWTYPE_ETHERNET /;"	d
+BOOTP_HWTYPE_ETHERNET	adpi/proto/dhcp.h	/^#define BOOTP_HWTYPE_ETHERNET /;"	d
+BOOTP_OPCODE_REPLY	adpi/dhcp.h	/^#define BOOTP_OPCODE_REPLY /;"	d
+BOOTP_OPCODE_REPLY	adpi/proto/dhcp.h	/^#define BOOTP_OPCODE_REPLY /;"	d
+BOOTP_OPCODE_REQ	adpi/dhcp.h	/^#define BOOTP_OPCODE_REQ /;"	d
+BOOTP_OPCODE_REQ	adpi/proto/dhcp.h	/^#define BOOTP_OPCODE_REQ /;"	d
+BRIDGE_DEV_PREFIX	adpi/air_coplane.h	/^#define BRIDGE_DEV_PREFIX /;"	d
+CLIENT_HASH	adpi/air_coplane.h	/^#define CLIENT_HASH(/;"	d
+CLIENT_HASHSIZE	adpi/air_coplane.h	/^#define CLIENT_HASHSIZE /;"	d
+CMB_ACCT_STATS_VER	adpi/proto/cmb_proto.h	/^#define CMB_ACCT_STATS_VER /;"	d
+CMB_ARF_VER	adpi/proto/cmb_proto.h	/^#define CMB_ARF_VER /;"	d
+CMB_CI_SESS_VER	adpi/proto/cmb_proto.h	/^#define CMB_CI_SESS_VER /;"	d
+CMB_CLB_UPDATE_VER	adpi/proto/cmb_proto.h	/^#define CMB_CLB_UPDATE_VER /;"	d
+CMB_ETHER_SUB_TYPE	adpi/proto/cmb_proto.h	/^#define CMB_ETHER_SUB_TYPE /;"	d
+CMB_ETHER_TYPE	adpi/proto/cmb_proto.h	/^#define CMB_ETHER_TYPE /;"	d
+CMB_GA_ACCOUNTING_ENABLED	adpi/proto/cmb_proto.h	/^#define CMB_GA_ACCOUNTING_ENABLED /;"	d
+CMB_GA_VER	adpi/proto/cmb_proto.h	/^#define CMB_GA_VER /;"	d
+CMB_NOTIFY_MSG_TYPE_ACCT_STATS_UPDATE_RSP	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_ACCT_STATS_UPDATE_RSP /;"	d
+CMB_NOTIFY_MSG_TYPE_ARF_CHANGE	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_ARF_CHANGE /;"	d
+CMB_NOTIFY_MSG_TYPE_ARF_DEVINFO	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_ARF_DEVINFO /;"	d
+CMB_NOTIFY_MSG_TYPE_ARF_LDR	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_ARF_LDR /;"	d
+CMB_NOTIFY_MSG_TYPE_ARF_NBRINFO	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_ARF_NBRINFO /;"	d
+CMB_NOTIFY_MSG_TYPE_AUTOPILOT	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_AUTOPILOT /;"	d
+CMB_NOTIFY_MSG_TYPE_BANDSTEER_STATUS	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_BANDSTEER_STATUS /;"	d
+CMB_NOTIFY_MSG_TYPE_CI_SESSION_UPDATE	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_CI_SESSION_UPDATE /;"	d
+CMB_NOTIFY_MSG_TYPE_CLB_UPDATE	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_CLB_UPDATE /;"	d
+CMB_NOTIFY_MSG_TYPE_DRF_NBR	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_DRF_NBR /;"	d
+CMB_NOTIFY_MSG_TYPE_DRF_NBR_CHAN_ASSIGN	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_DRF_NBR_CHAN_ASSIGN /;"	d
+CMB_NOTIFY_MSG_TYPE_DRF_NBR_DEV_INFO	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_DRF_NBR_DEV_INFO /;"	d
+CMB_NOTIFY_MSG_TYPE_DRF_NBR_RADIO_MAC_INFO	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_DRF_NBR_RADIO_MAC_INFO /;"	d
+CMB_NOTIFY_MSG_TYPE_FT_RRB	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_FT_RRB /;"	d
+CMB_NOTIFY_MSG_TYPE_GA_LOGIN_UPDATE_ROAMED_CLIENT	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_GA_LOGIN_UPDATE_ROAMED_CLIENT /;"	d
+CMB_NOTIFY_MSG_TYPE_GA_UPDATE	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_GA_UPDATE /;"	d
+CMB_NOTIFY_MSG_TYPE_MAX	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_MAX /;"	d
+CMB_NOTIFY_MSG_TYPE_PMK_UPDATE	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_PMK_UPDATE /;"	d
+CMB_NOTIFY_MSG_TYPE_ROAM	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_ROAM /;"	d
+CMB_NOTIFY_MSG_TYPE_ROAM_DATA_READY_UPDATE_REQ	adpi/proto/cmb_proto.h	/^#define CMB_NOTIFY_MSG_TYPE_ROAM_DATA_READY_UPDATE_REQ /;"	d
+CMB_PMK_UPDATE_VER	adpi/proto/cmb_proto.h	/^#define CMB_PMK_UPDATE_VER /;"	d
+CMB_ROAM_DATA_READY_UPDATE_REQ_VER	adpi/proto/cmb_proto.h	/^#define CMB_ROAM_DATA_READY_UPDATE_REQ_VER /;"	d
+CMB_ROAM_VER	adpi/proto/cmb_proto.h	/^#define CMB_ROAM_VER /;"	d
+DHCP_MAGIC_COOKIE	adpi/dhcp.h	/^#define DHCP_MAGIC_COOKIE /;"	d
+DHCP_MAGIC_COOKIE	adpi/proto/dhcp.h	/^#define DHCP_MAGIC_COOKIE /;"	d
+DHCP_MSG_TYPE_ACK	adpi/dhcp.h	/^#define DHCP_MSG_TYPE_ACK /;"	d
+DHCP_MSG_TYPE_ACK	adpi/proto/dhcp.h	/^#define DHCP_MSG_TYPE_ACK /;"	d
+DHCP_MSG_TYPE_DECLINE	adpi/dhcp.h	/^#define DHCP_MSG_TYPE_DECLINE /;"	d
+DHCP_MSG_TYPE_DECLINE	adpi/proto/dhcp.h	/^#define DHCP_MSG_TYPE_DECLINE /;"	d
+DHCP_MSG_TYPE_DISCOVER	adpi/dhcp.h	/^#define DHCP_MSG_TYPE_DISCOVER /;"	d
+DHCP_MSG_TYPE_DISCOVER	adpi/proto/dhcp.h	/^#define DHCP_MSG_TYPE_DISCOVER /;"	d
+DHCP_MSG_TYPE_INFORM	adpi/dhcp.h	/^#define DHCP_MSG_TYPE_INFORM /;"	d
+DHCP_MSG_TYPE_INFORM	adpi/proto/dhcp.h	/^#define DHCP_MSG_TYPE_INFORM /;"	d
+DHCP_MSG_TYPE_NACK	adpi/dhcp.h	/^#define DHCP_MSG_TYPE_NACK /;"	d
+DHCP_MSG_TYPE_NACK	adpi/proto/dhcp.h	/^#define DHCP_MSG_TYPE_NACK /;"	d
+DHCP_MSG_TYPE_OFFER	adpi/dhcp.h	/^#define DHCP_MSG_TYPE_OFFER /;"	d
+DHCP_MSG_TYPE_OFFER	adpi/proto/dhcp.h	/^#define DHCP_MSG_TYPE_OFFER /;"	d
+DHCP_MSG_TYPE_RELEASE	adpi/dhcp.h	/^#define DHCP_MSG_TYPE_RELEASE /;"	d
+DHCP_MSG_TYPE_RELEASE	adpi/proto/dhcp.h	/^#define DHCP_MSG_TYPE_RELEASE /;"	d
+DHCP_MSG_TYPE_REQUEST	adpi/dhcp.h	/^#define DHCP_MSG_TYPE_REQUEST /;"	d
+DHCP_MSG_TYPE_REQUEST	adpi/proto/dhcp.h	/^#define DHCP_MSG_TYPE_REQUEST /;"	d
+DHCP_OPTION_END	adpi/dhcp.h	/^#define DHCP_OPTION_END /;"	d
+DHCP_OPTION_END	adpi/proto/dhcp.h	/^#define DHCP_OPTION_END /;"	d
+DHCP_OPTION_HOSTNAME	adpi/dhcp.h	/^#define DHCP_OPTION_HOSTNAME /;"	d
+DHCP_OPTION_HOSTNAME	adpi/proto/dhcp.h	/^#define DHCP_OPTION_HOSTNAME /;"	d
+DHCP_OPTION_LEASE_TIME	adpi/dhcp.h	/^#define DHCP_OPTION_LEASE_TIME /;"	d
+DHCP_OPTION_LEASE_TIME	adpi/proto/dhcp.h	/^#define DHCP_OPTION_LEASE_TIME /;"	d
+DHCP_OPTION_MSG_TYPE	adpi/dhcp.h	/^#define DHCP_OPTION_MSG_TYPE /;"	d
+DHCP_OPTION_MSG_TYPE	adpi/proto/dhcp.h	/^#define DHCP_OPTION_MSG_TYPE /;"	d
+DHCP_OPTION_PAD	adpi/dhcp.h	/^#define DHCP_OPTION_PAD /;"	d
+DHCP_OPTION_PAD	adpi/proto/dhcp.h	/^#define DHCP_OPTION_PAD /;"	d
+DHCP_OPTION_RELAYAGENT	adpi/dhcp.h	/^#define DHCP_OPTION_RELAYAGENT /;"	d
+DHCP_OPTION_RELAYAGENT	adpi/proto/dhcp.h	/^#define DHCP_OPTION_RELAYAGENT /;"	d
+DHCP_OPTION_RELEASED_IP	adpi/dhcp.h	/^#define DHCP_OPTION_RELEASED_IP /;"	d
+DHCP_OPTION_REQUESTED_IP	adpi/dhcp.h	/^#define DHCP_OPTION_REQUESTED_IP /;"	d
+DHCP_OPTION_REQ_PARAM	adpi/dhcp.h	/^#define DHCP_OPTION_REQ_PARAM /;"	d
+DHCP_OPTION_REQ_PARAM	adpi/proto/dhcp.h	/^#define DHCP_OPTION_REQ_PARAM /;"	d
+DIR_ANY	adpi/air_common.h	/^    DIR_ANY  = 3,$/;"	e	enum:flow_direction
+DIR_IN	adpi/air_common.h	/^    DIR_IN   = 1,$/;"	e	enum:flow_direction
+DIR_NONE	adpi/air_common.h	/^    DIR_NONE = 0,$/;"	e	enum:flow_direction
+DIR_OUT	adpi/air_common.h	/^    DIR_OUT  = 2,$/;"	e	enum:flow_direction
+DNS_CNAME_PTR	adpi/dns.h	/^#define DNS_CNAME_PTR /;"	d
+DNS_CNAME_PTR	adpi/proto/dns.h	/^#define DNS_CNAME_PTR /;"	d
+DNS_CNAME_PTR	adpi/proto/mdns.h	/^#define DNS_CNAME_PTR /;"	d
+DNS_MSG_QUERY	adpi/dns.h	/^#define DNS_MSG_QUERY /;"	d
+DNS_MSG_QUERY	adpi/proto/dns.h	/^#define DNS_MSG_QUERY /;"	d
+DNS_MSG_QUERY_RSP	adpi/dns.h	/^#define DNS_MSG_QUERY_RSP /;"	d
+DNS_MSG_QUERY_RSP	adpi/proto/dns.h	/^#define DNS_MSG_QUERY_RSP /;"	d
+DNS_RCODE_FORMAT_ERROR	adpi/dns.h	/^  DNS_RCODE_FORMAT_ERROR = 1,$/;"	e	enum:__anona2ad57ed0303
+DNS_RCODE_FORMAT_ERROR	adpi/proto/dns.h	/^  DNS_RCODE_FORMAT_ERROR = 1,$/;"	e	enum:__anon2717fd300303
+DNS_RCODE_NAME_ERROR	adpi/dns.h	/^  DNS_RCODE_NAME_ERROR = 3$/;"	e	enum:__anona2ad57ed0303
+DNS_RCODE_NAME_ERROR	adpi/proto/dns.h	/^  DNS_RCODE_NAME_ERROR = 3$/;"	e	enum:__anon2717fd300303
+DNS_RCODE_NO_ERROR	adpi/dns.h	/^  DNS_RCODE_NO_ERROR = 0,$/;"	e	enum:__anona2ad57ed0303
+DNS_RCODE_NO_ERROR	adpi/proto/dns.h	/^  DNS_RCODE_NO_ERROR = 0,$/;"	e	enum:__anon2717fd300303
+DNS_RCODE_SERVER_FAILURE	adpi/dns.h	/^  DNS_RCODE_SERVER_FAILURE = 2,$/;"	e	enum:__anona2ad57ed0303
+DNS_RCODE_SERVER_FAILURE	adpi/proto/dns.h	/^  DNS_RCODE_SERVER_FAILURE = 2,$/;"	e	enum:__anon2717fd300303
+DNS_RR_CLASS_CH	adpi/dns.h	/^  DNS_RR_CLASS_CH = 3,  \/\/ CHAOS class$/;"	e	enum:__anona2ad57ed0203
+DNS_RR_CLASS_CH	adpi/proto/dns.h	/^  DNS_RR_CLASS_CH = 3,  \/\/ CHAOS class$/;"	e	enum:__anon2717fd300203
+DNS_RR_CLASS_CS	adpi/dns.h	/^  DNS_RR_CLASS_CS = 2,  \/\/ CSNET class(Obsolete)$/;"	e	enum:__anona2ad57ed0203
+DNS_RR_CLASS_CS	adpi/proto/dns.h	/^  DNS_RR_CLASS_CS = 2,  \/\/ CSNET class(Obsolete)$/;"	e	enum:__anon2717fd300203
+DNS_RR_CLASS_HS	adpi/dns.h	/^  DNS_RR_CLASS_HS = 4   \/\/ Hesiod$/;"	e	enum:__anona2ad57ed0203
+DNS_RR_CLASS_HS	adpi/proto/dns.h	/^  DNS_RR_CLASS_HS = 4   \/\/ Hesiod$/;"	e	enum:__anon2717fd300203
+DNS_RR_CLASS_IN	adpi/dns.h	/^  DNS_RR_CLASS_IN = 1,  \/\/ Internet$/;"	e	enum:__anona2ad57ed0203
+DNS_RR_CLASS_IN	adpi/proto/dns.h	/^  DNS_RR_CLASS_IN = 1,  \/\/ Internet$/;"	e	enum:__anon2717fd300203
+DNS_RR_TYPE_A	adpi/dns.h	/^  DNS_RR_TYPE_A     = 1,  \/\/ host address$/;"	e	enum:__anona2ad57ed0103
+DNS_RR_TYPE_A	adpi/proto/dns.h	/^  DNS_RR_TYPE_A     = 1,  \/\/ host address$/;"	e	enum:__anon2717fd300103
+DNS_RR_TYPE_CNAME	adpi/dns.h	/^  DNS_RR_TYPE_CNAME = 5   \/\/ canonical name for an alias$/;"	e	enum:__anona2ad57ed0103
+DNS_RR_TYPE_CNAME	adpi/proto/dns.h	/^  DNS_RR_TYPE_CNAME = 5   \/\/ canonical name for an alias$/;"	e	enum:__anon2717fd300103
+DNS_RR_TYPE_MD	adpi/dns.h	/^  DNS_RR_TYPE_MD    = 3,  \/\/ mail destination$/;"	e	enum:__anona2ad57ed0103
+DNS_RR_TYPE_MD	adpi/proto/dns.h	/^  DNS_RR_TYPE_MD    = 3,  \/\/ mail destination$/;"	e	enum:__anon2717fd300103
+DNS_RR_TYPE_MF	adpi/dns.h	/^  DNS_RR_TYPE_MF    = 4,  \/\/ mail forwarder$/;"	e	enum:__anona2ad57ed0103
+DNS_RR_TYPE_MF	adpi/proto/dns.h	/^  DNS_RR_TYPE_MF    = 4,  \/\/ mail forwarder$/;"	e	enum:__anon2717fd300103
+DNS_RR_TYPE_NS	adpi/dns.h	/^  DNS_RR_TYPE_NS    = 2,  \/\/ authotitative name server$/;"	e	enum:__anona2ad57ed0103
+DNS_RR_TYPE_NS	adpi/proto/dns.h	/^  DNS_RR_TYPE_NS    = 2,  \/\/ authotitative name server$/;"	e	enum:__anon2717fd300103
+DNS_SIZE_OF_CLASS	adpi/dns.h	/^#define DNS_SIZE_OF_CLASS /;"	d
+DNS_SIZE_OF_CLASS	adpi/proto/dns.h	/^#define DNS_SIZE_OF_CLASS /;"	d
+DNS_SIZE_OF_TYPE	adpi/dns.h	/^#define DNS_SIZE_OF_TYPE /;"	d
+DNS_SIZE_OF_TYPE	adpi/proto/dns.h	/^#define DNS_SIZE_OF_TYPE /;"	d
+ETHERNET_DEV_PREFIX	adpi/air_coplane.h	/^#define ETHERNET_DEV_PREFIX /;"	d
+ETHERTYPE_ARP	adpi/proto/ethernet.h	/^#define ETHERTYPE_ARP /;"	d
+ETHERTYPE_CMB	adpi/proto/ethernet.h	/^#define ETHERTYPE_CMB /;"	d
+ETHERTYPE_IPv4	adpi/proto/ethernet.h	/^#define ETHERTYPE_IPv4 /;"	d
+ETHERTYPE_IPv6	adpi/proto/ethernet.h	/^#define ETHERTYPE_IPv6 /;"	d
+ETHERTYPE_VLAN	adpi/proto/ethernet.h	/^#define ETHERTYPE_VLAN /;"	d
+FLUSH_FILE	adpi/sysctl.c	/^#define FLUSH_FILE /;"	d	file:
+IEEE80211_2G_BAND	adpi/air_coplane.h	/^    IEEE80211_2G_BAND,$/;"	e	enum:__anon59b237050203
+IEEE80211_5G_BAND	adpi/air_coplane.h	/^    IEEE80211_5G_BAND,$/;"	e	enum:__anon59b237050203
+IEEE80211_ADDR_COPY	adpi/air_coplane.h	/^#define IEEE80211_ADDR_COPY(/;"	d
+IEEE80211_ADDR_EQ	adpi/air_coplane.h	/^#define IEEE80211_ADDR_EQ(/;"	d
+IEEE80211_ADDR_LEN	adpi/air_coplane.h	/^#define IEEE80211_ADDR_LEN /;"	d
+IEEE80211_INVALID_BAND	adpi/air_coplane.h	/^    IEEE80211_INVALID_BAND$/;"	e	enum:__anon59b237050203
+IEEE80211_STA_BAND	adpi/air_coplane.h	/^} IEEE80211_STA_BAND;$/;"	t	typeref:enum:__anon59b237050203
+IFNAME_HASH	adpi/air_ioctl.h	/^#define IFNAME_HASH(/;"	d
+IGMPV3_ALLOW_NEW_SOURCES	adpi/proto/igmp.h	/^#define IGMPV3_ALLOW_NEW_SOURCES /;"	d
+IGMPV3_BLOCK_OLD_SOURCES	adpi/proto/igmp.h	/^#define IGMPV3_BLOCK_OLD_SOURCES /;"	d
+IGMPV3_CHANGE_TO_EXCLUDE	adpi/proto/igmp.h	/^#define IGMPV3_CHANGE_TO_EXCLUDE /;"	d
+IGMPV3_CHANGE_TO_INCLUDE	adpi/proto/igmp.h	/^#define IGMPV3_CHANGE_TO_INCLUDE /;"	d
+IGMPV3_MODE_IS_EXCLUDE	adpi/proto/igmp.h	/^#define IGMPV3_MODE_IS_EXCLUDE /;"	d
+IGMPV3_MODE_IS_INCLUDE	adpi/proto/igmp.h	/^#define IGMPV3_MODE_IS_INCLUDE /;"	d
+IGMP_ALL_HOSTS	adpi/proto/igmp.h	/^#define IGMP_ALL_HOSTS	/;"	d
+IGMP_TYPE_LEAVE_V2	adpi/proto/igmp.h	/^#define IGMP_TYPE_LEAVE_V2 /;"	d
+IGMP_TYPE_QUERY	adpi/proto/igmp.h	/^#define IGMP_TYPE_QUERY /;"	d
+IGMP_TYPE_REPORT_V1	adpi/proto/igmp.h	/^#define IGMP_TYPE_REPORT_V1 /;"	d
+IGMP_TYPE_REPORT_V2	adpi/proto/igmp.h	/^#define IGMP_TYPE_REPORT_V2 /;"	d
+IGMP_TYPE_REPORT_V3	adpi/proto/igmp.h	/^#define IGMP_TYPE_REPORT_V3 /;"	d
+INFO_FILE	adpi/sysctl.c	/^#define INFO_FILE /;"	d	file:
+IOCTL_ADPI_BLOCK_DOMAIN	adpi/air_ioctl.h	/^#define IOCTL_ADPI_BLOCK_DOMAIN /;"	d
+IOCTL_ADPI_GET_ALL_CLIENTS	adpi/air_ioctl.h	/^#define IOCTL_ADPI_GET_ALL_CLIENTS /;"	d
+IOCTL_ADPI_GET_AP_TOP_DOMAINS	adpi/air_ioctl.h	/^#define IOCTL_ADPI_GET_AP_TOP_DOMAINS /;"	d
+IOCTL_ADPI_GET_RATELIMIT_WLAN	adpi/air_ioctl.h	/^#define IOCTL_ADPI_GET_RATELIMIT_WLAN /;"	d
+IOCTL_ADPI_GET_RATELIMIT_WLAN_USER	adpi/air_ioctl.h	/^#define IOCTL_ADPI_GET_RATELIMIT_WLAN_USER /;"	d
+IOCTL_ADPI_RATELIMIT_WLAN	adpi/air_ioctl.h	/^#define IOCTL_ADPI_RATELIMIT_WLAN /;"	d
+IOCTL_ADPI_RATELIMIT_WLAN_PER_USER	adpi/air_ioctl.h	/^#define IOCTL_ADPI_RATELIMIT_WLAN_PER_USER /;"	d
+IOCTL_ADPI_RATELIMIT_WLAN_USER	adpi/air_ioctl.h	/^#define IOCTL_ADPI_RATELIMIT_WLAN_USER /;"	d
+IOCTL_ADPI_STA_ADD_ENTRY	adpi/air_ioctl.h	/^#define IOCTL_ADPI_STA_ADD_ENTRY /;"	d
+IOCTL_ADPI_STA_DEL_ENTRY	adpi/air_ioctl.h	/^#define IOCTL_ADPI_STA_DEL_ENTRY /;"	d
+IOCTL_ADPI_TYPE_GET_ALL_CLIENTS	adpi/air_ioctl.h	/^#define IOCTL_ADPI_TYPE_GET_ALL_CLIENTS /;"	d
+IOCTL_ADPI_TYPE_GET_AP_TOP_DOMAINS	adpi/air_ioctl.h	/^#define IOCTL_ADPI_TYPE_GET_AP_TOP_DOMAINS /;"	d
+IOCTL_ADPI_TYPE_GET_RATELIMIT_WLAN	adpi/air_ioctl.h	/^#define IOCTL_ADPI_TYPE_GET_RATELIMIT_WLAN /;"	d
+IOCTL_ADPI_TYPE_GET_RATELIMIT_WLAN_USER	adpi/air_ioctl.h	/^#define IOCTL_ADPI_TYPE_GET_RATELIMIT_WLAN_USER /;"	d
+IOCTL_ADPI_TYPE_RATELIMIT_WLAN	adpi/air_ioctl.h	/^#define IOCTL_ADPI_TYPE_RATELIMIT_WLAN /;"	d
+IOCTL_ADPI_TYPE_RATELIMIT_WLAN_PER_USER	adpi/air_ioctl.h	/^#define IOCTL_ADPI_TYPE_RATELIMIT_WLAN_PER_USER /;"	d
+IOCTL_ADPI_TYPE_RATELIMIT_WLAN_USER	adpi/air_ioctl.h	/^#define IOCTL_ADPI_TYPE_RATELIMIT_WLAN_USER /;"	d
+IOCTL_ADPI_TYPE_STA_ADD_ENTRY	adpi/air_ioctl.h	/^#define IOCTL_ADPI_TYPE_STA_ADD_ENTRY /;"	d
+IOCTL_ADPI_TYPE_STA_DEL_ENTRY	adpi/air_ioctl.h	/^#define IOCTL_ADPI_TYPE_STA_DEL_ENTRY /;"	d
+IOCTL_ADPI_UNBLOCK_DOMAIN	adpi/air_ioctl.h	/^#define IOCTL_ADPI_UNBLOCK_DOMAIN /;"	d
+IPOPT_CONTROL	adpi/proto/ipv4.h	/^#define	IPOPT_CONTROL	/;"	d
+IPOPT_COPY	adpi/proto/ipv4.h	/^#define IPOPT_COPY	/;"	d
+IPOPT_RA	adpi/proto/ipv4.h	/^#define IPOPT_RA	/;"	d
+IPV4_DF	adpi/proto/ipv4.h	/^#define IPV4_DF /;"	d
+IPV4_MF	adpi/proto/ipv4.h	/^#define IPV4_MF /;"	d
+IP_PROTO_ICMP	adpi/proto/ipv4.h	/^#define IP_PROTO_ICMP /;"	d
+IP_PROTO_IGMP	adpi/proto/ipv4.h	/^#define IP_PROTO_IGMP /;"	d
+IP_PROTO_TCP	adpi/proto/ipv4.h	/^#define IP_PROTO_TCP /;"	d
+IP_PROTO_UDP	adpi/proto/ipv4.h	/^#define IP_PROTO_UDP /;"	d
+IPv4BYTES	adpi/air_coplane.h	/^#define IPv4BYTES(/;"	d
+IPv4FORMAT	adpi/air_coplane.h	/^#define IPv4FORMAT /;"	d
+IPv4_ADDR_LEN	adpi/proto/ipv4.h	/^#define IPv4_ADDR_LEN /;"	d
+KPATH	adpi/Makefile	/^KPATH=${KLIB_BUILD}$/;"	m
+LIST_EMPTY	adpi/queue.h	/^#define    LIST_EMPTY(/;"	d
+LIST_ENTRY	adpi/queue.h	/^#define    LIST_ENTRY(/;"	d
+LIST_FIRST	adpi/queue.h	/^#define    LIST_FIRST(/;"	d
+LIST_FOREACH	adpi/queue.h	/^#define    LIST_FOREACH(/;"	d
+LIST_FOREACH_SAFE	adpi/queue.h	/^#define    LIST_FOREACH_SAFE(/;"	d
+LIST_HEAD	adpi/queue.h	/^#define LIST_HEAD /;"	d
+LIST_HEAD_INITIALIZER	adpi/queue.h	/^#define    LIST_HEAD_INITIALIZER(/;"	d
+LIST_INIT	adpi/queue.h	/^#define    LIST_INIT(/;"	d
+LIST_INSERT_AFTER	adpi/queue.h	/^#define    LIST_INSERT_AFTER(/;"	d
+LIST_INSERT_BEFORE	adpi/queue.h	/^#define    LIST_INSERT_BEFORE(/;"	d
+LIST_INSERT_HEAD	adpi/queue.h	/^#define    LIST_INSERT_HEAD(/;"	d
+LIST_NEXT	adpi/queue.h	/^#define    LIST_NEXT(/;"	d
+LIST_REMOVE	adpi/queue.h	/^#define    LIST_REMOVE(/;"	d
+MAC_ADDR_LEN	adpi/proto/ethernet.h	/^#define MAC_ADDR_LEN /;"	d
+MAC_ADDR_LEN	adpi/txrx.c	/^#define MAC_ADDR_LEN /;"	d	file:
+MAX_BONJOUR_RULES	adpi/proto/mdns.h	/^#define MAX_BONJOUR_RULES /;"	d
+MAX_DNS_LENGTH	adpi/air_coplane.h	/^#define MAX_DNS_LENGTH /;"	d
+MAX_DNS_LENGTH	adpi/dns.c	/^#define MAX_DNS_LENGTH /;"	d	file:
+MAX_DOMAINS	adpi/air_coplane.h	/^#define MAX_DOMAINS /;"	d
+MAX_DOMAINS	adpi/air_ioctl.h	/^#define MAX_DOMAINS /;"	d
+MAX_DOMAIN_NAME_LEN	adpi/air_coplane.h	/^#define MAX_DOMAIN_NAME_LEN /;"	d
+MAX_DOMAIN_NAME_LEN	adpi/air_ioctl.h	/^#define MAX_DOMAIN_NAME_LEN /;"	d
+MAX_EXPIRE_TS_MS	adpi/air_coplane.h	/^#define MAX_EXPIRE_TS_MS /;"	d
+MAX_IP_ADDR_LEN	adpi/sysctl.c	/^#define MAX_IP_ADDR_LEN /;"	d	file:
+MAX_IP_ADDR_LEN	adpi/txrx.c	/^#define MAX_IP_ADDR_LEN /;"	d	file:
+MAX_MAC_ADDR_LEN	adpi/air_coplane.h	/^#define MAX_MAC_ADDR_LEN /;"	d
+MAX_MAC_ADDR_LEN	adpi/air_ioctl.h	/^#define MAX_MAC_ADDR_LEN /;"	d
+MAX_MDNS_RRS	adpi/proto/mdns.h	/^#define MAX_MDNS_RRS /;"	d
+MAX_NUM_DNS	adpi/air_coplane.h	/^#define MAX_NUM_DNS /;"	d
+MAX_NWID_LEN	adpi/air_coplane.h	/^#define MAX_NWID_LEN /;"	d
+MAX_STA_HOSTNAME	adpi/air_coplane.h	/^#define MAX_STA_HOSTNAME /;"	d
+MAX_VAPS	adpi/air_coplane.h	/^#define MAX_VAPS /;"	d
+MAX_WLANS	adpi/air_coplane.h	/^#define MAX_WLANS /;"	d
+MDNS_TYPE_A	adpi/proto/mdns.h	/^#define MDNS_TYPE_A /;"	d
+MDNS_TYPE_AAAA	adpi/proto/mdns.h	/^#define MDNS_TYPE_AAAA /;"	d
+MDNS_TYPE_ALL	adpi/proto/mdns.h	/^#define MDNS_TYPE_ALL /;"	d
+MDNS_TYPE_CNAME	adpi/proto/mdns.h	/^#define MDNS_TYPE_CNAME /;"	d
+MDNS_TYPE_NS	adpi/proto/mdns.h	/^#define MDNS_TYPE_NS /;"	d
+MDNS_TYPE_NULL	adpi/proto/mdns.h	/^#define MDNS_TYPE_NULL /;"	d
+MDNS_TYPE_PTR	adpi/proto/mdns.h	/^#define MDNS_TYPE_PTR /;"	d
+MDNS_TYPE_SRV	adpi/proto/mdns.h	/^#define MDNS_TYPE_SRV /;"	d
+MDNS_TYPE_TXT	adpi/proto/mdns.h	/^#define MDNS_TYPE_TXT /;"	d
+NETLINK_USER	adpi/air_coplane.h	/^#define NETLINK_USER /;"	d
+NULL_MAC	adpi/proto/ethernet.h	/^#define NULL_MAC /;"	d
+OS_SPIN_LOCK	adpi/air_coplane.h	/^#define OS_SPIN_LOCK(/;"	d
+OS_SPIN_LOCK_DEINIT	adpi/air_coplane.h	/^#define OS_SPIN_LOCK_DEINIT(/;"	d
+OS_SPIN_LOCK_INIT	adpi/air_coplane.h	/^#define OS_SPIN_LOCK_INIT(/;"	d
+OS_SPIN_NW_IFACE_LOCK	adpi/air_coplane.h	/^#define OS_SPIN_NW_IFACE_LOCK(/;"	d
+OS_SPIN_NW_IFACE_LOCK_DEINIT	adpi/air_coplane.h	/^#define OS_SPIN_NW_IFACE_LOCK_DEINIT(/;"	d
+OS_SPIN_NW_IFACE_LOCK_INIT	adpi/air_coplane.h	/^#define OS_SPIN_NW_IFACE_LOCK_INIT(/;"	d
+OS_SPIN_NW_IFACE_UNLOCK	adpi/air_coplane.h	/^#define OS_SPIN_NW_IFACE_UNLOCK(/;"	d
+OS_SPIN_UNLOCK	adpi/air_coplane.h	/^#define OS_SPIN_UNLOCK(/;"	d
+OS_SPIN_WLAN_RC_LOCK	adpi/air_coplane.h	/^#define OS_SPIN_WLAN_RC_LOCK(/;"	d
+OS_SPIN_WLAN_RC_LOCK_DEINIT	adpi/air_coplane.h	/^#define OS_SPIN_WLAN_RC_LOCK_DEINIT(/;"	d
+OS_SPIN_WLAN_RC_LOCK_INIT	adpi/air_coplane.h	/^#define OS_SPIN_WLAN_RC_LOCK_INIT(/;"	d
+OS_SPIN_WLAN_RC_UNLOCK	adpi/air_coplane.h	/^#define OS_SPIN_WLAN_RC_UNLOCK(/;"	d
+OS_SPIN_WLAN_STA_LOCK	adpi/air_coplane.h	/^#define OS_SPIN_WLAN_STA_LOCK(/;"	d
+OS_SPIN_WLAN_STA_LOCK_DEINIT	adpi/air_coplane.h	/^#define OS_SPIN_WLAN_STA_LOCK_DEINIT(/;"	d
+OS_SPIN_WLAN_STA_LOCK_INIT	adpi/air_coplane.h	/^#define OS_SPIN_WLAN_STA_LOCK_INIT(/;"	d
+OS_SPIN_WLAN_STA_UNLOCK	adpi/air_coplane.h	/^#define OS_SPIN_WLAN_STA_UNLOCK(/;"	d
+PACKET_EGRESS	adpi/air_common.h	/^#define PACKET_EGRESS /;"	d
+PACKET_INGRESS	adpi/air_common.h	/^#define PACKET_INGRESS /;"	d
+PHY_ETH	adpi/air_common.h	/^    PHY_ETH,$/;"	e	enum:phy
+PHY_WLAN	adpi/air_common.h	/^    PHY_WLAN,$/;"	e	enum:phy
+PPPOE_DEV_PREFIX	adpi/air_coplane.h	/^#define PPPOE_DEV_PREFIX /;"	d
+PROC_DIR	adpi/sysctl.c	/^#define PROC_DIR /;"	d	file:
+PROTO_ARP_H	adpi/proto/arp.h	/^#define PROTO_ARP_H$/;"	d
+PROTO_CMB_H	adpi/proto/cmb_proto.h	/^#define PROTO_CMB_H$/;"	d
+PROTO_DHCP_H	adpi/dhcp.h	/^#define PROTO_DHCP_H$/;"	d
+PROTO_DHCP_H	adpi/proto/dhcp.h	/^#define PROTO_DHCP_H$/;"	d
+PROTO_DNS_H	adpi/dns.h	/^#define PROTO_DNS_H$/;"	d
+PROTO_DNS_H	adpi/proto/dns.h	/^#define PROTO_DNS_H$/;"	d
+PROTO_ETHERPROTO_H	adpi/proto/ethernet.h	/^#define PROTO_ETHERPROTO_H$/;"	d
+PROTO_IGMP_H	adpi/proto/igmp.h	/^#define PROTO_IGMP_H$/;"	d
+PROTO_IPv4_H	adpi/proto/ipv4.h	/^#define PROTO_IPv4_H$/;"	d
+PROTO_MDNS_H	adpi/proto/mdns.h	/^#define PROTO_MDNS_H$/;"	d
+PROTO_TCP_H	adpi/proto/tcp.h	/^#define PROTO_TCP_H$/;"	d
+PROTO_UDP_H	adpi/proto/udp.h	/^#define PROTO_UDP_H$/;"	d
+SIMPLE_HASH	adpi/air_ioctl.h	/^#define SIMPLE_HASH(/;"	d
+TAILQ_CONCAT	adpi/queue.h	/^#define TAILQ_CONCAT(/;"	d
+TAILQ_EMPTY	adpi/queue.h	/^#define    TAILQ_EMPTY(/;"	d
+TAILQ_ENTRY	adpi/queue.h	/^#define    TAILQ_ENTRY(/;"	d
+TAILQ_FIRST	adpi/queue.h	/^#define TAILQ_FIRST(/;"	d
+TAILQ_FOREACH	adpi/queue.h	/^#define    TAILQ_FOREACH(/;"	d
+TAILQ_FOREACH_SAFE	adpi/queue.h	/^#define    TAILQ_FOREACH_SAFE(/;"	d
+TAILQ_HEAD	adpi/queue.h	/^#define    TAILQ_HEAD(/;"	d
+TAILQ_INIT	adpi/queue.h	/^#define    TAILQ_INIT(/;"	d
+TAILQ_INSERT_HEAD	adpi/queue.h	/^#define TAILQ_INSERT_HEAD(/;"	d
+TAILQ_INSERT_TAIL	adpi/queue.h	/^#define TAILQ_INSERT_TAIL(/;"	d
+TAILQ_LAST	adpi/queue.h	/^#define TAILQ_LAST(/;"	d
+TAILQ_NEXT	adpi/queue.h	/^#define    TAILQ_NEXT(/;"	d
+TAILQ_REMOVE	adpi/queue.h	/^#define TAILQ_REMOVE(/;"	d
+TCP_PORT_HTTP	adpi/proto/tcp.h	/^#define TCP_PORT_HTTP /;"	d
+TCP_PORT_HTTPS	adpi/proto/tcp.h	/^#define TCP_PORT_HTTPS /;"	d
+TUNNEL_DEV_PREFIX	adpi/air_coplane.h	/^#define TUNNEL_DEV_PREFIX /;"	d
+UDP_PORT_BOOTPC	adpi/proto/udp.h	/^#define UDP_PORT_BOOTPC /;"	d
+UDP_PORT_BOOTPC	adpi/txrx.c	/^#define UDP_PORT_BOOTPC /;"	d	file:
+UDP_PORT_BOOTPS	adpi/proto/udp.h	/^#define UDP_PORT_BOOTPS /;"	d
+UDP_PORT_BOOTPS	adpi/txrx.c	/^#define UDP_PORT_BOOTPS /;"	d	file:
+UDP_PORT_DNS	adpi/proto/udp.h	/^#define UDP_PORT_DNS /;"	d
+UDP_PORT_DNS	adpi/txrx.c	/^#define UDP_PORT_DNS /;"	d	file:
+UDP_PORT_MDNS	adpi/proto/udp.h	/^#define UDP_PORT_MDNS /;"	d
+UDP_PORT_MDNS	adpi/txrx.c	/^#define UDP_PORT_MDNS /;"	d	file:
+UINT32_MAX	adpi/dns.c	/^#define UINT32_MAX /;"	d	file:
+USE_PROC_OPS	adpi/sysctl.c	/^#define USE_PROC_OPS /;"	d	file:
+VLAN_CFI_SHIFT	adpi/proto/ethernet.h	/^#define VLAN_CFI_SHIFT /;"	d
+VLAN_HDR_LEN	adpi/proto/ethernet.h	/^#define VLAN_HDR_LEN /;"	d
+VLAN_PRI_SHIFT	adpi/proto/ethernet.h	/^#define VLAN_PRI_SHIFT /;"	d
+WIRELESS_RADIO_PREFIX	adpi/air_coplane.h	/^#define WIRELESS_RADIO_PREFIX /;"	d
+WIRELESS_VAP_PREFIX	adpi/air_coplane.h	/^#define WIRELESS_VAP_PREFIX /;"	d
+WLAN_M_AHDEMO	adpi/air_coplane.h	/^    WLAN_M_AHDEMO      = 3,$/;"	e	enum:wlan_opmode
+WLAN_M_ANY	adpi/air_coplane.h	/^    WLAN_M_ANY         = 0xFF$/;"	e	enum:wlan_opmode
+WLAN_M_BTAMP	adpi/air_coplane.h	/^    WLAN_M_BTAMP       = 9,$/;"	e	enum:wlan_opmode
+WLAN_M_HOSTAP	adpi/air_coplane.h	/^    WLAN_M_HOSTAP      = 6,$/;"	e	enum:wlan_opmode
+WLAN_M_IBSS	adpi/air_coplane.h	/^    WLAN_M_IBSS        = 0,$/;"	e	enum:wlan_opmode
+WLAN_M_MONITOR	adpi/air_coplane.h	/^    WLAN_M_MONITOR     = 8,$/;"	e	enum:wlan_opmode
+WLAN_M_P2P_CLIENT	adpi/air_coplane.h	/^    WLAN_M_P2P_CLIENT  = 34,$/;"	e	enum:wlan_opmode
+WLAN_M_P2P_DEVICE	adpi/air_coplane.h	/^    WLAN_M_P2P_DEVICE  = 35,$/;"	e	enum:wlan_opmode
+WLAN_M_P2P_GO	adpi/air_coplane.h	/^    WLAN_M_P2P_GO      = 33,$/;"	e	enum:wlan_opmode
+WLAN_M_STA	adpi/air_coplane.h	/^    WLAN_M_STA         = 1,$/;"	e	enum:wlan_opmode
+WLAN_M_WDS	adpi/air_coplane.h	/^    WLAN_M_WDS         = 2,$/;"	e	enum:wlan_opmode
+WLAN_OPMODE_MAX	adpi/air_coplane.h	/^    WLAN_OPMODE_MAX    = WLAN_M_BTAMP,$/;"	e	enum:wlan_opmode
+WLAN_STA_DOMAIN_NAME_HASHSIZE	adpi/air_coplane.h	/^#define WLAN_STA_DOMAIN_NAME_HASHSIZE /;"	d
+WLAN_STA_HASH	adpi/air_coplane.h	/^#define WLAN_STA_HASH(/;"	d
+WLAN_STA_HASHSIZE	adpi/air_coplane.h	/^#define WLAN_STA_HASHSIZE /;"	d
+_AIR_API_H_	adpi/air_api.h	/^#define _AIR_API_H_$/;"	d
+__AIR_COPLANE_H__	adpi/air_coplane.h	/^#define __AIR_COPLANE_H__$/;"	d
+__anon07cd4dea0108	adpi/proto/ethernet.h	/^   struct {$/;"	s	struct:ethernet_vlan_hdr
+__anon07cd4dea0208	adpi/proto/ethernet.h	/^    struct {$/;"	s	struct:ethernet_vlan_hdr
+__anon07cd4dea0308	adpi/proto/ethernet.h	/^    struct {$/;"	s	struct:ethernet_vlan_hdr
+__anon07cd4dea0408	adpi/proto/ethernet.h	/^    struct {$/;"	s	struct:ethernet_vlan_hdr
+__anon2717fd300103	adpi/proto/dns.h	/^enum {$/;"	g
+__anon2717fd300203	adpi/proto/dns.h	/^enum {$/;"	g
+__anon2717fd300303	adpi/proto/dns.h	/^enum {$/;"	g
+__anon39e19c0c0103	adpi/air_common.h	/^typedef enum {$/;"	g
+__anon59b237050103	adpi/air_coplane.h	/^enum {$/;"	g
+__anon59b237050203	adpi/air_coplane.h	/^typedef enum {$/;"	g
+__anona2ad57ed0103	adpi/dns.h	/^enum {$/;"	g
+__anona2ad57ed0203	adpi/dns.h	/^enum {$/;"	g
+__anona2ad57ed0303	adpi/dns.h	/^enum {$/;"	g
+aa	adpi/dns.h	/^    uint8_t aa:1;          \/* authoritive answer *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:1
+aa	adpi/proto/dns.h	/^    uint8_t aa:1;          \/* authoritive answer *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:1
+aa	adpi/proto/mdns.h	/^    uint8_t aa:1;          \/* authoritive answer *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint8_t:1
+access_type	adpi/proto/cmb_proto.h	/^    uint8_t  access_type;$/;"	m	struct:cmb_ga_msg	typeref:typename:uint8_t
+acct_interim_delay	adpi/proto/cmb_proto.h	/^    uint32_t acct_interim_delay; \/\/ seconds after which interim update should be sent out for /;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint32_t
+acct_interim_interval	adpi/proto/cmb_proto.h	/^    uint32_t acct_interim_interval; \/\/ radius accounting interval as received by RADIUS server$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint32_t
+acct_interim_interval	adpi/proto/cmb_proto.h	/^    uint32_t acct_interim_interval; \/\/ radius accounting interval as received by RADIUS server/;"	m	struct:cmb_ga_msg	typeref:typename:uint32_t
+acct_running	adpi/proto/cmb_proto.h	/^    uint8_t  acct_running; \/\/ if this is set then the accounting update should be ignored$/;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint8_t
+ack	adpi/proto/tcp.h	/^    uint16_t ack:1;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t:1
+ack_seq	adpi/proto/tcp.h	/^    uint32_t ack_seq;$/;"	m	struct:tcp_hdr	typeref:typename:uint32_t
+act	adpi/proto/mdns.h	/^    uint8_t act;$/;"	m	struct:mdns_cfg_rules	typeref:typename:uint8_t
+action	adpi/air_common.h	/^typedef enum action {$/;"	g
+action_t	adpi/air_common.h	/^} action_t;$/;"	t	typeref:enum:action
+active	adpi/air_coplane.h	/^    int active;$/;"	m	struct:blocked_domain	typeref:typename:int
+add_blocked_domain	adpi/ioctl.c	/^static int add_blocked_domain(struct airpro_coplane *cp, const char *domain)$/;"	f	typeref:typename:int	file:
+add_count	adpi/dns.h	/^    uint16_t add_count;    \/* number of resource entries *\/$/;"	m	struct:dns_hdr	typeref:typename:uint16_t
+add_count	adpi/proto/dns.h	/^    uint16_t add_count;    \/* number of resource entries *\/$/;"	m	struct:dns_hdr	typeref:typename:uint16_t
+add_count	adpi/proto/mdns.h	/^    uint16_t add_count;    \/* number of resource entries *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint16_t
+addns	adpi/proto/mdns.h	/^    mdns_rr_list_t *addns;$/;"	m	struct:dnspacket	typeref:typename:mdns_rr_list_t *
+adpi_add_sta_entry	adpi/air_ioctl.h	/^struct adpi_add_sta_entry {$/;"	s
+adpi_client_entry	adpi/air_ioctl.h	/^struct adpi_client_entry {$/;"	s
+adpi_client_info	adpi/air_ioctl.h	/^struct adpi_client_info {$/;"	s
+adpi_del_sta_entry	adpi/air_ioctl.h	/^struct adpi_del_sta_entry {$/;"	s
+adpi_domain_entry	adpi/air_ioctl.h	/^struct adpi_domain_entry {$/;"	s
+adpi_ratelimit_bucket	adpi/air_ioctl.h	/^struct adpi_ratelimit_bucket {$/;"	s
+air_action_t	adpi/air_common.h	/^} air_action_t;$/;"	t	typeref:enum:__anon39e19c0c0103
+air_device_ioctl	adpi/ioctl.c	/^long air_device_ioctl(struct file *file, unsigned int cmd, unsigned long arg)$/;"	f	typeref:typename:long
+air_egress_hook	adpi/txrx.c	/^unsigned int air_egress_hook(struct sk_buff *skb, const struct nf_hook_state* state)$/;"	f	typeref:typename:unsigned int
+air_get_ip_str	adpi/sysctl.c	/^void air_get_ip_str(u32 *sip, u8 *ipstr)$/;"	f	typeref:typename:void
+air_hookfunc_postroute	adpi/main.c	/^static unsigned int air_hookfunc_postroute(void* priv, struct sk_buff* skb, const struct nf_hook/;"	f	typeref:typename:unsigned int	file:
+air_hookfunc_preroute	adpi/main.c	/^static unsigned int air_hookfunc_preroute(void* priv, struct sk_buff* skb, const struct nf_hook_/;"	f	typeref:typename:unsigned int	file:
+air_ingress_hook	adpi/txrx.c	/^unsigned int air_ingress_hook(struct sk_buff *skb, const struct nf_hook_state* state)$/;"	f	typeref:typename:unsigned int
+air_init_netfilter_hook	adpi/main.c	/^int air_init_netfilter_hook(void)$/;"	f	typeref:typename:int
+air_misc_fops	adpi/main.c	/^static const struct file_operations air_misc_fops = {$/;"	v	typeref:typename:const struct file_operations	file:
+air_miscdev	adpi/main.c	/^static struct miscdevice air_miscdev = {$/;"	v	typeref:struct:miscdevice	file:
+air_parse_dhcp	adpi/txrx.c	/^static int air_parse_dhcp(struct sk_buff *skb, unsigned int ofs, struct iphdr *iph)$/;"	f	typeref:typename:int	file:
+air_vif_module_exit	adpi/main.c	/^int air_vif_module_exit(void)$/;"	f	typeref:typename:int
+air_vif_module_init	adpi/main.c	/^int air_vif_module_init(void)$/;"	f	typeref:typename:int
+air_vif_node_sysctl_register	adpi/sysctl.c	/^int air_vif_node_sysctl_register(void)$/;"	f	typeref:typename:int
+air_vif_node_sysctl_unregister	adpi/sysctl.c	/^void air_vif_node_sysctl_unregister(void)$/;"	f	typeref:typename:void
+airdpi_g_ops	adpi/main.c	/^static const struct airdpi_ops airdpi_g_ops = {$/;"	v	typeref:typename:const struct airdpi_ops	file:
+airdpi_get_ops	adpi/air_ops.c	/^const struct airdpi_ops *airdpi_get_ops(void)$/;"	f	typeref:typename:const struct airdpi_ops *
+airdpi_ops	adpi/air_api.h	/^struct airdpi_ops {$/;"	s
+airdpi_ops_ptr	adpi/air_ops.c	/^static const struct airdpi_ops *airdpi_ops_ptr;$/;"	v	typeref:typename:const struct airdpi_ops *	file:
+airdpi_register_ops	adpi/air_ops.c	/^int airdpi_register_ops(const struct airdpi_ops *ops)$/;"	f	typeref:typename:int
+airdpi_sta_add	adpi/sta_ops.c	/^int airdpi_sta_add(const u8 *macaddr, const char *ifname)$/;"	f	typeref:typename:int
+airdpi_sta_del	adpi/sta_ops.c	/^int airdpi_sta_del(const u8 *macaddr, const char *ifname)$/;"	f	typeref:typename:int
+airdpi_unregister_ops	adpi/air_ops.c	/^void airdpi_unregister_ops(const struct airdpi_ops *ops)$/;"	f	typeref:typename:void
+airpro_coplane	adpi/air_coplane.h	/^struct airpro_coplane {$/;"	s
+airpro_radio_mapping	adpi/air_coplane.h	/^enum airpro_radio_mapping {$/;"	g
+airpro_sta_unreg_timer	adpi/air_coplane.h	/^    struct timer_list airpro_sta_unreg_timer;$/;"	m	struct:airpro_coplane	typeref:struct:timer_list
+ancount	adpi/txrx.c	/^    uint16_t ancount;$/;"	m	struct:dns_header	typeref:typename:uint16_t	file:
+ans_count	adpi/dns.h	/^    uint16_t ans_count;    \/* number of answer entries *\/$/;"	m	struct:dns_hdr	typeref:typename:uint16_t
+ans_count	adpi/proto/dns.h	/^    uint16_t ans_count;    \/* number of answer entries *\/$/;"	m	struct:dns_hdr	typeref:typename:uint16_t
+ans_count	adpi/proto/mdns.h	/^    uint16_t ans_count;    \/* number of answer entries *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint16_t
+answers	adpi/proto/mdns.h	/^    mdns_rr_list_t *answers;$/;"	m	struct:dnspacket	typeref:typename:mdns_rr_list_t *
+ap_mac	adpi/proto/cmb_proto.h	/^    uint8_t             ap_mac[MAC_ADDR_LEN]; \/\/ AP mac from where the msg was generated$/;"	m	struct:cmb_notify_hdr	typeref:typename:uint8_t[]
+arcount	adpi/txrx.c	/^    uint16_t arcount;$/;"	m	struct:dns_header	typeref:typename:uint16_t	file:
+arp_hdr	adpi/proto/arp.h	/^struct arp_hdr {$/;"	s
+arp_ipv4_pkt	adpi/proto/arp.h	/^struct arp_ipv4_pkt {$/;"	s
+auth_count	adpi/dns.h	/^    uint16_t auth_count;   \/* number of authority entries *\/$/;"	m	struct:dns_hdr	typeref:typename:uint16_t
+auth_count	adpi/proto/dns.h	/^    uint16_t auth_count;   \/* number of authority entries *\/$/;"	m	struct:dns_hdr	typeref:typename:uint16_t
+auth_count	adpi/proto/mdns.h	/^    uint16_t auth_count;   \/* number of authority entries *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint16_t
+auths	adpi/proto/mdns.h	/^    mdns_rr_list_t *auths;$/;"	m	struct:dnspacket	typeref:typename:mdns_rr_list_t *
+auto_power	adpi/proto/cmb_proto.h	/^    uint8_t auto_power:1;   \/\/ Power is automatic?$/;"	m	struct:cmb_arf_radio	typeref:typename:uint8_t:1
+aux_data_len	adpi/proto/igmp.h	/^    u_int8_t    aux_data_len;$/;"	m	struct:igmp_v3_grec	typeref:typename:u_int8_t
+blocked_domain	adpi/air_coplane.h	/^struct blocked_domain {$/;"	s
+blocked_ip	adpi/air_coplane.h	/^struct blocked_ip {$/;"	s
+bss	adpi/proto/cmb_proto.h	/^    uint8_t bss[MAC_ADDR_LEN];  \/\/ Neighbor mac$/;"	m	struct:cmb_arf_nbr	typeref:typename:uint8_t[]
+bssid	adpi/air_coplane.h	/^    uint8_t            bssid[MAX_MAC_ADDR_LEN];$/;"	m	struct:wlan_sta	typeref:typename:uint8_t[]
+bw	adpi/air_coplane.h	/^    int                bw;$/;"	m	struct:wlan_sta	typeref:typename:int
+bytes_per_sec	adpi/air_coplane.h	/^    uint32_t bytes_per_sec; \/* Token rate, bytes per second *\/$/;"	m	struct:ratelimit_config	typeref:typename:uint32_t
+bytes_per_sec	adpi/air_ioctl.h	/^    uint32_t          bytes_per_sec;    \/\/ Data rate limit in bytes per second$/;"	m	struct:adpi_ratelimit_bucket	typeref:typename:uint32_t
+cfg_channel	adpi/proto/cmb_proto.h	/^    uint8_t cfg_channel;    \/\/ Configured channel$/;"	m	struct:cmb_arf_radio	typeref:typename:uint8_t
+cfg_power	adpi/proto/cmb_proto.h	/^    uint8_t cfg_power;      \/\/ Configured power$/;"	m	struct:cmb_arf_radio	typeref:typename:uint8_t
+cfg_width	adpi/proto/cmb_proto.h	/^    uint8_t cfg_width;      \/\/ Configured width$/;"	m	struct:cmb_arf_radio	typeref:typename:uint8_t
+chaddr	adpi/dhcp.h	/^    uint8_t chaddr[16];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[16]
+chaddr	adpi/proto/dhcp.h	/^    uint8_t chaddr[16];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[16]
+channel	adpi/air_coplane.h	/^    uint8_t            channel;$/;"	m	struct:wlan_sta	typeref:typename:uint8_t
+channel	adpi/proto/cmb_proto.h	/^    uint8_t channel;            \/\/ Channel heard$/;"	m	struct:cmb_arf_nbr	typeref:typename:uint8_t
+channel	adpi/proto/cmb_proto.h	/^    uint8_t channel;            \/\/ New channel$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t
+channel	adpi/proto/cmb_proto.h	/^    uint8_t channel;        \/\/ Current channel$/;"	m	struct:cmb_arf_radio	typeref:typename:uint8_t
+channel_change	adpi/proto/cmb_proto.h	/^    uint8_t channel_change:1;   \/\/ channel change$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t:1
+ciaddr	adpi/dhcp.h	/^    uint8_t ciaddr[4];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[4]
+ciaddr	adpi/proto/dhcp.h	/^    uint8_t ciaddr[4];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[4]
+client_count	adpi/proto/cmb_proto.h	/^    uint8_t client_count;       \/\/ Num clients on this radio$/;"	m	struct:cmb_clb_update_msg	typeref:typename:uint8_t
+client_node	adpi/air_coplane.h	/^struct client_node {$/;"	s
+client_reg_table_alloc	adpi/txrx.c	/^struct client_node *client_reg_table_alloc(char *macaddr)$/;"	f	typeref:struct:client_node *
+client_reg_table_lookup	adpi/txrx.c	/^struct client_node *client_reg_table_lookup(uint8_t *macaddr)$/;"	f	typeref:struct:client_node *
+client_registry	adpi/air_coplane.h	/^struct client_registry {$/;"	s
+cmb_acct_stats_msg	adpi/proto/cmb_proto.h	/^struct cmb_acct_stats_msg {$/;"	s
+cmb_arf_devinfo_msg	adpi/proto/cmb_proto.h	/^struct cmb_arf_devinfo_msg {$/;"	s
+cmb_arf_leader_msg	adpi/proto/cmb_proto.h	/^struct cmb_arf_leader_msg {$/;"	s
+cmb_arf_nbr	adpi/proto/cmb_proto.h	/^struct cmb_arf_nbr {$/;"	s
+cmb_arf_nbrinfo_msg	adpi/proto/cmb_proto.h	/^struct cmb_arf_nbrinfo_msg {$/;"	s
+cmb_arf_radio	adpi/proto/cmb_proto.h	/^struct cmb_arf_radio {$/;"	s
+cmb_arf_rfchange_msg	adpi/proto/cmb_proto.h	/^struct cmb_arf_rfchange_msg {$/;"	s
+cmb_cflags_msg	adpi/proto/cmb_proto.h	/^struct cmb_cflags_msg {$/;"	s
+cmb_ci_sess_msg	adpi/proto/cmb_proto.h	/^struct cmb_ci_sess_msg {$/;"	s
+cmb_clb_update_msg	adpi/proto/cmb_proto.h	/^struct cmb_clb_update_msg {$/;"	s
+cmb_ga_msg	adpi/proto/cmb_proto.h	/^struct cmb_ga_msg {$/;"	s
+cmb_notify_hdr	adpi/proto/cmb_proto.h	/^struct cmb_notify_hdr {$/;"	s
+cmb_pmk_update_msg	adpi/proto/cmb_proto.h	/^struct cmb_pmk_update_msg {$/;"	s
+cmb_roam_data_ready_update_msg	adpi/proto/cmb_proto.h	/^struct cmb_roam_data_ready_update_msg {$/;"	s
+cmb_roam_msg	adpi/proto/cmb_proto.h	/^struct cmb_roam_msg {$/;"	s
+connected_tms	adpi/air_coplane.h	/^    u32 connected_tms;$/;"	m	struct:client_node	typeref:typename:u32
+coplane	adpi/main.c	/^struct airpro_coplane *coplane = NULL;$/;"	v	typeref:struct:airpro_coplane *
+count	adpi/air_coplane.h	/^    uint32_t count;$/;"	m	struct:domain_entry	typeref:typename:uint32_t
+count	adpi/air_ioctl.h	/^    int count;$/;"	m	struct:adpi_client_info	typeref:typename:int
+count	adpi/air_ioctl.h	/^    uint32_t count;$/;"	m	struct:adpi_domain_entry	typeref:typename:uint32_t
+count	adpi/proto/mdns.h	/^    uint16_t count; \/\/num of rules added$/;"	m	struct:mdns_acl_cfg	typeref:typename:uint16_t
+csum	adpi/proto/igmp.h	/^    uint16_t    csum;$/;"	m	struct:igmp_v3_report_hdr	typeref:typename:uint16_t
+csum	adpi/proto/igmp.h	/^    uint16_t csum;$/;"	m	struct:igmp_hdr	typeref:typename:uint16_t
+csum	adpi/proto/ipv4.h	/^    uint16_t csum;$/;"	m	struct:ipv4_hdr	typeref:typename:uint16_t
+csum	adpi/proto/tcp.h	/^    uint16_t csum;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t
+csum	adpi/proto/udp.h	/^    uint16_t csum;$/;"	m	struct:udp_hdr	typeref:typename:uint16_t
+cur_channel	adpi/proto/cmb_proto.h	/^    uint8_t cur_channel;        \/\/ Current channel$/;"	m	struct:cmb_arf_nbrinfo_msg	typeref:typename:uint8_t
+cur_channel	adpi/proto/cmb_proto.h	/^    uint8_t cur_channel;        \/\/ Current channel$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t
+cur_if	adpi/proto/cmb_proto.h	/^    uint8_t cur_if;             \/\/ current channel interference$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t
+cur_power	adpi/proto/cmb_proto.h	/^    uint8_t cur_power;          \/\/ current power$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t
+cur_width	adpi/proto/cmb_proto.h	/^    uint8_t cur_width;          \/\/ Current width$/;"	m	struct:cmb_arf_nbrinfo_msg	typeref:typename:uint8_t
+cur_width	adpi/proto/cmb_proto.h	/^    uint8_t cur_width;          \/\/ current width$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t
+cwr	adpi/proto/tcp.h	/^    uint16_t cwr:1;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t:1
+data	adpi/proto/cmb_proto.h	/^    uint8_t             data[0];$/;"	m	struct:cmb_notify_hdr	typeref:typename:uint8_t[0]
+default	adpi/Makefile	/^default:$/;"	t
+dei	adpi/proto/ethernet.h	/^        uint16_t dei:1;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0108	typeref:typename:uint16_t:1
+dei	adpi/proto/ethernet.h	/^        uint16_t dei:1;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0208	typeref:typename:uint16_t:1
+dei	adpi/proto/ethernet.h	/^        uint16_t dei:1;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0308	typeref:typename:uint16_t:1
+dei	adpi/proto/ethernet.h	/^        uint16_t dei:1;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0408	typeref:typename:uint16_t:1
+dest_mac	adpi/air_coplane.h	/^    uint8_t            dest_mac[MAX_MAC_ADDR_LEN];$/;"	m	struct:wlan_sta	typeref:typename:uint8_t[]
+dev	adpi/air_coplane.h	/^    struct net_device *dev;$/;"	m	struct:nw_iface	typeref:struct:net_device *
+dev_type	adpi/proto/cmb_proto.h	/^    uint8_t dev_type[16];$/;"	m	struct:cmb_ga_msg	typeref:typename:uint8_t[16]
+dev_type	adpi/proto/cmb_proto.h	/^    uint8_t dev_type[16];$/;"	m	struct:cmb_roam_msg	typeref:typename:uint8_t[16]
+dhcp_hdr	adpi/dhcp.h	/^struct dhcp_hdr {$/;"	s
+dhcp_hdr	adpi/proto/dhcp.h	/^struct dhcp_hdr {$/;"	s
+dip	adpi/proto/ipv4.h	/^    uint32_t dip;$/;"	m	struct:ipv4_hdr	typeref:typename:uint32_t
+dir_t	adpi/air_common.h	/^} dir_t;$/;"	t	typeref:enum:flow_direction
+direction	adpi/air_ioctl.h	/^    int               direction;        \/\/ Direction of the traffic (e.g., 0 for upload, 1 for/;"	m	struct:adpi_ratelimit_bucket	typeref:typename:int
+dl_bytes_per_sec	adpi/air_coplane.h	/^    uint32_t dl_bytes_per_sec;$/;"	m	struct:wlan_sta_rc	typeref:typename:uint32_t
+dlen	adpi/dns.h	/^  uint16_t dlen; \/\/ data len$/;"	m	struct:dns_rr	typeref:typename:uint16_t
+dlen	adpi/proto/dns.h	/^  uint16_t dlen; \/\/ data len$/;"	m	struct:dns_rr	typeref:typename:uint16_t
+dns_get_name	adpi/dns.c	/^static int dns_get_name(unsigned char *buf, uint8_t *pos, uint8_t *q_name, int max_len, uint32_t/;"	f	typeref:typename:int	file:
+dns_hdr	adpi/dns.h	/^struct dns_hdr$/;"	s
+dns_hdr	adpi/proto/dns.h	/^struct dns_hdr$/;"	s
+dns_header	adpi/txrx.c	/^struct dns_header {$/;"	s	file:
+dns_rr	adpi/dns.h	/^struct dns_rr {$/;"	s
+dns_rr	adpi/proto/dns.h	/^struct dns_rr {$/;"	s
+dnspacket	adpi/proto/mdns.h	/^struct dnspacket {$/;"	s
+do_acct_stop	adpi/proto/cmb_proto.h	/^    uint8_t  do_acct_stop; \/\/ if set the old AP will do accounting stop$/;"	m	struct:cmb_roam_data_ready_update_msg	typeref:typename:uint8_t
+doff	adpi/proto/tcp.h	/^    uint16_t doff:4;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t:4
+domain	adpi/air_coplane.h	/^    char domain[MAX_DOMAIN_NAME_LEN];$/;"	m	struct:blocked_domain	typeref:typename:char[]
+domain	adpi/air_coplane.h	/^    char domain[MAX_DOMAIN_NAME_LEN];$/;"	m	struct:domain_entry	typeref:typename:char[]
+domain	adpi/air_ioctl.h	/^    char domain[MAX_DOMAIN_NAME_LEN];$/;"	m	struct:adpi_domain_entry	typeref:typename:char[]
+domain_entry	adpi/air_coplane.h	/^struct domain_entry {$/;"	s
+domain_lock	adpi/air_coplane.h	/^    spinlock_t domain_lock;$/;"	m	struct:airpro_coplane	typeref:typename:spinlock_t
+domain_name	adpi/air_coplane.h	/^    char domain_name[10][MAX_DNS_LENGTH];$/;"	m	struct:wlan_sta	typeref:typename:char[10][]
+domain_name_count	adpi/air_coplane.h	/^    uint8_t            domain_name_count;$/;"	m	struct:wlan_sta	typeref:typename:uint8_t
+dport	adpi/proto/tcp.h	/^    uint16_t dport;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t
+dport	adpi/proto/udp.h	/^    uint16_t dport;$/;"	m	struct:udp_hdr	typeref:typename:uint16_t
+dropped	adpi/air_coplane.h	/^    unsigned int dropped; \/* Packets dropped *\/$/;"	m	struct:ratelimit_bucket	typeref:typename:unsigned int
+dst	adpi/proto/ethernet.h	/^    uint8_t dst[MAC_ADDR_LEN];$/;"	m	struct:ethernet_hdr	typeref:typename:uint8_t[]
+dst	adpi/proto/ethernet.h	/^    uint8_t dst[MAC_ADDR_LEN];$/;"	m	struct:ethernet_vlan_hdr	typeref:typename:uint8_t[]
+ece	adpi/proto/tcp.h	/^    uint16_t ece:1;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t:1
+elected	adpi/proto/cmb_proto.h	/^    uint32_t elected;$/;"	m	struct:cmb_arf_leader_msg	typeref:typename:uint32_t
+enabled	adpi/proto/cmb_proto.h	/^    uint8_t enabled;            \/\/ CLB enabled \/ not$/;"	m	struct:cmb_clb_update_msg	typeref:typename:uint8_t
+entry	adpi/air_ioctl.h	/^    struct adpi_client_entry entry[32];$/;"	m	struct:adpi_client_info	typeref:struct:adpi_client_entry[32]
+ethernet_hdr	adpi/proto/ethernet.h	/^struct ethernet_hdr {$/;"	s
+ethernet_vlan_hdr	adpi/proto/ethernet.h	/^struct ethernet_vlan_hdr {$/;"	s
+file	adpi/dhcp.h	/^    uint8_t file[128];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[128]
+file	adpi/proto/dhcp.h	/^    uint8_t file[128];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[128]
+fin	adpi/proto/tcp.h	/^    uint16_t fin:1;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t:1
+fingerprint	adpi/air_coplane.h	/^    char fingerprint[256];$/;"	m	struct:client_node	typeref:typename:char[256]
+flags	adpi/dhcp.h	/^    uint16_t flags;$/;"	m	struct:dhcp_hdr	typeref:typename:uint16_t
+flags	adpi/proto/cmb_proto.h	/^    uint32_t flags;$/;"	m	struct:cmb_cflags_msg	typeref:typename:uint32_t
+flags	adpi/proto/cmb_proto.h	/^    uint8_t  flags; \/\/ update accounting flag if enabled$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint8_t
+flags	adpi/proto/cmb_proto.h	/^    uint8_t  flags; \/\/ update accounting flag if enabled$/;"	m	struct:cmb_ga_msg	typeref:typename:uint8_t
+flags	adpi/proto/dhcp.h	/^    uint16_t flags;$/;"	m	struct:dhcp_hdr	typeref:typename:uint16_t
+flags	adpi/txrx.c	/^    uint16_t flags;$/;"	m	struct:dns_header	typeref:typename:uint16_t	file:
+flags_offs	adpi/proto/ipv4.h	/^    uint16_t flags_offs;$/;"	m	struct:ipv4_hdr	typeref:typename:uint16_t
+flow_direction	adpi/air_common.h	/^typedef enum flow_direction {$/;"	g
+flush_proc_fops	adpi/sysctl.c	/^static const struct file_operations flush_proc_fops = {$/;"	v	typeref:typename:const struct file_operations	file:
+flush_proc_fops	adpi/sysctl.c	/^static const struct proc_ops flush_proc_fops = {$/;"	v	typeref:typename:const struct proc_ops	file:
+flush_proc_write	adpi/sysctl.c	/^static ssize_t flush_proc_write(struct file *file, const char __user *buffer, size_t count, loff/;"	f	typeref:typename:ssize_t	file:
+forced	adpi/proto/cmb_proto.h	/^    uint8_t forced:1;           \/\/ Forced assignment - no channel change diff$/;"	m	struct:cmb_arf_nbrinfo_msg	typeref:typename:uint8_t:1
+g_hook_postroute	adpi/main.c	/^static struct nf_hook_ops g_hook_postroute = {$/;"	v	typeref:struct:nf_hook_ops	file:
+g_hook_preroute	adpi/main.c	/^static struct nf_hook_ops g_hook_preroute = {$/;"	v	typeref:struct:nf_hook_ops	file:
+get_ip_str	adpi/txrx.c	/^void get_ip_str(u32 *sip, u8 *ipstr)$/;"	f	typeref:typename:void
+giaddr	adpi/dhcp.h	/^    uint8_t giaddr[4];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[4]
+giaddr	adpi/proto/dhcp.h	/^    uint8_t giaddr[4];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[4]
+hash_string	adpi/air_coplane.h	/^static inline unsigned long hash_string(const char *str) {$/;"	f	typeref:typename:unsigned long
+hdr	adpi/proto/arp.h	/^    struct arp_hdr hdr;$/;"	m	struct:arp_ipv4_pkt	typeref:struct:arp_hdr
+hdr	adpi/proto/igmp.h	/^    struct igmp_hdr hdr; \/* Type is 0x11 *\/$/;"	m	struct:igmp_v3_query	typeref:struct:igmp_hdr
+head	adpi/proto/mdns.h	/^    mdns_rr_t *head;$/;"	m	struct:mdns_rr_list	typeref:typename:mdns_rr_t *
+hlen	adpi/proto/ipv4.h	/^    uint8_t hlen:4;$/;"	m	struct:ipv4_hdr	typeref:typename:uint8_t:4
+hops	adpi/dhcp.h	/^    uint8_t hops;$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t
+hops	adpi/proto/dhcp.h	/^    uint8_t hops;$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t
+hostname	adpi/air_coplane.h	/^    char hostname[32];$/;"	m	struct:client_node	typeref:typename:char[32]
+hostname	adpi/air_coplane.h	/^    uint8_t            hostname[16+1];$/;"	m	struct:wlan_sta	typeref:typename:uint8_t[]
+hostname	adpi/air_ioctl.h	/^    char hostname[32];$/;"	m	struct:adpi_client_entry	typeref:typename:char[32]
+hostname	adpi/proto/cmb_proto.h	/^    uint8_t hostname[16];$/;"	m	struct:cmb_ga_msg	typeref:typename:uint8_t[16]
+hostname	adpi/proto/cmb_proto.h	/^    uint8_t hostname[16];$/;"	m	struct:cmb_roam_msg	typeref:typename:uint8_t[16]
+hw_len	adpi/proto/arp.h	/^    uint8_t hw_len;$/;"	m	struct:arp_hdr	typeref:typename:uint8_t
+hw_type	adpi/proto/arp.h	/^    uint16_t hw_type;$/;"	m	struct:arp_hdr	typeref:typename:uint16_t
+hwlen	adpi/dhcp.h	/^    uint8_t hwlen;$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t
+hwlen	adpi/proto/dhcp.h	/^    uint8_t hwlen;$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t
+hwtype	adpi/dhcp.h	/^    uint8_t hwtype;$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t
+hwtype	adpi/proto/dhcp.h	/^    uint8_t hwtype;$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t
+id	adpi/dns.h	/^    uint16_t id;           \/* identification number *\/$/;"	m	struct:dns_hdr	typeref:typename:uint16_t
+id	adpi/proto/dns.h	/^    uint16_t id;           \/* identification number *\/$/;"	m	struct:dns_hdr	typeref:typename:uint16_t
+id	adpi/proto/ipv4.h	/^    uint16_t id;$/;"	m	struct:ipv4_hdr	typeref:typename:uint16_t
+id	adpi/proto/mdns.h	/^    uint16_t id;           \/* identification number *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint16_t
+id	adpi/txrx.c	/^    uint16_t id;$/;"	m	struct:dns_header	typeref:typename:uint16_t	file:
+iface_name	adpi/air_coplane.h	/^    char iface_name[16];$/;"	m	struct:nw_iface	typeref:typename:char[16]
+iface_type	adpi/air_coplane.h	/^    int iface_type; \/\/PHY_ETH, PHY_WLAN$/;"	m	struct:nw_iface	typeref:typename:int
+ifname	adpi/air_coplane.h	/^    char               ifname[8];$/;"	m	struct:wlan_sta	typeref:typename:char[8]
+ifname	adpi/air_coplane.h	/^    char ifname[12];$/;"	m	struct:client_node	typeref:typename:char[12]
+ifname	adpi/air_ioctl.h	/^    char ifname[12];$/;"	m	struct:adpi_add_sta_entry	typeref:typename:char[12]
+ifname	adpi/air_ioctl.h	/^    char ifname[12];$/;"	m	struct:adpi_del_sta_entry	typeref:typename:char[12]
+igmp_hdr	adpi/proto/igmp.h	/^struct igmp_hdr$/;"	s
+igmp_v3_grec	adpi/proto/igmp.h	/^struct igmp_v3_grec {$/;"	s
+igmp_v3_query	adpi/proto/igmp.h	/^struct igmp_v3_query$/;"	s
+igmp_v3_report_hdr	adpi/proto/igmp.h	/^struct igmp_v3_report_hdr {$/;"	s
+in_use	adpi/proto/mdns.h	/^    uint8_t in_use:1;$/;"	m	struct:mdns_rr	typeref:typename:uint8_t:1
+inactivity_timeout	adpi/proto/cmb_proto.h	/^    uint32_t inactivity_timeout; \/\/ inactivity timeout for the client, can be give by RADIUS s/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint32_t
+inactivity_timeout	adpi/proto/cmb_proto.h	/^    uint32_t inactivity_timeout; \/\/ inactivity timeout for the client, can be give by RADIUS s/;"	m	struct:cmb_ga_msg	typeref:typename:uint32_t
+info_proc_fops	adpi/sysctl.c	/^static const struct file_operations info_proc_fops = {$/;"	v	typeref:typename:const struct file_operations	file:
+info_proc_fops	adpi/sysctl.c	/^static const struct proc_ops info_proc_fops = {$/;"	v	typeref:typename:const struct proc_ops	file:
+info_proc_open	adpi/sysctl.c	/^static int info_proc_open(struct inode *inode, struct file *file) $/;"	f	typeref:typename:int	file:
+info_proc_show	adpi/sysctl.c	/^static int info_proc_show(struct seq_file *m, void *v) $/;"	f	typeref:typename:int	file:
+ip	adpi/air_coplane.h	/^    __be32 ip;$/;"	m	struct:blocked_ip	typeref:typename:__be32
+ip	adpi/air_coplane.h	/^    u32 ip;$/;"	m	struct:client_node	typeref:typename:u32
+ip	adpi/air_ioctl.h	/^    uint32_t ip;$/;"	m	struct:adpi_client_entry	typeref:typename:uint32_t
+ip	adpi/proto/cmb_proto.h	/^    uint32_t ip; \/\/ IP address of the client$/;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint32_t
+ip	adpi/proto/mdns.h	/^    char ip[16];$/;"	m	struct:mdns_pkt_info	typeref:typename:char[16]
+ip_list	adpi/air_coplane.h	/^    struct hlist_head ip_list;$/;"	m	struct:blocked_domain	typeref:struct:hlist_head
+ipv4_addr	adpi/air_coplane.h	/^    uint8_t            ipv4_addr[20];$/;"	m	struct:wlan_sta	typeref:typename:uint8_t[20]
+ipv4_hdr	adpi/proto/ipv4.h	/^struct ipv4_hdr {$/;"	s
+is_blocked_ip	adpi/txrx.c	/^int is_blocked_ip(struct airpro_coplane *cp, __be32 ip) {$/;"	f	typeref:typename:int
+last_update	adpi/air_coplane.h	/^    unsigned long last_update; \/* Last time bucket was updated *\/$/;"	m	struct:ratelimit_bucket	typeref:typename:unsigned long
+last_updated	adpi/proto/mdns.h	/^    uint32_t last_updated;$/;"	m	struct:mdns_rr	typeref:typename:uint32_t
+lease_time	adpi/air_coplane.h	/^    u32 lease_time;$/;"	m	struct:client_node	typeref:typename:u32
+len	adpi/proto/cmb_proto.h	/^    uint16_t            len; \/\/ length is the size of what follows$/;"	m	struct:cmb_notify_hdr	typeref:typename:uint16_t
+len	adpi/proto/udp.h	/^    uint16_t len;$/;"	m	struct:udp_hdr	typeref:typename:uint16_t
+lock	adpi/air_coplane.h	/^    spinlock_t lock;$/;"	m	struct:client_registry	typeref:typename:spinlock_t
+mac	adpi/proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_ga_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_pmk_update_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_roam_data_ready_update_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_roam_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];  \/\/ AP mac$/;"	m	struct:cmb_clb_update_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];  \/\/ Device mac$/;"	m	struct:cmb_arf_devinfo_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];  \/\/ Device mac$/;"	m	struct:cmb_arf_nbrinfo_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];  \/\/ Device mac$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];  \/\/ Radio mac$/;"	m	struct:cmb_arf_radio	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN]; \/\/ client mac$/;"	m	struct:cmb_cflags_msg	typeref:typename:uint8_t[]
+mac	adpi/proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_arf_leader_msg	typeref:typename:uint8_t[]
+macaddr	adpi/air_coplane.h	/^    u8 macaddr[6];$/;"	m	struct:client_node	typeref:typename:u8[6]
+macaddr	adpi/air_coplane.h	/^    uint8_t macaddr[MAX_MAC_ADDR_LEN];$/;"	m	struct:wlan_sta_rc	typeref:typename:uint8_t[]
+macaddr	adpi/air_ioctl.h	/^    uint8_t           macaddr[MAX_MAC_ADDR_LEN];$/;"	m	struct:adpi_ratelimit_bucket	typeref:typename:uint8_t[]
+macaddr	adpi/air_ioctl.h	/^    uint8_t macaddr[6];$/;"	m	struct:adpi_client_entry	typeref:typename:uint8_t[6]
+macaddr	adpi/air_ioctl.h	/^    uint8_t macaddr[MAX_MAC_ADDR_LEN];$/;"	m	struct:adpi_add_sta_entry	typeref:typename:uint8_t[]
+macaddr	adpi/air_ioctl.h	/^    uint8_t macaddr[MAX_MAC_ADDR_LEN];$/;"	m	struct:adpi_del_sta_entry	typeref:typename:uint8_t[]
+magic	adpi/dhcp.h	/^    uint8_t magic[4];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[4]
+magic	adpi/proto/dhcp.h	/^    uint8_t magic[4];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[4]
+max_resp_code	adpi/proto/igmp.h	/^    uint8_t max_resp_code;$/;"	m	struct:igmp_hdr	typeref:typename:uint8_t
+max_tokens	adpi/air_coplane.h	/^    uint32_t max_tokens; \/* burst size *\/$/;"	m	struct:ratelimit_bucket	typeref:typename:uint32_t
+mc_addr	adpi/proto/igmp.h	/^    u_int32_t   mc_addr;$/;"	m	struct:igmp_v3_grec	typeref:typename:u_int32_t
+mc_addr	adpi/proto/igmp.h	/^    uint32_t mc_addr;$/;"	m	struct:igmp_hdr	typeref:typename:uint32_t
+mdns_acl_cfg	adpi/proto/mdns.h	/^typedef struct mdns_acl_cfg {$/;"	s
+mdns_cfg_rules	adpi/proto/mdns.h	/^typedef struct mdns_cfg_rules {$/;"	s
+mdns_cfg_t	adpi/proto/mdns.h	/^} mdns_cfg_t;$/;"	t	typeref:struct:mdns_acl_cfg
+mdns_hdr	adpi/proto/mdns.h	/^struct mdns_hdr$/;"	s
+mdns_pkt_info	adpi/proto/mdns.h	/^typedef struct mdns_pkt_info {$/;"	s
+mdns_pkt_info_t	adpi/proto/mdns.h	/^} mdns_pkt_info_t;$/;"	t	typeref:struct:mdns_pkt_info
+mdns_rr	adpi/proto/mdns.h	/^typedef struct mdns_rr {$/;"	s
+mdns_rr_list	adpi/proto/mdns.h	/^typedef struct mdns_rr_list {$/;"	s
+mdns_rr_list_t	adpi/proto/mdns.h	/^} mdns_rr_list_t;$/;"	t	typeref:struct:mdns_rr_list
+mdns_rr_t	adpi/proto/mdns.h	/^}  mdns_rr_t;$/;"	t	typeref:struct:mdns_rr
+mdns_rules_t	adpi/proto/mdns.h	/^} mdns_rules_t;$/;"	t	typeref:struct:mdns_cfg_rules
+modules	adpi/Makefile	/^modules:$/;"	t
+name	adpi/proto/mdns.h	/^    char *name;$/;"	m	struct:srv	typeref:typename:char *
+name	adpi/proto/mdns.h	/^    char name[64];$/;"	m	struct:mdns_rr	typeref:typename:char[64]
+nbrs	adpi/proto/cmb_proto.h	/^    struct cmb_arf_nbr nbrs[0];$/;"	m	struct:cmb_arf_nbrinfo_msg	typeref:struct:cmb_arf_nbr[0]
+netlink_exit	adpi/netlink.c	/^void netlink_exit(void) $/;"	f	typeref:typename:void
+netlink_init	adpi/netlink.c	/^int netlink_init(void) $/;"	f	typeref:typename:int
+netlink_recv_msg	adpi/netlink.c	/^static void netlink_recv_msg(struct sk_buff *skb) $/;"	f	typeref:typename:void	file:
+new_if	adpi/proto/cmb_proto.h	/^    uint8_t new_if;             \/\/ new channel interference$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t
+next	adpi/proto/mdns.h	/^    struct mdns_rr *next;$/;"	m	struct:mdns_rr	typeref:struct:mdns_rr *
+ngrec	adpi/proto/igmp.h	/^    uint16_t    ngrec;$/;"	m	struct:igmp_v3_report_hdr	typeref:typename:uint16_t
+nl_sk	adpi/netlink.c	/^static struct sock *nl_sk = NULL;$/;"	v	typeref:struct:sock *	file:
+node	adpi/air_coplane.h	/^    struct hlist_node node;$/;"	m	struct:blocked_domain	typeref:struct:hlist_node
+node	adpi/air_coplane.h	/^    struct hlist_node node;$/;"	m	struct:blocked_ip	typeref:struct:hlist_node
+noise	adpi/proto/cmb_proto.h	/^    uint8_t noise;              \/\/ Noise$/;"	m	struct:cmb_arf_nbr	typeref:typename:uint8_t
+nscount	adpi/txrx.c	/^    uint16_t nscount;$/;"	m	struct:dns_header	typeref:typename:uint16_t	file:
+nsrcs	adpi/proto/igmp.h	/^    u_int16_t   nsrcs;$/;"	m	struct:igmp_v3_grec	typeref:typename:u_int16_t
+num_nbrs	adpi/proto/cmb_proto.h	/^    uint8_t num_nbrs;           \/\/ Num neighbors$/;"	m	struct:cmb_arf_nbrinfo_msg	typeref:typename:uint8_t
+num_src	adpi/proto/igmp.h	/^    uint16_t num_src;$/;"	m	struct:igmp_v3_query	typeref:typename:uint16_t
+nw_iface	adpi/air_coplane.h	/^struct nw_iface {$/;"	s
+nw_iface_lock	adpi/air_coplane.h	/^    spinlock_t nw_iface_lock;$/;"	m	struct:airpro_coplane	typeref:typename:spinlock_t
+opcode	adpi/dhcp.h	/^    uint8_t opcode;$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t
+opcode	adpi/dns.h	/^    uint8_t opcode:4;      \/* purpose of message *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:4
+opcode	adpi/proto/arp.h	/^    uint16_t opcode;$/;"	m	struct:arp_hdr	typeref:typename:uint16_t
+opcode	adpi/proto/dhcp.h	/^    uint8_t opcode;$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t
+opcode	adpi/proto/dns.h	/^    uint8_t opcode:4;      \/* purpose of message *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:4
+opcode	adpi/proto/mdns.h	/^    uint8_t opcode:4;      \/* purpose of message *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint8_t:4
+options	adpi/dhcp.h	/^    uint8_t options[];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[]
+options	adpi/proto/dhcp.h	/^    uint8_t options[];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[]
+parse_dns_response	adpi/dns.c	/^static int parse_dns_response(struct sk_buff *skb, unsigned int ofs)$/;"	f	typeref:typename:int	file:
+parse_dns_response	adpi/txrx.c	/^static int parse_dns_response(struct sk_buff *skb) {$/;"	f	typeref:typename:int	file:
+parse_layer2_header	adpi/txrx.c	/^static unsigned int parse_layer2_header(struct sk_buff *skb, unsigned int *proto, unsigned int */;"	f	typeref:typename:unsigned int	file:
+pcp	adpi/proto/ethernet.h	/^        uint16_t pcp:3;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0108	typeref:typename:uint16_t:3
+pcp	adpi/proto/ethernet.h	/^        uint16_t pcp:3;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0208	typeref:typename:uint16_t:3
+pcp	adpi/proto/ethernet.h	/^        uint16_t pcp:3;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0308	typeref:typename:uint16_t:3
+pcp	adpi/proto/ethernet.h	/^        uint16_t pcp:3;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0408	typeref:typename:uint16_t:3
+phy	adpi/air_common.h	/^typedef enum phy {$/;"	g
+phy_t	adpi/air_common.h	/^} phy_t;$/;"	t	typeref:enum:phy
+phymode	adpi/air_coplane.h	/^    int                phymode;$/;"	m	struct:wlan_sta	typeref:typename:int
+pid	adpi/netlink.c	/^int pid = 0;$/;"	v	typeref:typename:int
+pktidx	adpi/proto/mdns.h	/^    uint8_t pktidx;$/;"	m	struct:mdns_rr	typeref:typename:uint8_t
+pmk	adpi/proto/cmb_proto.h	/^    uint8_t  pmk[32];$/;"	m	struct:cmb_pmk_update_msg	typeref:typename:uint8_t[32]
+port	adpi/proto/mdns.h	/^    uint16_t port;$/;"	m	struct:srv	typeref:typename:uint16_t
+power	adpi/proto/cmb_proto.h	/^    uint8_t power;              \/\/ New power$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t
+power	adpi/proto/cmb_proto.h	/^    uint8_t power;          \/\/ Current power$/;"	m	struct:cmb_arf_radio	typeref:typename:uint8_t
+power_change	adpi/proto/cmb_proto.h	/^    uint8_t power_change:1;     \/\/ power change$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t:1
+priority	adpi/proto/cmb_proto.h	/^    uint8_t priority;$/;"	m	struct:cmb_arf_leader_msg	typeref:typename:uint8_t
+priority	adpi/proto/mdns.h	/^    uint16_t priority;$/;"	m	struct:srv	typeref:typename:uint16_t
+proc_dir	adpi/sysctl.c	/^static struct proc_dir_entry *proc_dir;$/;"	v	typeref:struct:proc_dir_entry *	file:
+proc_flush	adpi/sysctl.c	/^static struct proc_dir_entry *proc_flush;$/;"	v	typeref:struct:proc_dir_entry *	file:
+proc_info	adpi/sysctl.c	/^static struct proc_dir_entry *proc_info;$/;"	v	typeref:struct:proc_dir_entry *	file:
+proto	adpi/proto/arp.h	/^    uint16_t proto;$/;"	m	struct:arp_hdr	typeref:typename:uint16_t
+proto	adpi/proto/ipv4.h	/^    uint8_t proto;$/;"	m	struct:ipv4_hdr	typeref:typename:uint8_t
+proto	adpi/proto/mdns.h	/^    char proto[64]; \/\/Application protocol$/;"	m	struct:mdns_cfg_rules	typeref:typename:char[64]
+proto_len	adpi/proto/arp.h	/^    uint8_t proto_len;$/;"	m	struct:arp_hdr	typeref:typename:uint8_t
+psh	adpi/proto/tcp.h	/^    uint16_t psh:1;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t:1
+q_count	adpi/dns.h	/^    uint16_t q_count;      \/* number of question entries *\/$/;"	m	struct:dns_hdr	typeref:typename:uint16_t
+q_count	adpi/proto/dns.h	/^    uint16_t q_count;      \/* number of question entries *\/$/;"	m	struct:dns_hdr	typeref:typename:uint16_t
+qdcount	adpi/txrx.c	/^    uint16_t qdcount;$/;"	m	struct:dns_header	typeref:typename:uint16_t	file:
+qqic	adpi/proto/igmp.h	/^    uint8_t qqic;$/;"	m	struct:igmp_v3_query	typeref:typename:uint8_t
+qr	adpi/dns.h	/^    uint8_t qr:1;          \/* response flag *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:1
+qr	adpi/proto/dns.h	/^    uint8_t qr:1;          \/* response flag *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:1
+qr	adpi/proto/mdns.h	/^    uint8_t qr:1;          \/* response flag *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint8_t:1
+quota_down	adpi/proto/cmb_proto.h	/^    uint32_t quota_down; \/\/ quota limit as received by RADIUS server or controller$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint32_t
+quota_down	adpi/proto/cmb_proto.h	/^    uint32_t quota_down; \/\/ quota limit as received by RADIUS server or controller$/;"	m	struct:cmb_ga_msg	typeref:typename:uint32_t
+quota_type	adpi/proto/cmb_proto.h	/^    uint8_t  quota_type; \/\/ quota type for data limit for client$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint8_t
+quota_type	adpi/proto/cmb_proto.h	/^    uint8_t  quota_type; \/\/ quota type for data limit for client$/;"	m	struct:cmb_ga_msg	typeref:typename:uint8_t
+quota_up	adpi/proto/cmb_proto.h	/^    uint32_t quota_up; \/\/ quota limit as received by RADIUS server or controller$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint32_t
+quota_up	adpi/proto/cmb_proto.h	/^    uint32_t quota_up; \/\/ quota limit as received by RADIUS server or controller$/;"	m	struct:cmb_ga_msg	typeref:typename:uint32_t
+ra	adpi/dns.h	/^    uint8_t ra:1;          \/* recursion available *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:1
+ra	adpi/proto/dns.h	/^    uint8_t ra:1;          \/* recursion available *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:1
+ra	adpi/proto/mdns.h	/^    uint8_t ra:1;          \/* recursion available *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint8_t:1
+radio_id	adpi/proto/cmb_proto.h	/^    uint8_t  radio_id;$/;"	m	struct:cmb_pmk_update_msg	typeref:typename:uint8_t
+radio_idx	adpi/proto/cmb_proto.h	/^    uint8_t radio_idx:1;        \/\/ Radio index$/;"	m	struct:cmb_arf_nbrinfo_msg	typeref:typename:uint8_t:1
+radio_idx	adpi/proto/cmb_proto.h	/^    uint8_t radio_idx:1;        \/\/ Radio index$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t:1
+radio_idx	adpi/proto/cmb_proto.h	/^    uint8_t radio_idx:1;    \/\/ Radio index$/;"	m	struct:cmb_arf_radio	typeref:typename:uint8_t:1
+radio_idx	adpi/proto/cmb_proto.h	/^    uint8_t radio_idx;          \/\/ Radio index$/;"	m	struct:cmb_clb_update_msg	typeref:typename:uint8_t
+radio_type	adpi/proto/cmb_proto.h	/^    uint8_t  radio_type;$/;"	m	struct:cmb_roam_msg	typeref:typename:uint8_t
+radios	adpi/proto/cmb_proto.h	/^    struct cmb_arf_radio radios[2];$/;"	m	struct:cmb_arf_devinfo_msg	typeref:struct:cmb_arf_radio[2]
+radius_server_idx	adpi/proto/cmb_proto.h	/^    int8_t   radius_server_idx; \/\/ the server index which was used for doing radius auth and o/;"	m	struct:cmb_ci_sess_msg	typeref:typename:int8_t
+radius_server_idx	adpi/proto/cmb_proto.h	/^    int8_t   radius_server_idx; \/\/ the server index which was used for doing radius auth and o/;"	m	struct:cmb_ga_msg	typeref:typename:int8_t
+ratelimit_bucket	adpi/air_coplane.h	/^struct ratelimit_bucket {$/;"	s
+ratelimit_check_update	adpi/rate_limit.c	/^static int ratelimit_check_update(struct ratelimit_bucket *rl, unsigned long now, size_t len)$/;"	f	typeref:typename:int	file:
+ratelimit_config	adpi/air_coplane.h	/^struct ratelimit_config {$/;"	s
+rcode	adpi/dns.h	/^    uint8_t rcode:4;       \/* response code *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:4
+rcode	adpi/proto/dns.h	/^    uint8_t rcode:4;       \/* response code *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:4
+rcode	adpi/proto/mdns.h	/^    uint8_t rcode:4;       \/* response code *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint8_t:4
+rd	adpi/dns.h	/^    uint8_t rd:1;          \/* recursion desired *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:1
+rd	adpi/proto/dns.h	/^    uint8_t rd:1;          \/* recursion desired *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:1
+rd	adpi/proto/mdns.h	/^    uint8_t rd:1;          \/* recursion desired *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint8_t:1
+rdata	adpi/proto/mdns.h	/^    char rdata[64];$/;"	m	struct:mdns_rr	typeref:typename:char[64]
+rdlength	adpi/proto/mdns.h	/^    uint16_t rdlength;$/;"	m	struct:mdns_rr	typeref:typename:uint16_t
+reg	adpi/air_coplane.h	/^    struct client_registry reg;$/;"	m	struct:airpro_coplane	typeref:struct:client_registry
+remove_blocked_domain	adpi/ioctl.c	/^static int remove_blocked_domain(struct airpro_coplane *cp, const char *domain)$/;"	f	typeref:typename:int	file:
+remove_client_from_coplane_table	adpi/main.c	/^int remove_client_from_coplane_table(uint8_t *macaddr)$/;"	f	typeref:typename:int
+remove_client_from_reg_table	adpi/main.c	/^int remove_client_from_reg_table(uint8_t *macaddr, char *ifname)$/;"	f	typeref:typename:int
+res1	adpi/proto/tcp.h	/^    uint16_t res1:4;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t:4
+resv1	adpi/proto/igmp.h	/^    uint8_t     resv1;$/;"	m	struct:igmp_v3_report_hdr	typeref:typename:uint8_t
+resv2	adpi/proto/igmp.h	/^    uint16_t    resv2;$/;"	m	struct:igmp_v3_report_hdr	typeref:typename:uint16_t
+resv_s_qrv	adpi/proto/igmp.h	/^    uint8_t resv_s_qrv; \/* M2U will set the whole field to 0 *\/$/;"	m	struct:igmp_v3_query	typeref:typename:uint8_t
+rl	adpi/air_coplane.h	/^    struct ratelimit_bucket *rl[AIR_RL_DIR_MAX];$/;"	m	struct:client_node	typeref:struct:ratelimit_bucket * []
+rl	adpi/air_coplane.h	/^    struct ratelimit_bucket *rl[AIR_RL_DIR_MAX];$/;"	m	struct:wlan_sta	typeref:struct:ratelimit_bucket * []
+rl_dl_update	adpi/air_coplane.h	/^    uint8_t rl_dl_update;$/;"	m	struct:wlan_sta_rc	typeref:typename:uint8_t
+rl_down	adpi/proto/cmb_proto.h	/^    uint32_t rl_down; \/\/ down rate limit as received by RADIUS server or controller$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint32_t
+rl_down	adpi/proto/cmb_proto.h	/^    uint32_t rl_down; \/\/ down rate limit as received by RADIUS server or controller$/;"	m	struct:cmb_ga_msg	typeref:typename:uint32_t
+rl_drop_packet	adpi/rate_limit.c	/^int rl_drop_packet(struct wlan_sta *se, size_t len, unsigned int dir)$/;"	f	typeref:typename:int
+rl_ul_update	adpi/air_coplane.h	/^    uint8_t rl_ul_update;$/;"	m	struct:wlan_sta_rc	typeref:typename:uint8_t
+rl_up	adpi/proto/cmb_proto.h	/^    uint32_t rl_up; \/\/ up rate limit as received by RADIUS server or controller$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint32_t
+rl_up	adpi/proto/cmb_proto.h	/^    uint32_t rl_up; \/\/ up rate limit as received by RADIUS server or controller$/;"	m	struct:cmb_ga_msg	typeref:typename:uint32_t
+rssi	adpi/air_coplane.h	/^    int                rssi;$/;"	m	struct:wlan_sta	typeref:typename:int
+rssi	adpi/proto/cmb_proto.h	/^    uint8_t rssi;               \/\/ RSSI$/;"	m	struct:cmb_arf_nbr	typeref:typename:uint8_t
+rst	adpi/proto/tcp.h	/^    uint16_t rst:1;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t:1
+rule_type	adpi/air_common.h	/^typedef enum rule_type {$/;"	g
+rule_type_t	adpi/air_common.h	/^} rule_type_t;$/;"	t	typeref:enum:rule_type
+rules	adpi/proto/mdns.h	/^    mdns_rules_t rules[MAX_BONJOUR_RULES];$/;"	m	struct:mdns_acl_cfg	typeref:typename:mdns_rules_t[]
+rx_bytes	adpi/air_coplane.h	/^    uint64_t           rx_bytes;$/;"	m	struct:wlan_sta	typeref:typename:uint64_t
+rx_bytes	adpi/proto/cmb_proto.h	/^    uint64_t rx_bytes;$/;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint64_t
+rx_pkts	adpi/air_coplane.h	/^    uint64_t           rx_pkts;$/;"	m	struct:wlan_sta	typeref:typename:uint64_t
+rx_pkts	adpi/proto/cmb_proto.h	/^    uint32_t rx_pkts;$/;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint32_t
+rxbytes	adpi/air_coplane.h	/^    u32 rxbytes;$/;"	m	struct:client_node	typeref:typename:u32
+rxratekbps	adpi/air_coplane.h	/^    int                rxratekbps;$/;"	m	struct:wlan_sta	typeref:typename:int
+sec	adpi/dhcp.h	/^    uint16_t sec;$/;"	m	struct:dhcp_hdr	typeref:typename:uint16_t
+sec	adpi/proto/dhcp.h	/^    uint16_t sec;$/;"	m	struct:dhcp_hdr	typeref:typename:uint16_t
+send_netlink_msg	adpi/netlink.c	/^static int send_netlink_msg(int pid, char *msg) $/;"	f	typeref:typename:int	file:
+send_nl_event	adpi/netlink.c	/^int send_nl_event(char *msg)$/;"	f	typeref:typename:int
+seq	adpi/proto/tcp.h	/^    uint32_t seq;$/;"	m	struct:tcp_hdr	typeref:typename:uint32_t
+session_id	adpi/proto/cmb_proto.h	/^    uint8_t  session_id[10]; \/\/ used for accounting, ap_mac+session_id, client mac is added wh/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint8_t[10]
+session_id	adpi/proto/cmb_proto.h	/^    uint8_t  session_id[10]; \/\/ used for accounting, ap_mac+session_id, client mac is added wh/;"	m	struct:cmb_ga_msg	typeref:typename:uint8_t[10]
+session_id	adpi/proto/cmb_proto.h	/^    uint8_t  session_id[10]; \/\/ used for accounting, if current AP session-id mismatches then /;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint8_t[10]
+session_time	adpi/proto/cmb_proto.h	/^    uint32_t session_time; \/\/ in case the current AP has to do stop then it can pick the sessi/;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint32_t
+session_time	adpi/proto/cmb_proto.h	/^    uint32_t session_time; \/\/ zero session time means hotspot session is no longer valid$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint32_t
+session_time	adpi/proto/cmb_proto.h	/^    uint32_t session_time; \/\/ zero session time means hotspot session is no longer valid$/;"	m	struct:cmb_ga_msg	typeref:typename:uint32_t
+siaddr	adpi/dhcp.h	/^    uint8_t siaddr[4];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[4]
+siaddr	adpi/proto/dhcp.h	/^    uint8_t siaddr[4];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[4]
+sip	adpi/proto/arp.h	/^    uint32_t sip;$/;"	m	struct:arp_ipv4_pkt	typeref:typename:uint32_t
+sip	adpi/proto/ipv4.h	/^    uint32_t sip;$/;"	m	struct:ipv4_hdr	typeref:typename:uint32_t
+size	adpi/air_coplane.h	/^    uint32_t size; \/* bucket size in bytes *\/$/;"	m	struct:ratelimit_config	typeref:typename:uint32_t
+size	adpi/air_ioctl.h	/^    uint32_t          size;             \/\/ Size of the bucket (e.g., burst size)$/;"	m	struct:adpi_ratelimit_bucket	typeref:typename:uint32_t
+smac	adpi/proto/mdns.h	/^    char smac[18];$/;"	m	struct:mdns_pkt_info	typeref:typename:char[18]
+sname	adpi/dhcp.h	/^    uint8_t sname[64];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[64]
+sname	adpi/proto/dhcp.h	/^    uint8_t sname[64];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[64]
+sname	adpi/proto/mdns.h	/^    char sname[64]; \/\/Service name$/;"	m	struct:mdns_cfg_rules	typeref:typename:char[64]
+snoop_dns_response	adpi/dns.c	/^int snoop_dns_response(struct sk_buff *skb, unsigned int ofs)$/;"	f	typeref:typename:int
+sport	adpi/proto/tcp.h	/^    uint16_t sport;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t
+sport	adpi/proto/udp.h	/^    uint16_t sport;$/;"	m	struct:udp_hdr	typeref:typename:uint16_t
+src	adpi/proto/ethernet.h	/^    uint8_t src[MAC_ADDR_LEN];$/;"	m	struct:ethernet_hdr	typeref:typename:uint8_t[]
+src	adpi/proto/ethernet.h	/^    uint8_t src[MAC_ADDR_LEN];$/;"	m	struct:ethernet_vlan_hdr	typeref:typename:uint8_t[]
+src_mac	adpi/air_coplane.h	/^    uint8_t            src_mac[MAX_MAC_ADDR_LEN];$/;"	m	struct:wlan_sta	typeref:typename:uint8_t[]
+src_mac	adpi/proto/arp.h	/^    uint8_t src_mac[MAC_ADDR_LEN];$/;"	m	struct:arp_ipv4_pkt	typeref:typename:uint8_t[]
+srv	adpi/proto/mdns.h	/^struct srv {$/;"	s
+ss	adpi/air_coplane.h	/^    uint8_t            ss[1024]; \/\/for os name and desc$/;"	m	struct:wlan_sta	typeref:typename:uint8_t[1024]
+ssid	adpi/air_coplane.h	/^    char               ssid[32+1];$/;"	m	struct:wlan_sta	typeref:typename:char[]
+ssid	adpi/proto/cmb_proto.h	/^    char     ssid[36]; \/\/ Change from char to uint8_t to make it of same data type as that of /;"	m	struct:cmb_ga_msg	typeref:typename:char[36]
+ssid	adpi/proto/cmb_proto.h	/^    uint8_t  ssid[36]; \/\/ 33 really, just rounding to nearest roundish number$/;"	m	struct:cmb_pmk_update_msg	typeref:typename:uint8_t[36]
+ssid	adpi/proto/cmb_proto.h	/^    uint8_t  ssid[36];$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint8_t[36]
+ssid	adpi/proto/cmb_proto.h	/^    uint8_t  ssid[36];$/;"	m	struct:cmb_roam_msg	typeref:typename:uint8_t[36]
+sta_add	adpi/air_api.h	/^	int (*sta_add)(const u8 *macaddr, const char *ifname);$/;"	m	struct:airdpi_ops	typeref:typename:int (*)(const u8 * macaddr,const char * ifname)
+sta_del	adpi/air_api.h	/^	int (*sta_del)(const u8 *macaddr, const char *ifname);$/;"	m	struct:airdpi_ops	typeref:typename:int (*)(const u8 * macaddr,const char * ifname)
+sta_table_lookup	adpi/txrx.c	/^struct wlan_sta *sta_table_lookup(uint8_t *macaddr, int dir, uint8_t ifindex)$/;"	f	typeref:struct:wlan_sta *
+status	adpi/proto/cmb_proto.h	/^    uint8_t status:1;       \/\/ Radio ON \/ Off$/;"	m	struct:cmb_arf_radio	typeref:typename:uint8_t:1
+sub_type	adpi/proto/cmb_proto.h	/^    uint8_t             sub_type; \/\/ part of ethernet hdr type to be always CMB_ETHER_SUB_TYPE$/;"	m	struct:cmb_notify_hdr	typeref:typename:uint8_t
+syn	adpi/proto/tcp.h	/^    uint16_t syn:1;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t:1
+target_mac	adpi/proto/arp.h	/^    uint8_t target_mac[MAC_ADDR_LEN];$/;"	m	struct:arp_ipv4_pkt	typeref:typename:uint8_t[]
+tc	adpi/dns.h	/^    uint8_t tc:1;          \/* truncated message *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:1
+tc	adpi/proto/dns.h	/^    uint8_t tc:1;          \/* truncated message *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:1
+tc	adpi/proto/mdns.h	/^    uint8_t tc:1;          \/* truncated message *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint8_t:1
+tci	adpi/proto/ethernet.h	/^    } tci;$/;"	m	struct:ethernet_vlan_hdr	typeref:struct:ethernet_vlan_hdr::__anon07cd4dea0108
+tci	adpi/proto/ethernet.h	/^    } tci;$/;"	m	struct:ethernet_vlan_hdr	typeref:struct:ethernet_vlan_hdr::__anon07cd4dea0208
+tci	adpi/proto/ethernet.h	/^    } tci;$/;"	m	struct:ethernet_vlan_hdr	typeref:struct:ethernet_vlan_hdr::__anon07cd4dea0308
+tci	adpi/proto/ethernet.h	/^    } tci;$/;"	m	struct:ethernet_vlan_hdr	typeref:struct:ethernet_vlan_hdr::__anon07cd4dea0408
+tcp_hdr	adpi/proto/tcp.h	/^struct tcp_hdr {$/;"	s
+tid	adpi/dhcp.h	/^    uint32_t tid;$/;"	m	struct:dhcp_hdr	typeref:typename:uint32_t
+tid	adpi/proto/dhcp.h	/^    uint32_t tid;$/;"	m	struct:dhcp_hdr	typeref:typename:uint32_t
+tip	adpi/proto/arp.h	/^    uint32_t tip;$/;"	m	struct:arp_ipv4_pkt	typeref:typename:uint32_t
+tlen	adpi/proto/ipv4.h	/^    uint16_t tlen;$/;"	m	struct:ipv4_hdr	typeref:typename:uint16_t
+tokens	adpi/air_coplane.h	/^    unsigned long tokens; \/* Tokens in bucket. This is unsigned long so we can use cmpxchg *\/$/;"	m	struct:ratelimit_bucket	typeref:typename:unsigned long
+tokens_per_jiffy	adpi/air_coplane.h	/^    uint32_t tokens_per_jiffy; \/* Tokens earned per jiffy, zero if no rate limiting *\/$/;"	m	struct:ratelimit_bucket	typeref:typename:uint32_t
+top_domains	adpi/air_coplane.h	/^    struct domain_entry top_domains[MAX_DOMAINS];$/;"	m	struct:airpro_coplane	typeref:struct:domain_entry[]
+tos	adpi/proto/ipv4.h	/^    uint8_t tos;$/;"	m	struct:ipv4_hdr	typeref:typename:uint8_t
+tpid	adpi/proto/ethernet.h	/^    uint16_t tpid;$/;"	m	struct:ethernet_vlan_hdr	typeref:typename:uint16_t
+ts	adpi/air_coplane.h	/^    u64 ts;$/;"	m	struct:client_node	typeref:typename:u64
+ttl	adpi/dns.h	/^  uint32_t ttl;$/;"	m	struct:dns_rr	typeref:typename:uint32_t
+ttl	adpi/proto/dns.h	/^  uint32_t ttl;$/;"	m	struct:dns_rr	typeref:typename:uint32_t
+ttl	adpi/proto/ipv4.h	/^    uint8_t ttl;$/;"	m	struct:ipv4_hdr	typeref:typename:uint8_t
+ttl	adpi/proto/mdns.h	/^    int ttl;$/;"	m	struct:mdns_rr	typeref:typename:int
+tx_bytes	adpi/air_coplane.h	/^    uint64_t           tx_bytes;$/;"	m	struct:wlan_sta	typeref:typename:uint64_t
+tx_bytes	adpi/proto/cmb_proto.h	/^    uint64_t tx_bytes;$/;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint64_t
+tx_pkts	adpi/air_coplane.h	/^    uint64_t           tx_pkts;$/;"	m	struct:wlan_sta	typeref:typename:uint64_t
+tx_pkts	adpi/proto/cmb_proto.h	/^    uint32_t tx_pkts;$/;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint32_t
+txbytes	adpi/air_coplane.h	/^    u32 txbytes;$/;"	m	struct:client_node	typeref:typename:u32
+txratekbps	adpi/air_coplane.h	/^    int                txratekbps;$/;"	m	struct:wlan_sta	typeref:typename:int
+type	adpi/dns.h	/^  uint16_t type;$/;"	m	struct:dns_rr	typeref:typename:uint16_t
+type	adpi/proto/cmb_proto.h	/^    uint8_t             type;$/;"	m	struct:cmb_notify_hdr	typeref:typename:uint8_t
+type	adpi/proto/dns.h	/^  uint16_t type;$/;"	m	struct:dns_rr	typeref:typename:uint16_t
+type	adpi/proto/ethernet.h	/^    uint16_t type;$/;"	m	struct:ethernet_hdr	typeref:typename:uint16_t
+type	adpi/proto/ethernet.h	/^    uint16_t type;$/;"	m	struct:ethernet_vlan_hdr	typeref:typename:uint16_t
+type	adpi/proto/igmp.h	/^    u_int8_t    type;$/;"	m	struct:igmp_v3_grec	typeref:typename:u_int8_t
+type	adpi/proto/igmp.h	/^    uint8_t     type; \/* Always 0x22 *\/$/;"	m	struct:igmp_v3_report_hdr	typeref:typename:uint8_t
+type	adpi/proto/igmp.h	/^    uint8_t type;$/;"	m	struct:igmp_hdr	typeref:typename:uint8_t
+type	adpi/proto/mdns.h	/^    uint16_t type;$/;"	m	struct:mdns_rr	typeref:typename:uint16_t
+udp_hdr	adpi/proto/udp.h	/^struct udp_hdr {$/;"	s
+ul_bytes_per_sec	adpi/air_coplane.h	/^    uint32_t ul_bytes_per_sec;$/;"	m	struct:wlan_sta_rc	typeref:typename:uint32_t
+unused	adpi/dns.h	/^    uint8_t unused:3;      \/* unused bits (MBZ as of 4.9.3a3) *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:3
+unused	adpi/proto/dns.h	/^    uint8_t unused:3;      \/* unused bits (MBZ as of 4.9.3a3) *\/$/;"	m	struct:dns_hdr	typeref:typename:uint8_t:3
+unused	adpi/proto/mdns.h	/^    uint8_t unused:3;      \/* unused bits (MBZ as of 4.9.3a3) *\/$/;"	m	struct:mdns_hdr	typeref:typename:uint8_t:3
+update_client_quota	adpi/txrx.c	/^static int update_client_quota(struct sk_buff *skb, struct client_node *cn, int dir)$/;"	f	typeref:typename:int	file:
+update_vif_top_domains	adpi/dns.c	/^void update_vif_top_domains(const char *domain_name) $/;"	f	typeref:typename:void
+urg	adpi/proto/tcp.h	/^    uint16_t urg:1;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t:1
+urg_ptr	adpi/proto/tcp.h	/^    uint16_t urg_ptr;$/;"	m	struct:tcp_hdr	typeref:typename:uint16_t
+user_name	adpi/proto/cmb_proto.h	/^    char     user_name[256]; \/\/ max of 255 size of username$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:char[256]
+user_name	adpi/proto/cmb_proto.h	/^    char     user_name[256]; \/\/ max of 255 size of username$/;"	m	struct:cmb_ga_msg	typeref:typename:char[256]
+user_wlan_rl	adpi/rate_limit.c	/^struct ratelimit_bucket *user_wlan_rl[MAX_WLANS][AIR_RL_DIR_MAX];$/;"	v	typeref:struct:ratelimit_bucket * [][]
+ver	adpi/proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_acct_stats_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_ga_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_pmk_update_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_roam_data_ready_update_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_roam_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t ver;                \/\/ version of the msg$/;"	m	struct:cmb_arf_devinfo_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t ver;                \/\/ version of the msg$/;"	m	struct:cmb_arf_leader_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t ver;                \/\/ version of the msg$/;"	m	struct:cmb_arf_nbrinfo_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t ver;                \/\/ version of the msg$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t ver;                \/\/ version of the msg$/;"	m	struct:cmb_clb_update_msg	typeref:typename:uint8_t
+ver	adpi/proto/cmb_proto.h	/^    uint8_t ver; \/\/ version of message$/;"	m	struct:cmb_cflags_msg	typeref:typename:uint8_t
+ver	adpi/proto/ipv4.h	/^    uint8_t ver:4;$/;"	m	struct:ipv4_hdr	typeref:typename:uint8_t:4
+vid	adpi/proto/ethernet.h	/^        uint16_t vid:12;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0108	typeref:typename:uint16_t:12
+vid	adpi/proto/ethernet.h	/^        uint16_t vid:12;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0208	typeref:typename:uint16_t:12
+vid	adpi/proto/ethernet.h	/^        uint16_t vid:12;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0308	typeref:typename:uint16_t:12
+vid	adpi/proto/ethernet.h	/^        uint16_t vid:12;$/;"	m	struct:ethernet_vlan_hdr::__anon07cd4dea0408	typeref:typename:uint16_t:12
+vidfrom	adpi/proto/mdns.h	/^    uint16_t vidfrom;$/;"	m	struct:mdns_cfg_rules	typeref:typename:uint16_t
+vidto	adpi/proto/mdns.h	/^    uint16_t vidto;$/;"	m	struct:mdns_cfg_rules	typeref:typename:uint16_t
+vifmodule_exit	adpi/main.c	/^static void __exit vifmodule_exit(void)$/;"	f	typeref:typename:void __exit	file:
+vifmodule_init	adpi/main.c	/^static int __init vifmodule_init(void)$/;"	f	typeref:typename:int __init	file:
+vlan	adpi/proto/cmb_proto.h	/^    uint16_t vlan; \/\/ n\/w order$/;"	m	struct:cmb_ci_sess_msg	typeref:typename:uint16_t
+vlan	adpi/proto/cmb_proto.h	/^    uint16_t vlan; \/\/ n\/w order$/;"	m	struct:cmb_ga_msg	typeref:typename:uint16_t
+vlan	adpi/proto/cmb_proto.h	/^    uint16_t vlan; \/\/ n\/w order$/;"	m	struct:cmb_roam_msg	typeref:typename:uint16_t
+vlan_id	adpi/proto/cmb_proto.h	/^    uint16_t vlan_id;$/;"	m	struct:cmb_pmk_update_msg	typeref:typename:uint16_t
+vlanid	adpi/proto/mdns.h	/^    uint16_t vlanid;$/;"	m	struct:mdns_pkt_info	typeref:typename:uint16_t
+webs_ow_idx	adpi/air_coplane.h	/^    uint8_t            webs_ow_idx;\/\/overwrite index after top 10$/;"	m	struct:wlan_sta	typeref:typename:uint8_t
+weight	adpi/proto/mdns.h	/^    uint16_t weight;$/;"	m	struct:srv	typeref:typename:uint16_t
+width	adpi/proto/cmb_proto.h	/^    uint8_t width;              \/\/ New width$/;"	m	struct:cmb_arf_rfchange_msg	typeref:typename:uint8_t
+width	adpi/proto/cmb_proto.h	/^    uint8_t width;          \/\/ Current width$/;"	m	struct:cmb_arf_radio	typeref:typename:uint8_t
+wlan_client	adpi/air_coplane.h	/^    struct wlan_client_list wlan_client;$/;"	m	struct:airpro_coplane	typeref:struct:wlan_client_list
+wlan_client_list	adpi/air_coplane.h	/^struct wlan_client_list {$/;"	s
+wlan_client_lock	adpi/air_coplane.h	/^    spinlock_t wlan_client_lock;$/;"	m	struct:wlan_client_list	typeref:typename:spinlock_t
+wlan_id	adpi/air_coplane.h	/^    int                wlan_id; \/* wlan-id of sta 0... (MAX_WLANS-1) *\/$/;"	m	struct:wlan_sta	typeref:typename:int
+wlan_idx	adpi/air_ioctl.h	/^    int               wlan_idx;         \/\/ Index or ID of the WLAN$/;"	m	struct:adpi_ratelimit_bucket	typeref:typename:int
+wlan_opmode	adpi/air_coplane.h	/^enum wlan_opmode {$/;"	g
+wlan_rl	adpi/rate_limit.c	/^struct ratelimit_bucket *wlan_rl[MAX_WLANS][AIR_RL_DIR_MAX];$/;"	v	typeref:struct:ratelimit_bucket * [][]
+wlan_sta	adpi/air_coplane.h	/^struct wlan_sta {$/;"	s
+wlan_sta_rc	adpi/air_coplane.h	/^struct wlan_sta_rc {$/;"	s
+wlan_sta_rc_lock	adpi/air_coplane.h	/^    spinlock_t wlan_sta_rc_lock;$/;"	m	struct:airpro_coplane	typeref:typename:spinlock_t
+wlanidx	adpi/proto/mdns.h	/^    uint16_t wlanidx;$/;"	m	struct:mdns_pkt_info	typeref:typename:uint16_t
+yiaddr	adpi/dhcp.h	/^    uint8_t yiaddr[4];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[4]
+yiaddr	adpi/proto/dhcp.h	/^    uint8_t yiaddr[4];$/;"	m	struct:dhcp_hdr	typeref:typename:uint8_t[4]

@@ -1,0 +1,62 @@
+Index: backports-6.12.6/net/wireless/airdpi.h
+===================================================================
+--- /dev/null
++++ backports-6.12.6/net/wireless/airdpi.h
+@@ -0,0 +1,15 @@
++#ifndef _AIR_API_H_
++#define _AIR_API_H_
++
++#include <linux/types.h>
++
++struct airdpi_ops {
++        int (*sta_add)(const u8 *macaddr, const char *ifname);
++        int (*sta_del)(const u8 *macaddr, const char *ifname);
++};
++
++int airdpi_register_ops(const struct airdpi_ops *ops);
++void airdpi_unregister_ops(const struct airdpi_ops *ops);
++const struct airdpi_ops *airdpi_get_ops(void);
++
++#endif /* _AIR_API_H_ */
+Index: backports-6.12.6/net/wireless/nl80211.c
+===================================================================
+--- backports-6.12.6.orig/net/wireless/nl80211.c
++++ backports-6.12.6/net/wireless/nl80211.c
+@@ -31,6 +31,8 @@
+ #include "reg.h"
+ #include "rdev-ops.h"
+ 
++#include "airdpi.h"
++
+ static int nl80211_crypto_settings(struct cfg80211_registered_device *rdev,
+ 				   struct genl_info *info,
+ 				   struct cfg80211_crypto_settings *settings,
+@@ -18912,6 +18914,13 @@ void cfg80211_new_sta(struct net_device
+ 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
+ 	struct sk_buff *msg;
+ 
++        do {
++            const struct airdpi_ops *ops = airdpi_get_ops();
++            if (ops && ops->sta_add && dev) {
++                ops->sta_add(mac_addr, dev->name);
++            }
++        } while (0);
++
+ 	trace_cfg80211_new_sta(dev, mac_addr, sinfo);
+ 
+ 	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, gfp);
+@@ -18937,6 +18946,14 @@ void cfg80211_del_sta_sinfo(struct net_d
+ 	struct sk_buff *msg;
+ 	struct station_info empty_sinfo = {};
+ 
++        do {
++            const struct airdpi_ops *ops = airdpi_get_ops();
++            if (ops && ops->sta_del && dev) {
++                ops->sta_del(mac_addr, dev->name);
++            }
++        } while (0);
++
++
+ 	if (!sinfo)
+ 		sinfo = &empty_sinfo;
+ 

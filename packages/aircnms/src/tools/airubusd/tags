@@ -1,0 +1,79 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+AIR_ARG_DIRECTION	src/airhdlr.c	/^	AIR_ARG_DIRECTION,$/;"	e	enum:__anon2	file:
+AIR_ARG_DOMAIN	src/airhdlr.c	/^	AIR_ARG_DOMAIN,$/;"	e	enum:__anon2	file:
+AIR_ARG_IFACE	src/airhdlr.c	/^	AIR_ARG_IFACE,$/;"	e	enum:__anon2	file:
+AIR_ARG_MAC	src/airhdlr.c	/^	AIR_ARG_MAC,$/;"	e	enum:__anon2	file:
+AIR_ARG_RATE	src/airhdlr.c	/^	AIR_ARG_RATE,$/;"	e	enum:__anon2	file:
+AIR_DIR_DOWNLINK	src/airioctl.c	/^	AIR_DIR_DOWNLINK = 1,$/;"	e	enum:__anon1	file:
+AIR_DIR_UPLINK	src/airioctl.c	/^	AIR_DIR_UPLINK = 0,$/;"	e	enum:__anon1	file:
+CFLAGS	Makefile	/^CFLAGS  := $(UNIT_CFLAGS)$/;"	m
+LDFLAGS	Makefile	/^LDFLAGS := $(UNIT_LDFLAGS)$/;"	m
+RAYNETD_AIRDPIHDLR_H	src/airhdlr.h	2;"	d
+RAYNETD_AIRIOCTL_H	src/airioctl.h	2;"	d
+RAYNETD_SYSTEMHDLR_H	src/systemhdlr.h	2;"	d
+UNIT_SRC	Makefile	/^UNIT_SRC := src\/main.c$/;"	m
+__AIR_ARG_MAX	src/airhdlr.c	/^	__AIR_ARG_MAX$/;"	e	enum:__anon2	file:
+air_block_domain	src/airhdlr.c	/^static int air_block_domain(struct blob_attr *msg, struct blob_buf *out)$/;"	f	file:
+air_block_domain_policy	src/airhdlr.c	/^static const struct blobmsg_policy air_block_domain_policy[] = {$/;"	v	typeref:struct:blobmsg_policy	file:
+air_get_all_clients	src/airhdlr.c	/^static int air_get_all_clients(struct blob_attr *msg, struct blob_buf *out)$/;"	f	file:
+air_get_all_top_domains	src/airhdlr.c	/^static int air_get_all_top_domains(struct blob_attr *msg, struct blob_buf *out)$/;"	f	file:
+air_get_user_rate_limit	src/airhdlr.c	/^static int air_get_user_rate_limit(struct blob_attr *msg, struct blob_buf *out)$/;"	f	file:
+air_get_user_rate_policy	src/airhdlr.c	/^static const struct blobmsg_policy air_get_user_rate_policy[] = {$/;"	v	typeref:struct:blobmsg_policy	file:
+air_get_wlan_rate_limit	src/airhdlr.c	/^static int air_get_wlan_rate_limit(struct blob_attr *msg, struct blob_buf *out)$/;"	f	file:
+air_get_wlan_rate_policy	src/airhdlr.c	/^static const struct blobmsg_policy air_get_wlan_rate_policy[] = {$/;"	v	typeref:struct:blobmsg_policy	file:
+air_ioctl_block_domain	src/airioctl.c	/^int air_ioctl_block_domain(const char *domain)$/;"	f
+air_ioctl_get_all_clients	src/airioctl.c	/^int air_ioctl_get_all_clients(void)$/;"	f
+air_ioctl_get_all_top_domains	src/airioctl.c	/^int air_ioctl_get_all_top_domains(void)$/;"	f
+air_ioctl_get_user_rate_limit	src/airioctl.c	/^int air_ioctl_get_user_rate_limit(const char *mac_str)$/;"	f
+air_ioctl_get_wlan_rate_limit	src/airioctl.c	/^int air_ioctl_get_wlan_rate_limit(const char *ifname)$/;"	f
+air_ioctl_set_user_rate_limit	src/airioctl.c	/^int air_ioctl_set_user_rate_limit(const char *mac_addr, uint32_t rate, const char *direction)$/;"	f
+air_ioctl_set_wlan_rate_limit	src/airioctl.c	/^int air_ioctl_set_wlan_rate_limit(const char *interface, uint32_t rate, const char *direction)$/;"	f
+air_ioctl_unblock_domain	src/airioctl.c	/^int air_ioctl_unblock_domain(const char *domain)$/;"	f
+air_set_user_rate_limit	src/airhdlr.c	/^static int air_set_user_rate_limit(struct blob_attr *msg, struct blob_buf *out)$/;"	f	file:
+air_set_user_rate_policy	src/airhdlr.c	/^static const struct blobmsg_policy air_set_user_rate_policy[] = {$/;"	v	typeref:struct:blobmsg_policy	file:
+air_set_wlan_rate_limit	src/airhdlr.c	/^static int air_set_wlan_rate_limit(struct blob_attr *msg, struct blob_buf *out)$/;"	f	file:
+air_set_wlan_rate_policy	src/airhdlr.c	/^static const struct blobmsg_policy air_set_wlan_rate_policy[] = {$/;"	v	typeref:struct:blobmsg_policy	file:
+air_unblock_domain	src/airhdlr.c	/^static int air_unblock_domain(struct blob_attr *msg, struct blob_buf *out)$/;"	f	file:
+air_unblock_domain_policy	src/airhdlr.c	/^static const struct blobmsg_policy air_unblock_domain_policy[] = {$/;"	v	typeref:struct:blobmsg_policy	file:
+build_methods_array	src/main.c	/^static void build_methods_array(void)$/;"	f	file:
+dispatcher	src/main.c	/^static int dispatcher(struct ubus_context *ctx, struct ubus_object *obj,$/;"	f	file:
+g_air_methods	src/airhdlr.c	/^static const ray_airdpi_method_t g_air_methods[] = {$/;"	v	file:
+g_buf	src/main.c	/^static struct blob_buf g_buf;$/;"	v	typeref:struct:blob_buf	file:
+g_conn	src/main.c	/^static struct ubus_auto_conn g_conn;$/;"	v	typeref:struct:ubus_auto_conn	file:
+g_methods	src/main.c	/^static struct ubus_method *g_methods = NULL;$/;"	v	typeref:struct:ubus_method	file:
+g_methods_nr	src/main.c	/^static size_t g_methods_nr = 0;$/;"	v	file:
+g_obj	src/main.c	/^static struct ubus_object g_obj;$/;"	v	typeref:struct:ubus_object	file:
+g_obj_type	src/main.c	/^static struct ubus_object_type g_obj_type;$/;"	v	typeref:struct:ubus_object_type	file:
+g_system_methods	src/systemhdlr.c	/^static const ray_system_method_t g_system_methods[] = {$/;"	v	file:
+handler	src/airhdlr.h	/^	ray_airdpi_handler_fn handler;$/;"	m	struct:ray_airdpi_method
+handler	src/systemhdlr.h	/^	ray_system_handler_fn handler;$/;"	m	struct:ray_system_method
+main	src/main.c	/^int main(int argc, char **argv)$/;"	f
+n_policy	src/airhdlr.h	/^	int n_policy;$/;"	m	struct:ray_airdpi_method
+n_policy	src/systemhdlr.h	/^	int n_policy;$/;"	m	struct:ray_system_method
+name	src/airhdlr.h	/^	const char *name;$/;"	m	struct:ray_airdpi_method
+name	src/systemhdlr.h	/^	const char *name;$/;"	m	struct:ray_system_method
+nopolicy	src/airhdlr.c	/^static const struct blobmsg_policy nopolicy[] = {};$/;"	v	typeref:struct:blobmsg_policy	file:
+nopolicy	src/systemhdlr.c	/^static const struct blobmsg_policy nopolicy[] = {};$/;"	v	typeref:struct:blobmsg_policy	file:
+open_air	src/airioctl.c	/^static int open_air(void)$/;"	f	file:
+policy	src/airhdlr.h	/^	const struct blobmsg_policy *policy;$/;"	m	struct:ray_airdpi_method	typeref:struct:ray_airdpi_method::blobmsg_policy
+policy	src/systemhdlr.h	/^	const struct blobmsg_policy *policy;$/;"	m	struct:ray_system_method	typeref:struct:ray_system_method::blobmsg_policy
+ray_airdpi_handler_fn	src/airhdlr.h	/^typedef int (*ray_airdpi_handler_fn)(struct blob_attr *msg, struct blob_buf *out);$/;"	t
+ray_airdpi_method	src/airhdlr.h	/^typedef struct ray_airdpi_method {$/;"	s
+ray_airdpi_method_t	src/airhdlr.h	/^} ray_airdpi_method_t;$/;"	t	typeref:struct:ray_airdpi_method
+ray_get_ubus_ctx	src/main.c	/^struct ubus_context *ray_get_ubus_ctx(void)$/;"	f
+ray_system_handler_fn	src/systemhdlr.h	/^typedef int (*ray_system_handler_fn)(struct blob_attr *msg, struct blob_buf *out);$/;"	t
+ray_system_method	src/systemhdlr.h	/^typedef struct ray_system_method {$/;"	s
+ray_system_method_t	src/systemhdlr.h	/^} ray_system_method_t;$/;"	t	typeref:struct:ray_system_method
+rayairdpi_methods	src/airhdlr.c	/^const ray_airdpi_method_t *rayairdpi_methods(void)$/;"	f
+rayairdpi_methods_nr	src/airhdlr.c	/^size_t rayairdpi_methods_nr(void)$/;"	f
+raysystem_methods	src/systemhdlr.c	/^const ray_system_method_t *raysystem_methods(void)$/;"	f
+raysystem_methods_nr	src/systemhdlr.c	/^size_t raysystem_methods_nr(void)$/;"	f
+sig_handler	src/main.c	/^static void sig_handler(int signo)$/;"	f	file:
+system_show_systeminfo	src/systemhdlr.c	/^static int system_show_systeminfo(struct blob_attr *msg, struct blob_buf *out)$/;"	f	file:
+ubus_call_air	src/airhdlr.c	/^static int ubus_call_air(const char *method, struct blob_attr *msg, struct blob_buf *out)$/;"	f	file:
+ubus_connect_cb	src/main.c	/^static void ubus_connect_cb(struct ubus_context *ctx)$/;"	f	file:

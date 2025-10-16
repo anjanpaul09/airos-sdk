@@ -1,0 +1,232 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+.DEFAULT_GOAL	Makefile	/^.DEFAULT_GOAL := all$/;"	m
+.DEFAULT_GOAL	examples/Makefile	/^.DEFAULT_GOAL := all$/;"	m
+CC	Makefile	/^CC = gcc$/;"	m
+CC	examples/Makefile	/^CC = gcc$/;"	m
+CFLAGS	Makefile	/^CFLAGS = -Wall -Wextra -std=c99 -fPIC -O2 -g$/;"	m
+CFLAGS	examples/Makefile	/^CFLAGS = -Wall -Wextra -std=c99 -O2 -g$/;"	m
+DEBUG_CFLAGS	Makefile	/^DEBUG_CFLAGS = -DDEBUG -DUNIXCOMM_DEBUG -g3 -O0$/;"	m
+INC_DIR	Makefile	/^INC_DIR = inc$/;"	m
+LDFLAGS	Makefile	/^LDFLAGS = -shared -fPIC$/;"	m
+LIB_DIR	Makefile	/^LIB_DIR = lib$/;"	m
+LIB_NAME	Makefile	/^LIB_NAME = unixcomm$/;"	m
+LIB_VERSION	Makefile	/^LIB_VERSION = 1.0.0$/;"	m
+OBJECTS	Makefile	/^OBJECTS = $(SOURCES:$(SRC_DIR)\/%.c=$(OBJ_DIR)\/%.o)$/;"	m
+OBJ_DIR	Makefile	/^OBJ_DIR = obj$/;"	m
+RELEASE_CFLAGS	Makefile	/^RELEASE_CFLAGS = -DNDEBUG -O3$/;"	m
+SHARED_LIB	Makefile	/^SHARED_LIB = $(LIB_DIR)\/lib$(LIB_NAME).so.$(LIB_VERSION)$/;"	m
+SHARED_LINK	Makefile	/^SHARED_LINK = $(LIB_DIR)\/lib$(LIB_NAME).so$/;"	m
+SOURCES	Makefile	/^SOURCES = $(wildcard $(SRC_DIR)\/*.c)$/;"	m
+SOURCES	examples/Makefile	/^SOURCES = qm_migration.c sm_migration.c dm_migration.c cm_migration.c$/;"	m
+SRC_DIR	Makefile	/^SRC_DIR = src$/;"	m
+STATIC_LIB	Makefile	/^STATIC_LIB = $(LIB_DIR)\/lib$(LIB_NAME).a$/;"	m
+TARGETS	examples/Makefile	/^TARGETS = $(SOURCES:.c=)$/;"	m
+UNIXCOMM_DEFAULT_COMPACT_SIZE	inc/unixcomm.h	19;"	d
+UNIXCOMM_DEFAULT_MAX_PENDING	inc/unixcomm.h	18;"	d
+UNIXCOMM_DEFAULT_SOCK_DIR	inc/unixcomm.h	20;"	d
+UNIXCOMM_DEFAULT_TIMEOUT	inc/unixcomm.h	17;"	d
+UNIXCOMM_ERROR_INTERNAL	inc/unixcomm.h	/^    UNIXCOMM_ERROR_INTERNAL = -13$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_INVALID_DATA	inc/unixcomm.h	/^    UNIXCOMM_ERROR_INVALID_DATA = -12,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_INVALID_PARAM	inc/unixcomm.h	/^    UNIXCOMM_ERROR_INVALID_PARAM = -1,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_MEMORY_ALLOC	inc/unixcomm.h	/^    UNIXCOMM_ERROR_MEMORY_ALLOC = -2,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_NOT_CONNECTED	inc/unixcomm.h	/^    UNIXCOMM_ERROR_NOT_CONNECTED = -11,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_SOCKET_ACCEPT	inc/unixcomm.h	/^    UNIXCOMM_ERROR_SOCKET_ACCEPT = -6,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_SOCKET_BIND	inc/unixcomm.h	/^    UNIXCOMM_ERROR_SOCKET_BIND = -4,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_SOCKET_CONNECT	inc/unixcomm.h	/^    UNIXCOMM_ERROR_SOCKET_CONNECT = -7,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_SOCKET_CREATE	inc/unixcomm.h	/^    UNIXCOMM_ERROR_SOCKET_CREATE = -3,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_SOCKET_LISTEN	inc/unixcomm.h	/^    UNIXCOMM_ERROR_SOCKET_LISTEN = -5,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_SOCKET_RECV	inc/unixcomm.h	/^    UNIXCOMM_ERROR_SOCKET_RECV = -9,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_SOCKET_SEND	inc/unixcomm.h	/^    UNIXCOMM_ERROR_SOCKET_SEND = -8,$/;"	e	enum:__anon1
+UNIXCOMM_ERROR_TIMEOUT	inc/unixcomm.h	/^    UNIXCOMM_ERROR_TIMEOUT = -10,$/;"	e	enum:__anon1
+UNIXCOMM_H_INCLUDED	inc/unixcomm.h	2;"	d
+UNIXCOMM_MAX_DATA_SIZE	inc/unixcomm.h	23;"	d
+UNIXCOMM_MAX_SOCK_PATH	inc/unixcomm.h	21;"	d
+UNIXCOMM_MAX_TOPIC_LEN	inc/unixcomm.h	22;"	d
+UNIXCOMM_MSG_HEARTBEAT	inc/unixcomm.h	/^    UNIXCOMM_MSG_HEARTBEAT = 3,$/;"	e	enum:__anon4
+UNIXCOMM_MSG_NOTIFICATION	inc/unixcomm.h	/^    UNIXCOMM_MSG_NOTIFICATION = 2,$/;"	e	enum:__anon4
+UNIXCOMM_MSG_REQUEST	inc/unixcomm.h	/^    UNIXCOMM_MSG_REQUEST = 0,$/;"	e	enum:__anon4
+UNIXCOMM_MSG_RESPONSE	inc/unixcomm.h	/^    UNIXCOMM_MSG_RESPONSE = 1,$/;"	e	enum:__anon4
+UNIXCOMM_MSG_SHUTDOWN	inc/unixcomm.h	/^    UNIXCOMM_MSG_SHUTDOWN = 4$/;"	e	enum:__anon4
+UNIXCOMM_PROCESS_CM	inc/unixcomm.h	/^    UNIXCOMM_PROCESS_CM = 3     \/\/ Configuration Manager$/;"	e	enum:__anon3
+UNIXCOMM_PROCESS_DM	inc/unixcomm.h	/^    UNIXCOMM_PROCESS_DM = 2,    \/\/ Device Manager$/;"	e	enum:__anon3
+UNIXCOMM_PROCESS_QM	inc/unixcomm.h	/^    UNIXCOMM_PROCESS_QM = 0,    \/\/ Queue Manager$/;"	e	enum:__anon3
+UNIXCOMM_PROCESS_SM	inc/unixcomm.h	/^    UNIXCOMM_PROCESS_SM = 1,    \/\/ Statistics Manager$/;"	e	enum:__anon3
+UNIXCOMM_SUCCESS	inc/unixcomm.h	/^    UNIXCOMM_SUCCESS = 0,$/;"	e	enum:__anon1
+UNIXCOMM_TYPE_CLIENT	inc/unixcomm.h	/^    UNIXCOMM_TYPE_CLIENT = 1$/;"	e	enum:__anon2
+UNIXCOMM_TYPE_SERVER	inc/unixcomm.h	/^    UNIXCOMM_TYPE_SERVER = 0,$/;"	e	enum:__anon2
+UNIXCOMM_VERSION_MAJOR	inc/unixcomm.h	12;"	d
+UNIXCOMM_VERSION_MINOR	inc/unixcomm.h	13;"	d
+UNIXCOMM_VERSION_PATCH	inc/unixcomm.h	14;"	d
+buffer_size	inc/unixcomm.h	/^    size_t buffer_size;$/;"	m	struct:__anon7
+bytes_received	inc/unixcomm.h	/^    uint64_t bytes_received;$/;"	m	struct:__anon11
+bytes_sent	inc/unixcomm.h	/^    uint64_t bytes_sent;$/;"	m	struct:__anon11
+checksum	inc/unixcomm.h	/^    uint32_t checksum;             \/\/ Data checksum$/;"	m	struct:__anon5
+checksum	inc/unixcomm.h	/^    uint32_t checksum;             \/\/ Response checksum$/;"	m	struct:__anon6
+cm_create_client_for_qm	examples/process_specific_usage.c	/^bool cm_create_client_for_qm(unixcomm_handle_t *client) {$/;"	f
+cm_send_acl_config	examples/cm_migration.c	/^bool cm_send_acl_config(unixcomm_handle_t *client, const void *acl_config, size_t data_size, $/;"	f
+cm_send_log	examples/cm_migration.c	/^bool cm_send_log(unixcomm_handle_t *client, const char *message, unixcomm_response_t *response) {$/;"	f
+cm_send_nat_config	examples/cm_migration.c	/^bool cm_send_nat_config(unixcomm_handle_t *client, const void *nat_config, size_t data_size, $/;"	f
+cm_send_network_config	examples/cm_migration.c	/^bool cm_send_network_config(unixcomm_handle_t *client, const void *network_config, size_t data_size, $/;"	f
+cm_send_qos_config	examples/cm_migration.c	/^bool cm_send_qos_config(unixcomm_handle_t *client, const void *qos_config, size_t data_size, $/;"	f
+cm_send_rate_limit_config	examples/cm_migration.c	/^bool cm_send_rate_limit_config(unixcomm_handle_t *client, const void *rate_limit_config, size_t data_size, $/;"	f
+cm_send_security_config	examples/cm_migration.c	/^bool cm_send_security_config(unixcomm_handle_t *client, const void *security_config, size_t data_size, $/;"	f
+cm_send_stats	examples/cm_migration.c	/^bool cm_send_stats(unixcomm_handle_t *client, const void *data, size_t data_size, $/;"	f
+cm_send_topic_stats	examples/cm_migration.c	/^bool cm_send_topic_stats(unixcomm_handle_t *client, const char *topic, $/;"	f
+cm_send_vlan_config	examples/cm_migration.c	/^bool cm_send_vlan_config(unixcomm_handle_t *client, const void *vlan_config, size_t data_size, $/;"	f
+cm_send_wireless_config	examples/cm_migration.c	/^bool cm_send_wireless_config(unixcomm_handle_t *client, const void *wireless_config, size_t data_size, $/;"	f
+command	inc/unixcomm.h	/^    uint32_t command;              \/\/ Command type$/;"	m	struct:__anon5
+compress	inc/unixcomm.h	/^    uint8_t compress;              \/\/ Compression flag$/;"	m	struct:__anon5
+config	inc/unixcomm.h	/^    unixcomm_config_t config;      \/\/ Configuration$/;"	m	struct:__anon8
+config	src/unixcomm.c	/^    unixcomm_global_config_t config;$/;"	m	struct:__anon12	file:
+connected	inc/unixcomm.h	/^    bool connected;                 \/\/ Connection status$/;"	m	struct:__anon8
+connection_status	inc/unixcomm.h	/^    uint32_t connection_status;    \/\/ Connection status$/;"	m	struct:__anon6
+data	inc/unixcomm.h	/^    void *data;                     \/\/ Data buffer$/;"	m	struct:__anon9
+data_size	inc/unixcomm.h	/^    size_t data_size;               \/\/ Data size$/;"	m	struct:__anon9
+data_size	inc/unixcomm.h	/^    uint32_t data_size;            \/\/ Data size$/;"	m	struct:__anon5
+data_size	inc/unixcomm.h	/^    uint32_t data_size;            \/\/ Response data size$/;"	m	struct:__anon6
+dm_create_client_for_qm	examples/process_specific_usage.c	/^bool dm_create_client_for_qm(unixcomm_handle_t *client) {$/;"	f
+dm_send_alarm	examples/dm_migration.c	/^bool dm_send_alarm(unixcomm_handle_t *client, const void *alarm_data, size_t data_size, $/;"	f
+dm_send_config	examples/dm_migration.c	/^bool dm_send_config(unixcomm_handle_t *client, const void *config_data, size_t data_size, $/;"	f
+dm_send_device_info	examples/dm_migration.c	/^bool dm_send_device_info(unixcomm_handle_t *client, const void *device_info, size_t data_size, $/;"	f
+dm_send_event	examples/dm_migration.c	/^bool dm_send_event(unixcomm_handle_t *client, const void *event_data, size_t data_size, $/;"	f
+dm_send_log	examples/dm_migration.c	/^bool dm_send_log(unixcomm_handle_t *client, const char *message, unixcomm_response_t *response) {$/;"	f
+dm_send_stats	examples/dm_migration.c	/^bool dm_send_stats(unixcomm_handle_t *client, const void *data, size_t data_size, $/;"	f
+dm_send_topic_stats	examples/dm_migration.c	/^bool dm_send_topic_stats(unixcomm_handle_t *client, const char *topic, $/;"	f
+dm_send_upgrade_status	examples/dm_migration.c	/^bool dm_send_upgrade_status(unixcomm_handle_t *client, const void *upgrade_status, size_t data_size, $/;"	f
+enable_checksum	inc/unixcomm.h	/^    bool enable_checksum;$/;"	m	struct:__anon7
+enable_compression	inc/unixcomm.h	/^    bool enable_compression;$/;"	m	struct:__anon7
+enable_debug	inc/unixcomm.h	/^    bool enable_debug;$/;"	m	struct:__anon10
+enable_heartbeat	inc/unixcomm.h	/^    bool enable_heartbeat;$/;"	m	struct:__anon7
+enable_trace	inc/unixcomm.h	/^    bool enable_trace;$/;"	m	struct:__anon10
+error	inc/unixcomm.h	/^    uint32_t error;                \/\/ Error code$/;"	m	struct:__anon6
+errors	inc/unixcomm.h	/^    uint64_t errors;$/;"	m	struct:__anon11
+fd	inc/unixcomm.h	/^    int fd;                         \/\/ Socket file descriptor$/;"	m	struct:__anon8
+flags	inc/unixcomm.h	/^    uint32_t flags;                \/\/ Request flags$/;"	m	struct:__anon5
+g_unixcomm	src/unixcomm.c	/^static unixcomm_global_t g_unixcomm = {0};$/;"	v	file:
+global_mutex	src/unixcomm.c	/^    pthread_mutex_t global_mutex;$/;"	m	struct:__anon12	file:
+heartbeat_interval	inc/unixcomm.h	/^    int heartbeat_interval;$/;"	m	struct:__anon7
+initialized	src/unixcomm.c	/^    bool initialized;$/;"	m	struct:__anon12	file:
+last_activity	inc/unixcomm.h	/^    time_t last_activity;           \/\/ Last activity timestamp$/;"	m	struct:__anon8
+last_activity	inc/unixcomm.h	/^    time_t last_activity;$/;"	m	struct:__anon11
+log_callback	inc/unixcomm.h	/^    unixcomm_log_callback_t log_callback;$/;"	m	struct:__anon10
+log_level	inc/unixcomm.h	/^    int log_level;$/;"	m	struct:__anon10
+log_prefix	inc/unixcomm.h	/^    char log_prefix[32];$/;"	m	struct:__anon7
+main	examples/cm_migration.c	/^int main() {$/;"	f
+main	examples/dm_migration.c	/^int main() {$/;"	f
+main	examples/process_specific_usage.c	/^int main() {$/;"	f
+main	examples/qm_migration.c	/^int main() {$/;"	f
+main	examples/sm_migration.c	/^int main() {$/;"	f
+max_pending	inc/unixcomm.h	/^    int max_pending;$/;"	m	struct:__anon7
+messages_received	inc/unixcomm.h	/^    uint64_t messages_received;$/;"	m	struct:__anon11
+messages_sent	inc/unixcomm.h	/^    uint64_t messages_sent;$/;"	m	struct:__anon11
+msg_type	inc/unixcomm.h	/^    uint8_t msg_type;              \/\/ Message type$/;"	m	struct:__anon5
+priority	inc/unixcomm.h	/^    uint8_t priority;              \/\/ Message priority (0-7)$/;"	m	struct:__anon5
+private_data	inc/unixcomm.h	/^    void *private_data;             \/\/ Private data pointer$/;"	m	struct:__anon8
+processing_time	inc/unixcomm.h	/^    uint32_t processing_time;      \/\/ Processing time (ms)$/;"	m	struct:__anon6
+qm_client_init	examples/qm_migration.c	/^bool qm_client_init(unixcomm_handle_t *client) {$/;"	f
+qm_create_client_for_dm	examples/process_specific_usage.c	/^bool qm_create_client_for_dm(unixcomm_handle_t *client) {$/;"	f
+qm_create_server_for_sm	examples/process_specific_usage.c	/^bool qm_create_server_for_sm(unixcomm_handle_t *server) {$/;"	f
+qm_send_direct	examples/qm_migration.c	/^bool qm_send_direct(unixcomm_handle_t *client, const void *data, size_t data_size, $/;"	f
+qm_send_log	examples/qm_migration.c	/^bool qm_send_log(unixcomm_handle_t *client, const char *message, unixcomm_response_t *response) {$/;"	f
+qm_send_stats	examples/qm_migration.c	/^bool qm_send_stats(unixcomm_handle_t *client, const void *data, size_t data_size, $/;"	f
+qm_server_init	examples/qm_migration.c	/^bool qm_server_init(unixcomm_handle_t *server) {$/;"	f
+queue_length	inc/unixcomm.h	/^    uint32_t queue_length;         \/\/ Queue length$/;"	m	struct:__anon6
+queue_size	inc/unixcomm.h	/^    uint32_t queue_size;           \/\/ Queue size$/;"	m	struct:__anon6
+receiver_pid	inc/unixcomm.h	/^    uint32_t receiver_pid;          \/\/ Receiver process ID$/;"	m	struct:__anon9
+reconnections	inc/unixcomm.h	/^    uint64_t reconnections;$/;"	m	struct:__anon11
+request	inc/unixcomm.h	/^    unixcomm_request_t request;     \/\/ Request header$/;"	m	struct:__anon9
+reserved	inc/unixcomm.h	/^    uint8_t reserved;              \/\/ Reserved field$/;"	m	struct:__anon5
+sender	inc/unixcomm.h	/^    char sender[16];               \/\/ Sender name$/;"	m	struct:__anon5
+sender_pid	inc/unixcomm.h	/^    uint32_t sender_pid;            \/\/ Sender process ID$/;"	m	struct:__anon9
+sequence	inc/unixcomm.h	/^    uint32_t sequence;              \/\/ Sequence counter$/;"	m	struct:__anon8
+sequence	inc/unixcomm.h	/^    uint32_t sequence;             \/\/ Sequence number$/;"	m	struct:__anon5
+sequence	inc/unixcomm.h	/^    uint32_t sequence;             \/\/ Sequence number$/;"	m	struct:__anon6
+sm_create_client_for_qm	examples/process_specific_usage.c	/^bool sm_create_client_for_qm(unixcomm_handle_t *client) {$/;"	f
+sm_send_client_stats	examples/sm_migration.c	/^bool sm_send_client_stats(unixcomm_handle_t *client, const void *client_data, size_t data_size, $/;"	f
+sm_send_device_stats	examples/sm_migration.c	/^bool sm_send_device_stats(unixcomm_handle_t *client, const void *device_data, size_t data_size, $/;"	f
+sm_send_direct	examples/sm_migration.c	/^bool sm_send_direct(unixcomm_handle_t *client, const char *topic, $/;"	f
+sm_send_log	examples/sm_migration.c	/^bool sm_send_log(unixcomm_handle_t *client, const char *message, unixcomm_response_t *response) {$/;"	f
+sm_send_neighbor_stats	examples/sm_migration.c	/^bool sm_send_neighbor_stats(unixcomm_handle_t *client, const void *neighbor_data, size_t data_size, $/;"	f
+sm_send_stats	examples/sm_migration.c	/^bool sm_send_stats(unixcomm_handle_t *client, const void *data, size_t data_size, $/;"	f
+sm_send_topic_stats	examples/sm_migration.c	/^bool sm_send_topic_stats(unixcomm_handle_t *client, const char *topic, $/;"	f
+sm_send_vif_stats	examples/sm_migration.c	/^bool sm_send_vif_stats(unixcomm_handle_t *client, const void *vif_data, size_t data_size, $/;"	f
+socket_dir	inc/unixcomm.h	/^    char socket_dir[UNIXCOMM_MAX_SOCK_PATH];$/;"	m	struct:__anon7
+socket_path	inc/unixcomm.h	/^    char socket_path[UNIXCOMM_MAX_SOCK_PATH];$/;"	m	struct:__anon7
+start_time	inc/unixcomm.h	/^    time_t start_time;$/;"	m	struct:__anon11
+status	inc/unixcomm.h	/^    uint32_t status;               \/\/ Response status$/;"	m	struct:__anon6
+tag	inc/unixcomm.h	/^    char tag[4];                    \/\/ Request tag ("REQ")$/;"	m	struct:__anon5
+tag	inc/unixcomm.h	/^    char tag[4];                   \/\/ Response tag ("RES")$/;"	m	struct:__anon6
+target_process	inc/unixcomm.h	/^    unixcomm_process_t target_process;  \/\/ Target process for communication$/;"	m	struct:__anon7
+timeout	inc/unixcomm.h	/^    double timeout;$/;"	m	struct:__anon7
+timeout	inc/unixcomm.h	/^    uint32_t timeout;              \/\/ Request timeout (ms)$/;"	m	struct:__anon5
+timestamp	inc/unixcomm.h	/^    time_t timestamp;               \/\/ Message timestamp$/;"	m	struct:__anon9
+type	inc/unixcomm.h	/^    unixcomm_type_t type;           \/\/ Connection type$/;"	m	struct:__anon8
+unixcomm_accept	src/unixcomm.c	/^bool unixcomm_accept(unixcomm_handle_t *server_handle, unixcomm_handle_t *client_handle) {$/;"	f
+unixcomm_check_connection	src/unixcomm.c	/^bool unixcomm_check_connection(unixcomm_handle_t *handle) {$/;"	f
+unixcomm_cleanup	src/unixcomm.c	/^void unixcomm_cleanup(void) {$/;"	f
+unixcomm_client_create	src/unixcomm.c	/^bool unixcomm_client_create(unixcomm_handle_t *handle, const unixcomm_config_t *config) {$/;"	f
+unixcomm_close	src/unixcomm.c	/^bool unixcomm_close(unixcomm_handle_t *handle) {$/;"	f
+unixcomm_config_init	src/unixcomm.c	/^bool unixcomm_config_init(unixcomm_config_t *config) {$/;"	f
+unixcomm_config_set_max_pending	src/unixcomm.c	/^bool unixcomm_config_set_max_pending(unixcomm_config_t *config, int max_pending) {$/;"	f
+unixcomm_config_set_socket_path	src/unixcomm.c	/^bool unixcomm_config_set_socket_path(unixcomm_config_t *config, const char *path) {$/;"	f
+unixcomm_config_set_target_process	src/unixcomm.c	/^bool unixcomm_config_set_target_process(unixcomm_config_t *config, unixcomm_process_t process) {$/;"	f
+unixcomm_config_set_timeout	src/unixcomm.c	/^bool unixcomm_config_set_timeout(unixcomm_config_t *config, double timeout) {$/;"	f
+unixcomm_config_t	inc/unixcomm.h	/^} unixcomm_config_t;$/;"	t	typeref:struct:__anon7
+unixcomm_config_validate	src/unixcomm.c	/^bool unixcomm_config_validate(const unixcomm_config_t *config) {$/;"	f
+unixcomm_connect	src/unixcomm.c	/^bool unixcomm_connect(unixcomm_handle_t *handle) {$/;"	f
+unixcomm_create_socket_directory	src/unixcomm.c	/^static bool unixcomm_create_socket_directory(const char *path) {$/;"	f	file:
+unixcomm_disconnect	src/unixcomm.c	/^bool unixcomm_disconnect(unixcomm_handle_t *handle) {$/;"	f
+unixcomm_error_callback_t	inc/unixcomm.h	/^typedef void (*unixcomm_error_callback_t)(unixcomm_handle_t *handle, unixcomm_error_t error);$/;"	t
+unixcomm_error_string	src/unixcomm.c	/^const char *unixcomm_error_string(unixcomm_error_t error) {$/;"	f
+unixcomm_error_t	inc/unixcomm.h	/^} unixcomm_error_t;$/;"	t	typeref:enum:__anon1
+unixcomm_free	src/unixcomm.c	/^void unixcomm_free(void *ptr) {$/;"	f
+unixcomm_get_process_socket_name	src/unixcomm.c	/^static const char *unixcomm_get_process_socket_name(unixcomm_process_t process) {$/;"	f	file:
+unixcomm_global_config_t	inc/unixcomm.h	/^} unixcomm_global_config_t;$/;"	t	typeref:struct:__anon10
+unixcomm_global_t	src/unixcomm.c	/^} unixcomm_global_t;$/;"	t	typeref:struct:__anon12	file:
+unixcomm_handle_t	inc/unixcomm.h	/^} unixcomm_handle_t;$/;"	t	typeref:struct:__anon8
+unixcomm_init	src/unixcomm.c	/^bool unixcomm_init(const unixcomm_global_config_t *global_config) {$/;"	f
+unixcomm_is_connected	src/unixcomm.c	/^bool unixcomm_is_connected(const unixcomm_handle_t *handle) {$/;"	f
+unixcomm_is_initialized	src/unixcomm.c	/^bool unixcomm_is_initialized(void) {$/;"	f
+unixcomm_log_callback_t	inc/unixcomm.h	/^typedef void (*unixcomm_log_callback_t)(const char *format, ...);$/;"	t
+unixcomm_log_debug	src/unixcomm.c	/^void unixcomm_log_debug(const char *format, ...) {$/;"	f
+unixcomm_log_error	src/unixcomm.c	/^void unixcomm_log_error(const char *format, ...) {$/;"	f
+unixcomm_log_info	src/unixcomm.c	/^void unixcomm_log_info(const char *format, ...) {$/;"	f
+unixcomm_log_internal	src/unixcomm.c	/^static void unixcomm_log_internal(int level, const char *format, va_list args) {$/;"	f	file:
+unixcomm_log_set_level	src/unixcomm.c	/^bool unixcomm_log_set_level(int level) {$/;"	f
+unixcomm_log_warn	src/unixcomm.c	/^void unixcomm_log_warn(const char *format, ...) {$/;"	f
+unixcomm_malloc	src/unixcomm.c	/^void *unixcomm_malloc(size_t size) {$/;"	f
+unixcomm_message_callback_t	inc/unixcomm.h	/^typedef bool (*unixcomm_message_callback_t)(unixcomm_handle_t *handle, unixcomm_message_t *message);$/;"	t
+unixcomm_message_create	src/unixcomm.c	/^unixcomm_message_t *unixcomm_message_create(const void *data, size_t data_size) {$/;"	f
+unixcomm_message_destroy	src/unixcomm.c	/^void unixcomm_message_destroy(unixcomm_message_t *message) {$/;"	f
+unixcomm_message_set_type	src/unixcomm.c	/^bool unixcomm_message_set_type(unixcomm_message_t *message, unixcomm_msg_type_t type) {$/;"	f
+unixcomm_message_t	inc/unixcomm.h	/^} unixcomm_message_t;$/;"	t	typeref:struct:__anon9
+unixcomm_msg_type_string	src/unixcomm.c	/^const char *unixcomm_msg_type_string(unixcomm_msg_type_t type) {$/;"	f
+unixcomm_msg_type_t	inc/unixcomm.h	/^} unixcomm_msg_type_t;$/;"	t	typeref:enum:__anon4
+unixcomm_process_t	inc/unixcomm.h	/^} unixcomm_process_t;$/;"	t	typeref:enum:__anon3
+unixcomm_realloc	src/unixcomm.c	/^void *unixcomm_realloc(void *ptr, size_t size) {$/;"	f
+unixcomm_receive_message	src/unixcomm.c	/^bool unixcomm_receive_message(unixcomm_handle_t *handle, unixcomm_message_t *message) {$/;"	f
+unixcomm_reconnect	src/unixcomm.c	/^bool unixcomm_reconnect(unixcomm_handle_t *handle) {$/;"	f
+unixcomm_request_init	src/unixcomm.c	/^bool unixcomm_request_init(unixcomm_request_t *request, const char *sender) {$/;"	f
+unixcomm_request_t	inc/unixcomm.h	/^} unixcomm_request_t;$/;"	t	typeref:struct:__anon5
+unixcomm_response_init	src/unixcomm.c	/^bool unixcomm_response_init(unixcomm_response_t *response, const unixcomm_request_t *request) {$/;"	f
+unixcomm_response_t	inc/unixcomm.h	/^} unixcomm_response_t;$/;"	t	typeref:struct:__anon6
+unixcomm_send_data	src/unixcomm.c	/^bool unixcomm_send_data(unixcomm_handle_t *handle, const void *data, size_t data_size, unixcomm_response_t *response) {$/;"	f
+unixcomm_send_heartbeat	src/unixcomm.c	/^bool unixcomm_send_heartbeat(unixcomm_handle_t *handle) {$/;"	f
+unixcomm_send_log	inc/unixcomm.h	245;"	d
+unixcomm_send_message	src/unixcomm.c	/^bool unixcomm_send_message(unixcomm_handle_t *handle, const unixcomm_message_t *message, unixcomm_response_t *response) {$/;"	f
+unixcomm_send_notification	src/unixcomm.c	/^bool unixcomm_send_notification(unixcomm_handle_t *handle, const void *data, size_t data_size) {$/;"	f
+unixcomm_send_request	src/unixcomm.c	/^bool unixcomm_send_request(unixcomm_handle_t *handle, const void *data, size_t data_size, unixcomm_response_t *response) {$/;"	f
+unixcomm_send_stats	inc/unixcomm.h	242;"	d
+unixcomm_server_create	src/unixcomm.c	/^bool unixcomm_server_create(unixcomm_handle_t *handle, const unixcomm_config_t *config) {$/;"	f
+unixcomm_set_socket_timeout	src/unixcomm.c	/^static bool unixcomm_set_socket_timeout(int fd, double timeout) {$/;"	f	file:
+unixcomm_set_timeout	src/unixcomm.c	/^bool unixcomm_set_timeout(unixcomm_handle_t *handle, double timeout) {$/;"	f
+unixcomm_stats_t	inc/unixcomm.h	/^} unixcomm_stats_t;$/;"	t	typeref:struct:__anon11
+unixcomm_type_t	inc/unixcomm.h	/^} unixcomm_type_t;$/;"	t	typeref:enum:__anon2
+unixcomm_validate_socket_path	src/unixcomm.c	/^static bool unixcomm_validate_socket_path(const char *path) {$/;"	f	file:
+version	inc/unixcomm.h	/^    uint32_t version;              \/\/ Protocol version$/;"	m	struct:__anon5
+version	inc/unixcomm.h	/^    uint32_t version;              \/\/ Protocol version$/;"	m	struct:__anon6
