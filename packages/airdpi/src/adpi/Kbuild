@@ -1,0 +1,6 @@
+ccflags-y += -I$(src)
+
+obj-m = adpi.o
+
+adpi-objs := main.o netlink.o txrx.o dns.o sysctl.o rate_limit.o air_ops.o sta_ops.o ioctl.o
+

@@ -1,0 +1,912 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ACL_RULE_IP	air_common.h	/^    ACL_RULE_IP    = 1,$/;"	e	enum:rule_type
+ACL_RULE_MAC	air_common.h	/^    ACL_RULE_MAC   = 2,$/;"	e	enum:rule_type
+ACL_RULE_NONE	air_common.h	/^    ACL_RULE_NONE  = 0,$/;"	e	enum:rule_type
+ACL_RULE_PROTO	air_common.h	/^    ACL_RULE_PROTO = 3,$/;"	e	enum:rule_type
+ACTION_DENY	air_common.h	/^    ACTION_DENY   =0,$/;"	e	enum:action
+ACTION_PERMIT	air_common.h	/^    ACTION_PERMIT =1,$/;"	e	enum:action
+AIRPRO_IS_BROADCAST	air_common.h	10;"	d
+AIRPRO_RADIO_24	air_coplane.h	/^    AIRPRO_RADIO_24 = 0,$/;"	e	enum:airpro_radio_mapping
+AIRPRO_RADIO_5	air_coplane.h	/^    AIRPRO_RADIO_5 = 1,$/;"	e	enum:airpro_radio_mapping
+AIRPRO_RADIO_6	air_coplane.h	/^    AIRPRO_RADIO_6 = 2,$/;"	e	enum:airpro_radio_mapping
+AIR_ACTION_CONTINUE	air_common.h	/^    AIR_ACTION_CONTINUE = 0,$/;"	e	enum:__anon9
+AIR_ACTION_DROP	air_common.h	/^    AIR_ACTION_DROP,$/;"	e	enum:__anon9
+AIR_COMMON_H	air_common.h	3;"	d
+AIR_RL_DIR_DOWNLINK	air_vif.h	/^    AIR_RL_DIR_DOWNLINK,$/;"	e	enum:__anon1
+AIR_RL_DIR_MAX	air_vif.h	/^    AIR_RL_DIR_MAX$/;"	e	enum:__anon1
+AIR_RL_DIR_UPLINK	air_vif.h	/^    AIR_RL_DIR_UPLINK,$/;"	e	enum:__anon1
+AIR_SKB_POSTROUTE	air_vif.h	/^    AIR_SKB_POSTROUTE = 1$/;"	e	enum:air_skb_direct
+AIR_SKB_PREROUTE	air_vif.h	/^    AIR_SKB_PREROUTE = 0,$/;"	e	enum:air_skb_direct
+ARP_HWLEN_IPv4	proto/arp.h	9;"	d
+ARP_HWTYPE_ETHERNET	proto/arp.h	6;"	d
+ARP_OPCODE_REPLY	proto/arp.h	12;"	d
+ARP_OPCODE_REQ	proto/arp.h	11;"	d
+ARP_PROTO_IP	proto/arp.h	7;"	d
+ATH_LIST_HEAD	queue.h	82;"	d
+BCAST_MAC	proto/ethernet.h	17;"	d
+BOOTP_HWTYPE_ETHERNET	dhcp.h	9;"	d
+BOOTP_HWTYPE_ETHERNET	proto/dhcp.h	9;"	d
+BOOTP_OPCODE_REPLY	dhcp.h	7;"	d
+BOOTP_OPCODE_REPLY	proto/dhcp.h	7;"	d
+BOOTP_OPCODE_REQ	dhcp.h	6;"	d
+BOOTP_OPCODE_REQ	proto/dhcp.h	6;"	d
+BRIDGE_DEV_PREFIX	air_coplane.h	23;"	d
+CLIENT_HASH	air_vif.h	105;"	d
+CLIENT_HASHSIZE	air_vif.h	21;"	d
+CMB_ACCT_STATS_VER	proto/cmb_proto.h	114;"	d
+CMB_ARF_VER	proto/cmb_proto.h	148;"	d
+CMB_CI_SESS_VER	proto/cmb_proto.h	85;"	d
+CMB_CLB_UPDATE_VER	proto/cmb_proto.h	130;"	d
+CMB_ETHER_SUB_TYPE	proto/cmb_proto.h	7;"	d
+CMB_ETHER_TYPE	proto/cmb_proto.h	6;"	d
+CMB_GA_ACCOUNTING_ENABLED	proto/cmb_proto.h	32;"	d
+CMB_GA_VER	proto/cmb_proto.h	31;"	d
+CMB_NOTIFY_MSG_TYPE_ACCT_STATS_UPDATE_RSP	proto/cmb_proto.h	17;"	d
+CMB_NOTIFY_MSG_TYPE_ARF_CHANGE	proto/cmb_proto.h	28;"	d
+CMB_NOTIFY_MSG_TYPE_ARF_DEVINFO	proto/cmb_proto.h	26;"	d
+CMB_NOTIFY_MSG_TYPE_ARF_LDR	proto/cmb_proto.h	25;"	d
+CMB_NOTIFY_MSG_TYPE_ARF_NBRINFO	proto/cmb_proto.h	27;"	d
+CMB_NOTIFY_MSG_TYPE_AUTOPILOT	proto/cmb_proto.h	23;"	d
+CMB_NOTIFY_MSG_TYPE_BANDSTEER_STATUS	proto/cmb_proto.h	14;"	d
+CMB_NOTIFY_MSG_TYPE_CI_SESSION_UPDATE	proto/cmb_proto.h	15;"	d
+CMB_NOTIFY_MSG_TYPE_CLB_UPDATE	proto/cmb_proto.h	24;"	d
+CMB_NOTIFY_MSG_TYPE_DRF_NBR	proto/cmb_proto.h	19;"	d
+CMB_NOTIFY_MSG_TYPE_DRF_NBR_CHAN_ASSIGN	proto/cmb_proto.h	20;"	d
+CMB_NOTIFY_MSG_TYPE_DRF_NBR_DEV_INFO	proto/cmb_proto.h	22;"	d
+CMB_NOTIFY_MSG_TYPE_DRF_NBR_RADIO_MAC_INFO	proto/cmb_proto.h	21;"	d
+CMB_NOTIFY_MSG_TYPE_FT_RRB	proto/cmb_proto.h	13;"	d
+CMB_NOTIFY_MSG_TYPE_GA_LOGIN_UPDATE_ROAMED_CLIENT	proto/cmb_proto.h	18;"	d
+CMB_NOTIFY_MSG_TYPE_GA_UPDATE	proto/cmb_proto.h	11;"	d
+CMB_NOTIFY_MSG_TYPE_MAX	proto/cmb_proto.h	29;"	d
+CMB_NOTIFY_MSG_TYPE_PMK_UPDATE	proto/cmb_proto.h	12;"	d
+CMB_NOTIFY_MSG_TYPE_ROAM	proto/cmb_proto.h	10;"	d
+CMB_NOTIFY_MSG_TYPE_ROAM_DATA_READY_UPDATE_REQ	proto/cmb_proto.h	16;"	d
+CMB_PMK_UPDATE_VER	proto/cmb_proto.h	68;"	d
+CMB_ROAM_DATA_READY_UPDATE_REQ_VER	proto/cmb_proto.h	106;"	d
+CMB_ROAM_VER	proto/cmb_proto.h	56;"	d
+DHCP_MAGIC_COOKIE	dhcp.h	30;"	d
+DHCP_MAGIC_COOKIE	proto/dhcp.h	28;"	d
+DHCP_MSG_TYPE_ACK	dhcp.h	25;"	d
+DHCP_MSG_TYPE_ACK	proto/dhcp.h	23;"	d
+DHCP_MSG_TYPE_DECLINE	dhcp.h	24;"	d
+DHCP_MSG_TYPE_DECLINE	proto/dhcp.h	22;"	d
+DHCP_MSG_TYPE_DISCOVER	dhcp.h	21;"	d
+DHCP_MSG_TYPE_DISCOVER	proto/dhcp.h	19;"	d
+DHCP_MSG_TYPE_INFORM	dhcp.h	28;"	d
+DHCP_MSG_TYPE_INFORM	proto/dhcp.h	26;"	d
+DHCP_MSG_TYPE_NACK	dhcp.h	26;"	d
+DHCP_MSG_TYPE_NACK	proto/dhcp.h	24;"	d
+DHCP_MSG_TYPE_OFFER	dhcp.h	22;"	d
+DHCP_MSG_TYPE_OFFER	proto/dhcp.h	20;"	d
+DHCP_MSG_TYPE_RELEASE	dhcp.h	27;"	d
+DHCP_MSG_TYPE_RELEASE	proto/dhcp.h	25;"	d
+DHCP_MSG_TYPE_REQUEST	dhcp.h	23;"	d
+DHCP_MSG_TYPE_REQUEST	proto/dhcp.h	21;"	d
+DHCP_OPTION_END	dhcp.h	19;"	d
+DHCP_OPTION_END	proto/dhcp.h	17;"	d
+DHCP_OPTION_HOSTNAME	dhcp.h	12;"	d
+DHCP_OPTION_HOSTNAME	proto/dhcp.h	12;"	d
+DHCP_OPTION_LEASE_TIME	dhcp.h	14;"	d
+DHCP_OPTION_LEASE_TIME	proto/dhcp.h	13;"	d
+DHCP_OPTION_MSG_TYPE	dhcp.h	16;"	d
+DHCP_OPTION_MSG_TYPE	proto/dhcp.h	14;"	d
+DHCP_OPTION_PAD	dhcp.h	11;"	d
+DHCP_OPTION_PAD	proto/dhcp.h	11;"	d
+DHCP_OPTION_RELAYAGENT	dhcp.h	18;"	d
+DHCP_OPTION_RELAYAGENT	proto/dhcp.h	16;"	d
+DHCP_OPTION_RELEASED_IP	dhcp.h	15;"	d
+DHCP_OPTION_REQUESTED_IP	dhcp.h	13;"	d
+DHCP_OPTION_REQ_PARAM	dhcp.h	17;"	d
+DHCP_OPTION_REQ_PARAM	proto/dhcp.h	15;"	d
+DIR_ANY	air_common.h	/^    DIR_ANY  = 3,$/;"	e	enum:flow_direction
+DIR_IN	air_common.h	/^    DIR_IN   = 1,$/;"	e	enum:flow_direction
+DIR_NONE	air_common.h	/^    DIR_NONE = 0,$/;"	e	enum:flow_direction
+DIR_OUT	air_common.h	/^    DIR_OUT  = 2,$/;"	e	enum:flow_direction
+DNS_CNAME_PTR	dns.h	7;"	d
+DNS_CNAME_PTR	proto/dns.h	7;"	d
+DNS_CNAME_PTR	proto/mdns.h	4;"	d
+DNS_MSG_QUERY	dns.h	5;"	d
+DNS_MSG_QUERY	proto/dns.h	5;"	d
+DNS_MSG_QUERY_RSP	dns.h	6;"	d
+DNS_MSG_QUERY_RSP	proto/dns.h	6;"	d
+DNS_RCODE_FORMAT_ERROR	dns.h	/^  DNS_RCODE_FORMAT_ERROR = 1,$/;"	e	enum:__anon12
+DNS_RCODE_FORMAT_ERROR	proto/dns.h	/^  DNS_RCODE_FORMAT_ERROR = 1,$/;"	e	enum:__anon8
+DNS_RCODE_NAME_ERROR	dns.h	/^  DNS_RCODE_NAME_ERROR = 3$/;"	e	enum:__anon12
+DNS_RCODE_NAME_ERROR	proto/dns.h	/^  DNS_RCODE_NAME_ERROR = 3$/;"	e	enum:__anon8
+DNS_RCODE_NO_ERROR	dns.h	/^  DNS_RCODE_NO_ERROR = 0,$/;"	e	enum:__anon12
+DNS_RCODE_NO_ERROR	proto/dns.h	/^  DNS_RCODE_NO_ERROR = 0,$/;"	e	enum:__anon8
+DNS_RCODE_SERVER_FAILURE	dns.h	/^  DNS_RCODE_SERVER_FAILURE = 2,$/;"	e	enum:__anon12
+DNS_RCODE_SERVER_FAILURE	proto/dns.h	/^  DNS_RCODE_SERVER_FAILURE = 2,$/;"	e	enum:__anon8
+DNS_RR_CLASS_CH	dns.h	/^  DNS_RR_CLASS_CH = 3,  \/\/ CHAOS class$/;"	e	enum:__anon11
+DNS_RR_CLASS_CH	proto/dns.h	/^  DNS_RR_CLASS_CH = 3,  \/\/ CHAOS class$/;"	e	enum:__anon7
+DNS_RR_CLASS_CS	dns.h	/^  DNS_RR_CLASS_CS = 2,  \/\/ CSNET class(Obsolete)$/;"	e	enum:__anon11
+DNS_RR_CLASS_CS	proto/dns.h	/^  DNS_RR_CLASS_CS = 2,  \/\/ CSNET class(Obsolete)$/;"	e	enum:__anon7
+DNS_RR_CLASS_HS	dns.h	/^  DNS_RR_CLASS_HS = 4   \/\/ Hesiod$/;"	e	enum:__anon11
+DNS_RR_CLASS_HS	proto/dns.h	/^  DNS_RR_CLASS_HS = 4   \/\/ Hesiod$/;"	e	enum:__anon7
+DNS_RR_CLASS_IN	dns.h	/^  DNS_RR_CLASS_IN = 1,  \/\/ Internet$/;"	e	enum:__anon11
+DNS_RR_CLASS_IN	proto/dns.h	/^  DNS_RR_CLASS_IN = 1,  \/\/ Internet$/;"	e	enum:__anon7
+DNS_RR_TYPE_A	dns.h	/^  DNS_RR_TYPE_A     = 1,  \/\/ host address$/;"	e	enum:__anon10
+DNS_RR_TYPE_A	proto/dns.h	/^  DNS_RR_TYPE_A     = 1,  \/\/ host address$/;"	e	enum:__anon6
+DNS_RR_TYPE_CNAME	dns.h	/^  DNS_RR_TYPE_CNAME = 5   \/\/ canonical name for an alias$/;"	e	enum:__anon10
+DNS_RR_TYPE_CNAME	proto/dns.h	/^  DNS_RR_TYPE_CNAME = 5   \/\/ canonical name for an alias$/;"	e	enum:__anon6
+DNS_RR_TYPE_MD	dns.h	/^  DNS_RR_TYPE_MD    = 3,  \/\/ mail destination$/;"	e	enum:__anon10
+DNS_RR_TYPE_MD	proto/dns.h	/^  DNS_RR_TYPE_MD    = 3,  \/\/ mail destination$/;"	e	enum:__anon6
+DNS_RR_TYPE_MF	dns.h	/^  DNS_RR_TYPE_MF    = 4,  \/\/ mail forwarder$/;"	e	enum:__anon10
+DNS_RR_TYPE_MF	proto/dns.h	/^  DNS_RR_TYPE_MF    = 4,  \/\/ mail forwarder$/;"	e	enum:__anon6
+DNS_RR_TYPE_NS	dns.h	/^  DNS_RR_TYPE_NS    = 2,  \/\/ authotitative name server$/;"	e	enum:__anon10
+DNS_RR_TYPE_NS	proto/dns.h	/^  DNS_RR_TYPE_NS    = 2,  \/\/ authotitative name server$/;"	e	enum:__anon6
+DNS_SIZE_OF_CLASS	dns.h	32;"	d
+DNS_SIZE_OF_CLASS	proto/dns.h	32;"	d
+DNS_SIZE_OF_TYPE	dns.h	31;"	d
+DNS_SIZE_OF_TYPE	proto/dns.h	31;"	d
+ETHERNET_DEV_PREFIX	air_coplane.h	28;"	d
+ETHERTYPE_ARP	proto/ethernet.h	20;"	d
+ETHERTYPE_CMB	proto/ethernet.h	22;"	d
+ETHERTYPE_IPv4	proto/ethernet.h	19;"	d
+ETHERTYPE_IPv6	proto/ethernet.h	23;"	d
+ETHERTYPE_VLAN	proto/ethernet.h	21;"	d
+FLUSH_FILE	sysctl.c	19;"	d	file:
+IEEE80211_2G_BAND	air_coplane.h	/^    IEEE80211_2G_BAND,$/;"	e	enum:__anon13
+IEEE80211_5G_BAND	air_coplane.h	/^    IEEE80211_5G_BAND,$/;"	e	enum:__anon13
+IEEE80211_ADDR_COPY	air_coplane.h	46;"	d
+IEEE80211_ADDR_COPY	air_vif.h	109;"	d
+IEEE80211_ADDR_EQ	air_coplane.h	45;"	d
+IEEE80211_ADDR_EQ	air_vif.h	108;"	d
+IEEE80211_ADDR_LEN	air_coplane.h	41;"	d
+IEEE80211_HOSTNAME_COPY	air_vif.h	110;"	d
+IEEE80211_INVALID_BAND	air_coplane.h	/^    IEEE80211_INVALID_BAND$/;"	e	enum:__anon13
+IEEE80211_IP_COPY	air_vif.h	111;"	d
+IEEE80211_STA_BAND	air_coplane.h	/^} IEEE80211_STA_BAND;$/;"	t	typeref:enum:__anon13
+IFNAME_HASH	air_ioctl.h	19;"	d
+IGMPV3_ALLOW_NEW_SOURCES	proto/igmp.h	45;"	d
+IGMPV3_BLOCK_OLD_SOURCES	proto/igmp.h	46;"	d
+IGMPV3_CHANGE_TO_EXCLUDE	proto/igmp.h	44;"	d
+IGMPV3_CHANGE_TO_INCLUDE	proto/igmp.h	43;"	d
+IGMPV3_MODE_IS_EXCLUDE	proto/igmp.h	42;"	d
+IGMPV3_MODE_IS_INCLUDE	proto/igmp.h	41;"	d
+IGMP_ALL_HOSTS	proto/igmp.h	56;"	d
+IGMP_TYPE_LEAVE_V2	proto/igmp.h	13;"	d
+IGMP_TYPE_QUERY	proto/igmp.h	10;"	d
+IGMP_TYPE_REPORT_V1	proto/igmp.h	11;"	d
+IGMP_TYPE_REPORT_V2	proto/igmp.h	12;"	d
+IGMP_TYPE_REPORT_V3	proto/igmp.h	14;"	d
+INFO_FILE	sysctl.c	18;"	d	file:
+IOCTL_ADPI_BLOCK_DOMAIN	air_ioctl.h	77;"	d
+IOCTL_ADPI_GET_ALL_CLIENTS	air_ioctl.h	74;"	d
+IOCTL_ADPI_GET_AP_TOP_DOMAINS	air_ioctl.h	73;"	d
+IOCTL_ADPI_GET_RATELIMIT_WLAN	air_ioctl.h	76;"	d
+IOCTL_ADPI_GET_RATELIMIT_WLAN_USER	air_ioctl.h	75;"	d
+IOCTL_ADPI_RATELIMIT_WLAN	air_ioctl.h	70;"	d
+IOCTL_ADPI_RATELIMIT_WLAN_PER_USER	air_ioctl.h	72;"	d
+IOCTL_ADPI_RATELIMIT_WLAN_USER	air_ioctl.h	71;"	d
+IOCTL_ADPI_STA_ADD_ENTRY	air_ioctl.h	68;"	d
+IOCTL_ADPI_STA_DEL_ENTRY	air_ioctl.h	69;"	d
+IOCTL_ADPI_TYPE_GET_ALL_CLIENTS	air_ioctl.h	64;"	d
+IOCTL_ADPI_TYPE_GET_AP_TOP_DOMAINS	air_ioctl.h	63;"	d
+IOCTL_ADPI_TYPE_GET_RATELIMIT_WLAN	air_ioctl.h	66;"	d
+IOCTL_ADPI_TYPE_GET_RATELIMIT_WLAN_USER	air_ioctl.h	65;"	d
+IOCTL_ADPI_TYPE_RATELIMIT_WLAN	air_ioctl.h	60;"	d
+IOCTL_ADPI_TYPE_RATELIMIT_WLAN_PER_USER	air_ioctl.h	62;"	d
+IOCTL_ADPI_TYPE_RATELIMIT_WLAN_USER	air_ioctl.h	61;"	d
+IOCTL_ADPI_TYPE_STA_ADD_ENTRY	air_ioctl.h	58;"	d
+IOCTL_ADPI_TYPE_STA_DEL_ENTRY	air_ioctl.h	59;"	d
+IOCTL_ADPI_UNBLOCK_DOMAIN	air_ioctl.h	78;"	d
+IPOPT_CONTROL	proto/ipv4.h	16;"	d
+IPOPT_COPY	proto/ipv4.h	15;"	d
+IPOPT_RA	proto/ipv4.h	18;"	d
+IPV4_DF	proto/ipv4.h	11;"	d
+IPV4_MF	proto/ipv4.h	12;"	d
+IP_PROTO_ICMP	proto/ipv4.h	6;"	d
+IP_PROTO_IGMP	proto/ipv4.h	7;"	d
+IP_PROTO_TCP	proto/ipv4.h	8;"	d
+IP_PROTO_UDP	proto/ipv4.h	9;"	d
+IPv4BYTES	air_coplane.h	37;"	d
+IPv4FORMAT	air_coplane.h	36;"	d
+IPv4_ADDR_LEN	proto/ipv4.h	4;"	d
+KPATH	Makefile	/^KPATH=${KLIB_BUILD}$/;"	m
+LIST_EMPTY	queue.h	104;"	d
+LIST_ENTRY	queue.h	94;"	d
+LIST_FIRST	queue.h	106;"	d
+LIST_FOREACH	queue.h	108;"	d
+LIST_FOREACH_SAFE	queue.h	113;"	d
+LIST_HEAD	queue.h	88;"	d
+LIST_HEAD_INITIALIZER	queue.h	91;"	d
+LIST_INIT	queue.h	118;"	d
+LIST_INSERT_AFTER	queue.h	122;"	d
+LIST_INSERT_BEFORE	queue.h	130;"	d
+LIST_INSERT_HEAD	queue.h	137;"	d
+LIST_NEXT	queue.h	144;"	d
+LIST_REMOVE	queue.h	146;"	d
+MAC_ADDR_LEN	proto/ethernet.h	15;"	d
+MAC_ADDR_LEN	txrx.c	28;"	d	file:
+MAX_BLOCKED_DOMAINS	air_vif.h	25;"	d
+MAX_BLOCKED_IPS	air_vif.h	24;"	d
+MAX_BONJOUR_RULES	proto/mdns.h	6;"	d
+MAX_DNS_LENGTH	air_coplane.h	32;"	d
+MAX_DNS_LENGTH	dns.c	13;"	d	file:
+MAX_DOMAINS	air_ioctl.h	6;"	d
+MAX_DOMAINS	air_vif.h	22;"	d
+MAX_DOMAIN_NAME_LEN	air_ioctl.h	7;"	d
+MAX_DOMAIN_NAME_LEN	air_vif.h	23;"	d
+MAX_EXPIRE_TS_MS	air_coplane.h	31;"	d
+MAX_HOSTNAME_LEN	air_vif.h	103;"	d
+MAX_IP_ADDR_LEN	sysctl.c	16;"	d	file:
+MAX_IP_ADDR_LEN	txrx.c	20;"	d	file:
+MAX_IP_LEN	air_vif.h	104;"	d
+MAX_MAC_ADDR_LEN	air_coplane.h	21;"	d
+MAX_MAC_ADDR_LEN	air_ioctl.h	5;"	d
+MAX_MAC_ADDR_LEN	air_vif.h	102;"	d
+MAX_MDNS_RRS	proto/mdns.h	5;"	d
+MAX_NUM_DNS	air_coplane.h	33;"	d
+MAX_NWID_LEN	air_coplane.h	22;"	d
+MAX_STA_DISCONNECT_TIMEOUT	node_timer.c	5;"	d	file:
+MAX_STA_HOSTNAME	air_coplane.h	30;"	d
+MAX_VAPS	air_coplane.h	29;"	d
+MAX_WLANS	air_coplane.h	34;"	d
+MDNS_TYPE_A	proto/mdns.h	8;"	d
+MDNS_TYPE_AAAA	proto/mdns.h	14;"	d
+MDNS_TYPE_ALL	proto/mdns.h	16;"	d
+MDNS_TYPE_CNAME	proto/mdns.h	10;"	d
+MDNS_TYPE_NS	proto/mdns.h	9;"	d
+MDNS_TYPE_NULL	proto/mdns.h	11;"	d
+MDNS_TYPE_PTR	proto/mdns.h	12;"	d
+MDNS_TYPE_SRV	proto/mdns.h	15;"	d
+MDNS_TYPE_TXT	proto/mdns.h	13;"	d
+NETLINK_USER	air_vif.h	20;"	d
+NULL_MAC	proto/ethernet.h	16;"	d
+OS_SPIN_LOCK	air_vif.h	99;"	d
+OS_SPIN_LOCK_DEINIT	air_vif.h	98;"	d
+OS_SPIN_LOCK_INIT	air_vif.h	97;"	d
+OS_SPIN_NW_IFACE_LOCK	air_coplane.h	160;"	d
+OS_SPIN_NW_IFACE_LOCK_DEINIT	air_coplane.h	159;"	d
+OS_SPIN_NW_IFACE_LOCK_INIT	air_coplane.h	158;"	d
+OS_SPIN_NW_IFACE_UNLOCK	air_coplane.h	161;"	d
+OS_SPIN_UNLOCK	air_vif.h	100;"	d
+OS_SPIN_WLAN_RC_LOCK	air_coplane.h	170;"	d
+OS_SPIN_WLAN_RC_LOCK_DEINIT	air_coplane.h	169;"	d
+OS_SPIN_WLAN_RC_LOCK_INIT	air_coplane.h	168;"	d
+OS_SPIN_WLAN_RC_UNLOCK	air_coplane.h	171;"	d
+OS_SPIN_WLAN_STA_LOCK	air_coplane.h	165;"	d
+OS_SPIN_WLAN_STA_LOCK_DEINIT	air_coplane.h	164;"	d
+OS_SPIN_WLAN_STA_LOCK_INIT	air_coplane.h	163;"	d
+OS_SPIN_WLAN_STA_UNLOCK	air_coplane.h	166;"	d
+PACKET_EGRESS	air_common.h	8;"	d
+PACKET_INGRESS	air_common.h	7;"	d
+PHY_ETH	air_common.h	/^    PHY_ETH,$/;"	e	enum:phy
+PHY_WLAN	air_common.h	/^    PHY_WLAN,$/;"	e	enum:phy
+PPPOE_DEV_PREFIX	air_coplane.h	25;"	d
+PROC_DIR	sysctl.c	17;"	d	file:
+PROTO_ARP_H	proto/arp.h	2;"	d
+PROTO_CMB_H	proto/cmb_proto.h	2;"	d
+PROTO_DHCP_H	dhcp.h	2;"	d
+PROTO_DHCP_H	proto/dhcp.h	2;"	d
+PROTO_DNS_H	dns.h	2;"	d
+PROTO_DNS_H	proto/dns.h	2;"	d
+PROTO_ETHERPROTO_H	proto/ethernet.h	6;"	d
+PROTO_IGMP_H	proto/igmp.h	2;"	d
+PROTO_IPv4_H	proto/ipv4.h	2;"	d
+PROTO_MDNS_H	proto/mdns.h	2;"	d
+PROTO_TCP_H	proto/tcp.h	2;"	d
+PROTO_UDP_H	proto/udp.h	2;"	d
+SIMPLE_HASH	air_ioctl.h	9;"	d
+TAILQ_CONCAT	queue.h	65;"	d
+TAILQ_EMPTY	queue.h	63;"	d
+TAILQ_ENTRY	queue.h	2;"	d
+TAILQ_FIRST	queue.h	8;"	d
+TAILQ_FOREACH	queue.h	13;"	d
+TAILQ_FOREACH_SAFE	queue.h	74;"	d
+TAILQ_HEAD	queue.h	25;"	d
+TAILQ_INIT	queue.h	20;"	d
+TAILQ_INSERT_HEAD	queue.h	34;"	d
+TAILQ_INSERT_TAIL	queue.h	45;"	d
+TAILQ_LAST	queue.h	10;"	d
+TAILQ_NEXT	queue.h	18;"	d
+TAILQ_NEXT	queue.h	32;"	d
+TAILQ_REMOVE	queue.h	52;"	d
+TCP_PORT_HTTP	proto/tcp.h	4;"	d
+TCP_PORT_HTTPS	proto/tcp.h	5;"	d
+TUNNEL_DEV_PREFIX	air_coplane.h	24;"	d
+UDP_PORT_BOOTPC	proto/udp.h	5;"	d
+UDP_PORT_BOOTPC	txrx.c	23;"	d	file:
+UDP_PORT_BOOTPS	proto/udp.h	4;"	d
+UDP_PORT_BOOTPS	txrx.c	22;"	d	file:
+UDP_PORT_DNS	proto/udp.h	6;"	d
+UDP_PORT_DNS	txrx.c	24;"	d	file:
+UDP_PORT_MDNS	proto/udp.h	7;"	d
+UDP_PORT_MDNS	txrx.c	25;"	d	file:
+UINT32_MAX	dns.c	9;"	d	file:
+USE_PROC_OPS	sysctl.c	11;"	d	file:
+VLAN_CFI_SHIFT	proto/ethernet.h	27;"	d
+VLAN_HDR_LEN	proto/ethernet.h	25;"	d
+VLAN_PRI_SHIFT	proto/ethernet.h	26;"	d
+WIRELESS_RADIO_PREFIX	air_coplane.h	26;"	d
+WIRELESS_VAP_PREFIX	air_coplane.h	27;"	d
+WLAN_M_AHDEMO	air_coplane.h	/^    WLAN_M_AHDEMO      = 3,$/;"	e	enum:wlan_opmode
+WLAN_M_ANY	air_coplane.h	/^    WLAN_M_ANY         = 0xFF$/;"	e	enum:wlan_opmode
+WLAN_M_BTAMP	air_coplane.h	/^    WLAN_M_BTAMP       = 9,$/;"	e	enum:wlan_opmode
+WLAN_M_HOSTAP	air_coplane.h	/^    WLAN_M_HOSTAP      = 6,$/;"	e	enum:wlan_opmode
+WLAN_M_IBSS	air_coplane.h	/^    WLAN_M_IBSS        = 0,$/;"	e	enum:wlan_opmode
+WLAN_M_MONITOR	air_coplane.h	/^    WLAN_M_MONITOR     = 8,$/;"	e	enum:wlan_opmode
+WLAN_M_P2P_CLIENT	air_coplane.h	/^    WLAN_M_P2P_CLIENT  = 34,$/;"	e	enum:wlan_opmode
+WLAN_M_P2P_DEVICE	air_coplane.h	/^    WLAN_M_P2P_DEVICE  = 35,$/;"	e	enum:wlan_opmode
+WLAN_M_P2P_GO	air_coplane.h	/^    WLAN_M_P2P_GO      = 33,$/;"	e	enum:wlan_opmode
+WLAN_M_STA	air_coplane.h	/^    WLAN_M_STA         = 1,$/;"	e	enum:wlan_opmode
+WLAN_M_WDS	air_coplane.h	/^    WLAN_M_WDS         = 2,$/;"	e	enum:wlan_opmode
+WLAN_OPMODE_MAX	air_coplane.h	/^    WLAN_OPMODE_MAX    = WLAN_M_BTAMP,$/;"	e	enum:wlan_opmode
+WLAN_STA_DOMAIN_NAME_HASHSIZE	air_coplane.h	40;"	d
+WLAN_STA_HASH	air_coplane.h	42;"	d
+WLAN_STA_HASHSIZE	air_coplane.h	39;"	d
+_AIR_API_H_	air_api.h	2;"	d
+__AIR_COPLANE_H__	air_coplane.h	19;"	d
+__AIR_VIF_H__	air_vif.h	18;"	d
+aa	dns.h	/^    uint8_t aa:1;          \/* authoritive answer *\/$/;"	m	struct:dns_hdr
+aa	proto/dns.h	/^    uint8_t aa:1;          \/* authoritive answer *\/$/;"	m	struct:dns_hdr
+aa	proto/mdns.h	/^    uint8_t aa:1;          \/* authoritive answer *\/$/;"	m	struct:mdns_hdr
+access_type	proto/cmb_proto.h	/^    uint8_t  access_type;$/;"	m	struct:cmb_ga_msg
+acct_interim_delay	proto/cmb_proto.h	/^    uint32_t acct_interim_delay; \/\/ seconds after which interim update should be sent out for the roaming client$/;"	m	struct:cmb_acct_stats_msg
+acct_interim_interval	proto/cmb_proto.h	/^    uint32_t acct_interim_interval; \/\/ radius accounting interval as received by RADIUS server $/;"	m	struct:cmb_ga_msg
+acct_interim_interval	proto/cmb_proto.h	/^    uint32_t acct_interim_interval; \/\/ radius accounting interval as received by RADIUS server$/;"	m	struct:cmb_ci_sess_msg
+acct_running	proto/cmb_proto.h	/^    uint8_t  acct_running; \/\/ if this is set then the accounting update should be ignored$/;"	m	struct:cmb_acct_stats_msg
+ack	proto/tcp.h	/^    uint16_t ack:1;$/;"	m	struct:tcp_hdr
+ack_seq	proto/tcp.h	/^    uint32_t ack_seq;$/;"	m	struct:tcp_hdr
+act	proto/mdns.h	/^    uint8_t act;$/;"	m	struct:mdns_cfg_rules
+action	air_common.h	/^typedef enum action {$/;"	g
+action_t	air_common.h	/^} action_t;$/;"	t	typeref:enum:action
+active	air_vif.h	/^    int active;$/;"	m	struct:blocked_domain
+add_blocked_domain	main.c	/^static int add_blocked_domain(struct air_vif *vif, const char *domain) {$/;"	f	file:
+add_count	dns.h	/^    uint16_t add_count;    \/* number of resource entries *\/$/;"	m	struct:dns_hdr
+add_count	proto/dns.h	/^    uint16_t add_count;    \/* number of resource entries *\/$/;"	m	struct:dns_hdr
+add_count	proto/mdns.h	/^    uint16_t add_count;    \/* number of resource entries *\/$/;"	m	struct:mdns_hdr
+addns	proto/mdns.h	/^    mdns_rr_list_t *addns;$/;"	m	struct:dnspacket
+adpi_add_sta_entry	air_ioctl.h	/^struct adpi_add_sta_entry {$/;"	s
+adpi_client_entry	air_ioctl.h	/^struct adpi_client_entry {$/;"	s
+adpi_client_info	air_ioctl.h	/^struct adpi_client_info {$/;"	s
+adpi_del_sta_entry	air_ioctl.h	/^struct adpi_del_sta_entry {$/;"	s
+adpi_domain_entry	air_ioctl.h	/^struct adpi_domain_entry {$/;"	s
+adpi_ratelimit_bucket	air_ioctl.h	/^struct adpi_ratelimit_bucket {$/;"	s
+air_action_t	air_common.h	/^} air_action_t;$/;"	t	typeref:enum:__anon9
+air_active_node_init_timer	node_timer.c	/^int air_active_node_init_timer(struct air_vif *vif)$/;"	f
+air_active_node_timer	air_vif.h	/^    struct timer_list air_active_node_timer;$/;"	m	struct:air_vif	typeref:struct:air_vif::timer_list
+air_active_node_timer_handler	node_timer.c	/^void air_active_node_timer_handler(struct timer_list *timer)$/;"	f
+air_active_node_timer_handler	node_timer.c	/^void air_active_node_timer_handler(unsigned long *ptr)$/;"	f
+air_device_ioctl	main.c	/^static long air_device_ioctl(struct file *file, unsigned int cmd, unsigned long arg)$/;"	f	file:
+air_egress_hook	txrx.c	/^unsigned int air_egress_hook(struct sk_buff *skb, const struct nf_hook_state* state)$/;"	f
+air_get_ip_str	sysctl.c	/^void air_get_ip_str(u32 *sip, u8 *ipstr)$/;"	f
+air_hookfunc_postroute	main.c	/^static unsigned int air_hookfunc_postroute(void* priv, struct sk_buff* skb, const struct nf_hook_state* st)$/;"	f	file:
+air_hookfunc_preroute	main.c	/^static unsigned int air_hookfunc_preroute(void* priv, struct sk_buff* skb, const struct nf_hook_state* st)$/;"	f	file:
+air_ingress_hook	txrx.c	/^unsigned int air_ingress_hook(struct sk_buff *skb, const struct nf_hook_state* state)$/;"	f
+air_init_netfilter_hook	main.c	/^int air_init_netfilter_hook(void)$/;"	f
+air_misc_fops	main.c	/^static const struct file_operations air_misc_fops = {$/;"	v	typeref:struct:file_operations	file:
+air_miscdev	main.c	/^static struct miscdevice air_miscdev = {$/;"	v	typeref:struct:miscdevice	file:
+air_parse_dhcp	txrx.c	/^static int air_parse_dhcp(struct sk_buff *skb, unsigned int ofs, struct iphdr *iph)$/;"	f	file:
+air_skb_direct	air_vif.h	/^enum air_skb_direct {$/;"	g
+air_vif	air_vif.h	/^struct air_vif {$/;"	s
+air_vif_module_exit	main.c	/^int air_vif_module_exit(void)$/;"	f
+air_vif_module_init	main.c	/^int air_vif_module_init(void)$/;"	f
+air_vif_node_sysctl_register	sysctl.c	/^int air_vif_node_sysctl_register(struct air_vif *vif)$/;"	f
+air_vif_node_sysctl_unregister	sysctl.c	/^void air_vif_node_sysctl_unregister(void)$/;"	f
+airdpi_g_ops	main.c	/^static const struct airdpi_ops airdpi_g_ops = {$/;"	v	typeref:struct:airdpi_ops	file:
+airdpi_get_ops	main.c	/^EXPORT_SYMBOL_GPL(airdpi_get_ops);$/;"	v
+airdpi_get_ops	main.c	/^const struct airdpi_ops *airdpi_get_ops(void)$/;"	f
+airdpi_ops	air_api.h	/^struct airdpi_ops {$/;"	s
+airdpi_ops_ptr	main.c	/^static const struct airdpi_ops *airdpi_ops_ptr;$/;"	v	typeref:struct:airdpi_ops	file:
+airdpi_register_ops	main.c	/^EXPORT_SYMBOL_GPL(airdpi_register_ops);$/;"	v
+airdpi_register_ops	main.c	/^int airdpi_register_ops(const struct airdpi_ops *ops)$/;"	f
+airdpi_sta_add	main.c	/^EXPORT_SYMBOL_GPL(airdpi_sta_add);$/;"	v
+airdpi_sta_add	main.c	/^int airdpi_sta_add(const u8 *macaddr, const char *ifname)$/;"	f
+airdpi_sta_del	main.c	/^EXPORT_SYMBOL_GPL(airdpi_sta_del);$/;"	v
+airdpi_sta_del	main.c	/^int airdpi_sta_del(const u8 *macaddr, const char *ifname)$/;"	f
+airdpi_unregister_ops	main.c	/^EXPORT_SYMBOL_GPL(airdpi_unregister_ops);$/;"	v
+airdpi_unregister_ops	main.c	/^void airdpi_unregister_ops(const struct airdpi_ops *ops)$/;"	f
+airpro_coplane	air_coplane.h	/^struct airpro_coplane {$/;"	s
+airpro_radio_mapping	air_coplane.h	/^enum airpro_radio_mapping {$/;"	g
+airpro_sta_unreg_timer	air_coplane.h	/^    struct timer_list airpro_sta_unreg_timer;$/;"	m	struct:airpro_coplane	typeref:struct:airpro_coplane::timer_list
+ancount	txrx.c	/^    uint16_t ancount;$/;"	m	struct:dns_header	file:
+ans_count	dns.h	/^    uint16_t ans_count;    \/* number of answer entries *\/$/;"	m	struct:dns_hdr
+ans_count	proto/dns.h	/^    uint16_t ans_count;    \/* number of answer entries *\/$/;"	m	struct:dns_hdr
+ans_count	proto/mdns.h	/^    uint16_t ans_count;    \/* number of answer entries *\/$/;"	m	struct:mdns_hdr
+answers	proto/mdns.h	/^    mdns_rr_list_t *answers;$/;"	m	struct:dnspacket
+ap_mac	proto/cmb_proto.h	/^    uint8_t             ap_mac[MAC_ADDR_LEN]; \/\/ AP mac from where the msg was generated$/;"	m	struct:cmb_notify_hdr
+arcount	txrx.c	/^    uint16_t arcount;$/;"	m	struct:dns_header	file:
+arp_hdr	proto/arp.h	/^struct arp_hdr {$/;"	s
+arp_ipv4_pkt	proto/arp.h	/^struct arp_ipv4_pkt {$/;"	s
+auth_count	dns.h	/^    uint16_t auth_count;   \/* number of authority entries *\/$/;"	m	struct:dns_hdr
+auth_count	proto/dns.h	/^    uint16_t auth_count;   \/* number of authority entries *\/$/;"	m	struct:dns_hdr
+auth_count	proto/mdns.h	/^    uint16_t auth_count;   \/* number of authority entries *\/$/;"	m	struct:mdns_hdr
+auths	proto/mdns.h	/^    mdns_rr_list_t *auths;$/;"	m	struct:dnspacket
+auto_power	proto/cmb_proto.h	/^    uint8_t auto_power:1;   \/\/ Power is automatic?$/;"	m	struct:cmb_arf_radio
+aux_data_len	proto/igmp.h	/^    u_int8_t    aux_data_len;$/;"	m	struct:igmp_v3_grec
+blocked_domain	air_vif.h	/^struct blocked_domain {$/;"	s
+blocked_ip	air_vif.h	/^struct blocked_ip {$/;"	s
+bss	proto/cmb_proto.h	/^    uint8_t bss[MAC_ADDR_LEN];  \/\/ Neighbor mac$/;"	m	struct:cmb_arf_nbr
+bssid	air_coplane.h	/^    uint8_t            bssid[MAX_MAC_ADDR_LEN];$/;"	m	struct:wlan_sta
+bw	air_coplane.h	/^    int                bw;$/;"	m	struct:wlan_sta
+bytes_per_sec	air_coplane.h	/^    uint32_t bytes_per_sec; \/* Token rate, bytes per second *\/$/;"	m	struct:ratelimit_config
+bytes_per_sec	air_ioctl.h	/^    uint32_t          bytes_per_sec;    \/\/ Data rate limit in bytes per second$/;"	m	struct:adpi_ratelimit_bucket
+cfg_channel	proto/cmb_proto.h	/^    uint8_t cfg_channel;    \/\/ Configured channel$/;"	m	struct:cmb_arf_radio
+cfg_power	proto/cmb_proto.h	/^    uint8_t cfg_power;      \/\/ Configured power$/;"	m	struct:cmb_arf_radio
+cfg_width	proto/cmb_proto.h	/^    uint8_t cfg_width;      \/\/ Configured width$/;"	m	struct:cmb_arf_radio
+chaddr	dhcp.h	/^    uint8_t chaddr[16];$/;"	m	struct:dhcp_hdr
+chaddr	proto/dhcp.h	/^    uint8_t chaddr[16];$/;"	m	struct:dhcp_hdr
+channel	air_coplane.h	/^    uint8_t            channel;$/;"	m	struct:wlan_sta
+channel	proto/cmb_proto.h	/^    uint8_t channel;            \/\/ Channel heard$/;"	m	struct:cmb_arf_nbr
+channel	proto/cmb_proto.h	/^    uint8_t channel;            \/\/ New channel$/;"	m	struct:cmb_arf_rfchange_msg
+channel	proto/cmb_proto.h	/^    uint8_t channel;        \/\/ Current channel$/;"	m	struct:cmb_arf_radio
+channel_change	proto/cmb_proto.h	/^    uint8_t channel_change:1;   \/\/ channel change$/;"	m	struct:cmb_arf_rfchange_msg
+ciaddr	dhcp.h	/^    uint8_t ciaddr[4];$/;"	m	struct:dhcp_hdr
+ciaddr	proto/dhcp.h	/^    uint8_t ciaddr[4];$/;"	m	struct:dhcp_hdr
+client	air_vif.h	/^struct client {$/;"	s
+client_count	proto/cmb_proto.h	/^    uint8_t client_count;       \/\/ Num clients on this radio$/;"	m	struct:cmb_clb_update_msg
+client_hash	air_vif.h	/^    ATH_LIST_HEAD(, client_node) client_hash[CLIENT_HASHSIZE];$/;"	m	struct:client
+client_list	air_vif.h	/^    TAILQ_HEAD( ,client_node) client_list;$/;"	m	struct:client
+client_node	air_vif.h	/^struct client_node {$/;"	s
+client_reg_table_alloc	txrx.c	/^struct client_node *client_reg_table_alloc(char *macaddr)$/;"	f
+client_reg_table_lookup	txrx.c	/^struct client_node *client_reg_table_lookup(uint8_t *macaddr)$/;"	f
+cmb_acct_stats_msg	proto/cmb_proto.h	/^struct cmb_acct_stats_msg {$/;"	s
+cmb_arf_devinfo_msg	proto/cmb_proto.h	/^struct cmb_arf_devinfo_msg {$/;"	s
+cmb_arf_leader_msg	proto/cmb_proto.h	/^struct cmb_arf_leader_msg {$/;"	s
+cmb_arf_nbr	proto/cmb_proto.h	/^struct cmb_arf_nbr {$/;"	s
+cmb_arf_nbrinfo_msg	proto/cmb_proto.h	/^struct cmb_arf_nbrinfo_msg {$/;"	s
+cmb_arf_radio	proto/cmb_proto.h	/^struct cmb_arf_radio {$/;"	s
+cmb_arf_rfchange_msg	proto/cmb_proto.h	/^struct cmb_arf_rfchange_msg {$/;"	s
+cmb_cflags_msg	proto/cmb_proto.h	/^struct cmb_cflags_msg {$/;"	s
+cmb_ci_sess_msg	proto/cmb_proto.h	/^struct cmb_ci_sess_msg {$/;"	s
+cmb_clb_update_msg	proto/cmb_proto.h	/^struct cmb_clb_update_msg {$/;"	s
+cmb_ga_msg	proto/cmb_proto.h	/^struct cmb_ga_msg {$/;"	s
+cmb_notify_hdr	proto/cmb_proto.h	/^struct cmb_notify_hdr {$/;"	s
+cmb_pmk_update_msg	proto/cmb_proto.h	/^struct cmb_pmk_update_msg {$/;"	s
+cmb_roam_data_ready_update_msg	proto/cmb_proto.h	/^struct cmb_roam_data_ready_update_msg {$/;"	s
+cmb_roam_msg	proto/cmb_proto.h	/^struct cmb_roam_msg {$/;"	s
+connected_tms	air_vif.h	/^    u32 connected_tms;$/;"	m	struct:client_node
+coplane	main.c	/^struct airpro_coplane *coplane = NULL;$/;"	v	typeref:struct:airpro_coplane
+count	air_ioctl.h	/^    int count;$/;"	m	struct:adpi_client_info
+count	air_ioctl.h	/^    uint32_t count;$/;"	m	struct:adpi_domain_entry
+count	air_vif.h	/^    uint32_t count;$/;"	m	struct:domain_entry
+count	proto/mdns.h	/^    uint16_t count; \/\/num of rules added$/;"	m	struct:mdns_acl_cfg
+csum	proto/igmp.h	/^    uint16_t    csum;$/;"	m	struct:igmp_v3_report_hdr
+csum	proto/igmp.h	/^    uint16_t csum;$/;"	m	struct:igmp_hdr
+csum	proto/ipv4.h	/^    uint16_t csum;$/;"	m	struct:ipv4_hdr
+csum	proto/tcp.h	/^    uint16_t csum;$/;"	m	struct:tcp_hdr
+csum	proto/udp.h	/^    uint16_t csum;$/;"	m	struct:udp_hdr
+cur_channel	proto/cmb_proto.h	/^    uint8_t cur_channel;        \/\/ Current channel$/;"	m	struct:cmb_arf_nbrinfo_msg
+cur_channel	proto/cmb_proto.h	/^    uint8_t cur_channel;        \/\/ Current channel$/;"	m	struct:cmb_arf_rfchange_msg
+cur_if	proto/cmb_proto.h	/^    uint8_t cur_if;             \/\/ current channel interference$/;"	m	struct:cmb_arf_rfchange_msg
+cur_power	proto/cmb_proto.h	/^    uint8_t cur_power;          \/\/ current power$/;"	m	struct:cmb_arf_rfchange_msg
+cur_width	proto/cmb_proto.h	/^    uint8_t cur_width;          \/\/ Current width$/;"	m	struct:cmb_arf_nbrinfo_msg
+cur_width	proto/cmb_proto.h	/^    uint8_t cur_width;          \/\/ current width$/;"	m	struct:cmb_arf_rfchange_msg
+cwr	proto/tcp.h	/^    uint16_t cwr:1;$/;"	m	struct:tcp_hdr
+data	proto/cmb_proto.h	/^    uint8_t             data[0];$/;"	m	struct:cmb_notify_hdr
+dei	proto/ethernet.h	/^        uint16_t dei:1;$/;"	m	struct:ethernet_vlan_hdr::__anon2
+dei	proto/ethernet.h	/^        uint16_t dei:1;$/;"	m	struct:ethernet_vlan_hdr::__anon3
+dei	proto/ethernet.h	/^        uint16_t dei:1;$/;"	m	struct:ethernet_vlan_hdr::__anon4
+dei	proto/ethernet.h	/^        uint16_t dei:1;$/;"	m	struct:ethernet_vlan_hdr::__anon5
+dest_mac	air_coplane.h	/^    uint8_t            dest_mac[MAX_MAC_ADDR_LEN];$/;"	m	struct:wlan_sta
+dev	air_coplane.h	/^    struct net_device *dev;$/;"	m	struct:nw_iface	typeref:struct:nw_iface::net_device
+dev_type	proto/cmb_proto.h	/^    uint8_t dev_type[16];$/;"	m	struct:cmb_ga_msg
+dev_type	proto/cmb_proto.h	/^    uint8_t dev_type[16];$/;"	m	struct:cmb_roam_msg
+dhcp_hdr	dhcp.h	/^struct dhcp_hdr {$/;"	s
+dhcp_hdr	proto/dhcp.h	/^struct dhcp_hdr {$/;"	s
+dip	proto/ipv4.h	/^    uint32_t dip;$/;"	m	struct:ipv4_hdr
+dir_t	air_common.h	/^} dir_t;$/;"	t	typeref:enum:flow_direction
+direction	air_ioctl.h	/^    int               direction;        \/\/ Direction of the traffic (e.g., 0 for upload, 1 for download)$/;"	m	struct:adpi_ratelimit_bucket
+dl_bytes_per_sec	air_coplane.h	/^    uint32_t dl_bytes_per_sec;$/;"	m	struct:wlan_sta_rc
+dlen	dns.h	/^  uint16_t dlen; \/\/ data len$/;"	m	struct:dns_rr
+dlen	proto/dns.h	/^  uint16_t dlen; \/\/ data len$/;"	m	struct:dns_rr
+dns_get_name	dns.c	/^static int dns_get_name(unsigned char *buf, uint8_t *pos, uint8_t *q_name, int max_len, uint32_t *chars_parsed)$/;"	f	file:
+dns_hdr	dns.h	/^struct dns_hdr$/;"	s
+dns_hdr	proto/dns.h	/^struct dns_hdr$/;"	s
+dns_header	txrx.c	/^struct dns_header {$/;"	s	file:
+dns_rr	dns.h	/^struct dns_rr {$/;"	s
+dns_rr	proto/dns.h	/^struct dns_rr {$/;"	s
+dnspacket	proto/mdns.h	/^struct dnspacket {$/;"	s
+do_acct_stop	proto/cmb_proto.h	/^    uint8_t  do_acct_stop; \/\/ if set the old AP will do accounting stop$/;"	m	struct:cmb_roam_data_ready_update_msg
+doff	proto/tcp.h	/^    uint16_t doff:4;$/;"	m	struct:tcp_hdr
+domain	air_ioctl.h	/^    char domain[MAX_DOMAIN_NAME_LEN];$/;"	m	struct:adpi_domain_entry
+domain	air_vif.h	/^    char domain[MAX_DOMAIN_NAME_LEN];$/;"	m	struct:blocked_domain
+domain	air_vif.h	/^    char domain[MAX_DOMAIN_NAME_LEN];$/;"	m	struct:domain_entry
+domain_entry	air_vif.h	/^struct domain_entry {$/;"	s
+domain_lock	air_vif.h	/^    spinlock_t domain_lock;$/;"	m	struct:air_vif
+domain_name	air_coplane.h	/^    char domain_name[10][MAX_DNS_LENGTH];$/;"	m	struct:wlan_sta
+domain_name_count	air_coplane.h	/^    uint8_t            domain_name_count;$/;"	m	struct:wlan_sta
+dport	proto/tcp.h	/^    uint16_t dport;$/;"	m	struct:tcp_hdr
+dport	proto/udp.h	/^    uint16_t dport;$/;"	m	struct:udp_hdr
+dropped	air_coplane.h	/^    unsigned int dropped; \/* Packets dropped *\/$/;"	m	struct:ratelimit_bucket
+dst	proto/ethernet.h	/^    uint8_t dst[MAC_ADDR_LEN];$/;"	m	struct:ethernet_hdr
+dst	proto/ethernet.h	/^    uint8_t dst[MAC_ADDR_LEN];$/;"	m	struct:ethernet_vlan_hdr
+ece	proto/tcp.h	/^    uint16_t ece:1;$/;"	m	struct:tcp_hdr
+elected	proto/cmb_proto.h	/^    uint32_t elected;$/;"	m	struct:cmb_arf_leader_msg
+enabled	proto/cmb_proto.h	/^    uint8_t enabled;            \/\/ CLB enabled \/ not$/;"	m	struct:cmb_clb_update_msg
+entry	air_ioctl.h	/^    struct adpi_client_entry entry[32];$/;"	m	struct:adpi_client_info	typeref:struct:adpi_client_info::adpi_client_entry
+ethernet_hdr	proto/ethernet.h	/^struct ethernet_hdr {$/;"	s
+ethernet_vlan_hdr	proto/ethernet.h	/^struct ethernet_vlan_hdr {$/;"	s
+file	dhcp.h	/^    uint8_t file[128];$/;"	m	struct:dhcp_hdr
+file	proto/dhcp.h	/^    uint8_t file[128];$/;"	m	struct:dhcp_hdr
+fin	proto/tcp.h	/^    uint16_t fin:1;$/;"	m	struct:tcp_hdr
+fingerprint	air_vif.h	/^    char fingerprint[256];$/;"	m	struct:client_node
+flags	dhcp.h	/^    uint16_t flags;$/;"	m	struct:dhcp_hdr
+flags	proto/cmb_proto.h	/^    uint32_t flags;$/;"	m	struct:cmb_cflags_msg
+flags	proto/cmb_proto.h	/^    uint8_t  flags; \/\/ update accounting flag if enabled$/;"	m	struct:cmb_ci_sess_msg
+flags	proto/cmb_proto.h	/^    uint8_t  flags; \/\/ update accounting flag if enabled$/;"	m	struct:cmb_ga_msg
+flags	proto/dhcp.h	/^    uint16_t flags;$/;"	m	struct:dhcp_hdr
+flags	txrx.c	/^    uint16_t flags;$/;"	m	struct:dns_header	file:
+flags_offs	proto/ipv4.h	/^    uint16_t flags_offs;$/;"	m	struct:ipv4_hdr
+flow_direction	air_common.h	/^typedef enum flow_direction {$/;"	g
+flush_proc_fops	sysctl.c	/^static const struct file_operations flush_proc_fops = {$/;"	v	typeref:struct:file_operations	file:
+flush_proc_fops	sysctl.c	/^static const struct proc_ops flush_proc_fops = {$/;"	v	typeref:struct:proc_ops	file:
+flush_proc_write	sysctl.c	/^static ssize_t flush_proc_write(struct file *file, const char __user *buffer, size_t count, loff_t *pos) $/;"	f	file:
+forced	proto/cmb_proto.h	/^    uint8_t forced:1;           \/\/ Forced assignment - no channel change diff$/;"	m	struct:cmb_arf_nbrinfo_msg
+g_hook_postroute	main.c	/^static struct nf_hook_ops g_hook_postroute = {$/;"	v	typeref:struct:nf_hook_ops	file:
+g_hook_preroute	main.c	/^static struct nf_hook_ops g_hook_preroute = {$/;"	v	typeref:struct:nf_hook_ops	file:
+get_ip_str	txrx.c	/^void get_ip_str(u32 *sip, u8 *ipstr)$/;"	f
+giaddr	dhcp.h	/^    uint8_t giaddr[4];$/;"	m	struct:dhcp_hdr
+giaddr	proto/dhcp.h	/^    uint8_t giaddr[4];$/;"	m	struct:dhcp_hdr
+hash_string	air_vif.h	/^static inline unsigned long hash_string(const char *str) {$/;"	f
+hdr	proto/arp.h	/^    struct arp_hdr hdr;$/;"	m	struct:arp_ipv4_pkt	typeref:struct:arp_ipv4_pkt::arp_hdr
+hdr	proto/igmp.h	/^    struct igmp_hdr hdr; \/* Type is 0x11 *\/$/;"	m	struct:igmp_v3_query	typeref:struct:igmp_v3_query::igmp_hdr
+head	proto/mdns.h	/^    mdns_rr_t *head;$/;"	m	struct:mdns_rr_list
+hlen	proto/ipv4.h	/^    uint8_t hlen:4;$/;"	m	struct:ipv4_hdr
+hops	dhcp.h	/^    uint8_t hops;$/;"	m	struct:dhcp_hdr
+hops	proto/dhcp.h	/^    uint8_t hops;$/;"	m	struct:dhcp_hdr
+hostname	air_coplane.h	/^    uint8_t            hostname[16+1];$/;"	m	struct:wlan_sta
+hostname	air_ioctl.h	/^    char hostname[32];$/;"	m	struct:adpi_client_entry
+hostname	air_vif.h	/^    char hostname[32];$/;"	m	struct:client_node
+hostname	proto/cmb_proto.h	/^    uint8_t hostname[16];$/;"	m	struct:cmb_ga_msg
+hostname	proto/cmb_proto.h	/^    uint8_t hostname[16];$/;"	m	struct:cmb_roam_msg
+hw_len	proto/arp.h	/^    uint8_t hw_len;$/;"	m	struct:arp_hdr
+hw_type	proto/arp.h	/^    uint16_t hw_type;$/;"	m	struct:arp_hdr
+hwlen	dhcp.h	/^    uint8_t hwlen;$/;"	m	struct:dhcp_hdr
+hwlen	proto/dhcp.h	/^    uint8_t hwlen;$/;"	m	struct:dhcp_hdr
+hwtype	dhcp.h	/^    uint8_t hwtype;$/;"	m	struct:dhcp_hdr
+hwtype	proto/dhcp.h	/^    uint8_t hwtype;$/;"	m	struct:dhcp_hdr
+id	dns.h	/^    uint16_t id;           \/* identification number *\/$/;"	m	struct:dns_hdr
+id	proto/dns.h	/^    uint16_t id;           \/* identification number *\/$/;"	m	struct:dns_hdr
+id	proto/ipv4.h	/^    uint16_t id;$/;"	m	struct:ipv4_hdr
+id	proto/mdns.h	/^    uint16_t id;           \/* identification number *\/$/;"	m	struct:mdns_hdr
+id	txrx.c	/^    uint16_t id;$/;"	m	struct:dns_header	file:
+iface_name	air_coplane.h	/^    char iface_name[16];$/;"	m	struct:nw_iface
+iface_type	air_coplane.h	/^    int iface_type; \/\/PHY_ETH, PHY_WLAN$/;"	m	struct:nw_iface
+ifname	air_coplane.h	/^    char               ifname[8];$/;"	m	struct:wlan_sta
+ifname	air_ioctl.h	/^    char ifname[12];$/;"	m	struct:adpi_add_sta_entry
+ifname	air_ioctl.h	/^    char ifname[12];$/;"	m	struct:adpi_del_sta_entry
+ifname	air_vif.h	/^    char ifname[12];$/;"	m	struct:client_node
+igmp_hdr	proto/igmp.h	/^struct igmp_hdr$/;"	s
+igmp_v3_grec	proto/igmp.h	/^struct igmp_v3_grec {$/;"	s
+igmp_v3_query	proto/igmp.h	/^struct igmp_v3_query$/;"	s
+igmp_v3_report_hdr	proto/igmp.h	/^struct igmp_v3_report_hdr {$/;"	s
+in_use	proto/mdns.h	/^    uint8_t in_use:1;$/;"	m	struct:mdns_rr
+inactivity_timeout	proto/cmb_proto.h	/^    uint32_t inactivity_timeout; \/\/ inactivity timeout for the client, can be give by RADIUS server too $/;"	m	struct:cmb_ga_msg
+inactivity_timeout	proto/cmb_proto.h	/^    uint32_t inactivity_timeout; \/\/ inactivity timeout for the client, can be give by RADIUS server too$/;"	m	struct:cmb_ci_sess_msg
+info_proc_fops	sysctl.c	/^static const struct file_operations info_proc_fops = {$/;"	v	typeref:struct:file_operations	file:
+info_proc_fops	sysctl.c	/^static const struct proc_ops info_proc_fops = {$/;"	v	typeref:struct:proc_ops	file:
+info_proc_open	sysctl.c	/^static int info_proc_open(struct inode *inode, struct file *file) $/;"	f	file:
+info_proc_show	sysctl.c	/^static int info_proc_show(struct seq_file *m, void *v) $/;"	f	file:
+ip	air_ioctl.h	/^    uint32_t ip;$/;"	m	struct:adpi_client_entry
+ip	air_vif.h	/^    __be32 ip;$/;"	m	struct:blocked_ip
+ip	air_vif.h	/^    u32 ip;$/;"	m	struct:client_node
+ip	proto/cmb_proto.h	/^    uint32_t ip; \/\/ IP address of the client$/;"	m	struct:cmb_acct_stats_msg
+ip	proto/mdns.h	/^    char ip[16];$/;"	m	struct:mdns_pkt_info
+ip_list	air_vif.h	/^    struct hlist_head ip_list;$/;"	m	struct:blocked_domain	typeref:struct:blocked_domain::hlist_head
+ipv4_addr	air_coplane.h	/^    uint8_t            ipv4_addr[20];$/;"	m	struct:wlan_sta
+ipv4_hdr	proto/ipv4.h	/^struct ipv4_hdr {$/;"	s
+is_blocked_ip	txrx.c	/^int is_blocked_ip(struct air_vif *vif, __be32 ip) {$/;"	f
+kprobe_exit	main.c	/^static void kprobe_exit(void)$/;"	f	file:
+kprobe_init	main.c	/^static int kprobe_init(void)$/;"	f	file:
+last_update	air_coplane.h	/^    unsigned long last_update; \/* Last time bucket was updated *\/$/;"	m	struct:ratelimit_bucket
+last_updated	proto/mdns.h	/^    uint32_t last_updated;$/;"	m	struct:mdns_rr
+lease_time	air_vif.h	/^    u32 lease_time;$/;"	m	struct:client_node
+len	proto/cmb_proto.h	/^    uint16_t            len; \/\/ length is the size of what follows$/;"	m	struct:cmb_notify_hdr
+len	proto/udp.h	/^    uint16_t len;$/;"	m	struct:udp_hdr
+lock	air_vif.h	/^    spinlock_t lock;$/;"	m	struct:client
+mac	proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_acct_stats_msg
+mac	proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_ci_sess_msg
+mac	proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_ga_msg
+mac	proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_pmk_update_msg
+mac	proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_roam_data_ready_update_msg
+mac	proto/cmb_proto.h	/^    uint8_t  mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_roam_msg
+mac	proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];  \/\/ AP mac$/;"	m	struct:cmb_clb_update_msg
+mac	proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];  \/\/ Device mac$/;"	m	struct:cmb_arf_devinfo_msg
+mac	proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];  \/\/ Device mac$/;"	m	struct:cmb_arf_nbrinfo_msg
+mac	proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];  \/\/ Device mac$/;"	m	struct:cmb_arf_rfchange_msg
+mac	proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];  \/\/ Radio mac$/;"	m	struct:cmb_arf_radio
+mac	proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN]; \/\/ client mac$/;"	m	struct:cmb_cflags_msg
+mac	proto/cmb_proto.h	/^    uint8_t mac[MAC_ADDR_LEN];$/;"	m	struct:cmb_arf_leader_msg
+macaddr	air_coplane.h	/^    uint8_t macaddr[MAX_MAC_ADDR_LEN];$/;"	m	struct:wlan_sta_rc
+macaddr	air_ioctl.h	/^    uint8_t           macaddr[MAX_MAC_ADDR_LEN];$/;"	m	struct:adpi_ratelimit_bucket
+macaddr	air_ioctl.h	/^    uint8_t macaddr[6];$/;"	m	struct:adpi_client_entry
+macaddr	air_ioctl.h	/^    uint8_t macaddr[MAX_MAC_ADDR_LEN];$/;"	m	struct:adpi_add_sta_entry
+macaddr	air_ioctl.h	/^    uint8_t macaddr[MAX_MAC_ADDR_LEN];$/;"	m	struct:adpi_del_sta_entry
+macaddr	air_vif.h	/^    u8 macaddr[6];$/;"	m	struct:client_node
+magic	dhcp.h	/^    uint8_t magic[4];$/;"	m	struct:dhcp_hdr
+magic	proto/dhcp.h	/^    uint8_t magic[4];$/;"	m	struct:dhcp_hdr
+max_resp_code	proto/igmp.h	/^    uint8_t max_resp_code;$/;"	m	struct:igmp_hdr
+max_tokens	air_coplane.h	/^    uint32_t max_tokens; \/* burst size *\/$/;"	m	struct:ratelimit_bucket
+mc_addr	proto/igmp.h	/^    u_int32_t   mc_addr;$/;"	m	struct:igmp_v3_grec
+mc_addr	proto/igmp.h	/^    uint32_t mc_addr;$/;"	m	struct:igmp_hdr
+mdns_acl_cfg	proto/mdns.h	/^typedef struct mdns_acl_cfg {$/;"	s
+mdns_cfg_rules	proto/mdns.h	/^typedef struct mdns_cfg_rules {$/;"	s
+mdns_cfg_t	proto/mdns.h	/^} mdns_cfg_t;$/;"	t	typeref:struct:mdns_acl_cfg
+mdns_hdr	proto/mdns.h	/^struct mdns_hdr$/;"	s
+mdns_pkt_info	proto/mdns.h	/^typedef struct mdns_pkt_info {$/;"	s
+mdns_pkt_info_t	proto/mdns.h	/^} mdns_pkt_info_t;$/;"	t	typeref:struct:mdns_pkt_info
+mdns_rr	proto/mdns.h	/^typedef struct mdns_rr {$/;"	s
+mdns_rr_list	proto/mdns.h	/^typedef struct mdns_rr_list {$/;"	s
+mdns_rr_list_t	proto/mdns.h	/^} mdns_rr_list_t;$/;"	t	typeref:struct:mdns_rr_list
+mdns_rr_t	proto/mdns.h	/^}  mdns_rr_t;$/;"	t	typeref:struct:mdns_rr
+mdns_rules_t	proto/mdns.h	/^} mdns_rules_t;$/;"	t	typeref:struct:mdns_cfg_rules
+my_timer	main.c	/^struct timer_list my_timer; \/\/ Timer for resetting the counter$/;"	v	typeref:struct:timer_list
+name	proto/mdns.h	/^    char *name;$/;"	m	struct:srv
+name	proto/mdns.h	/^    char name[64];$/;"	m	struct:mdns_rr
+nbrs	proto/cmb_proto.h	/^    struct cmb_arf_nbr nbrs[0];$/;"	m	struct:cmb_arf_nbrinfo_msg	typeref:struct:cmb_arf_nbrinfo_msg::cmb_arf_nbr
+nc	air_vif.h	/^    struct client nc;$/;"	m	struct:air_vif	typeref:struct:air_vif::client
+netlink_exit	netlink.c	/^void netlink_exit(void) $/;"	f
+netlink_init	netlink.c	/^int netlink_init(void) $/;"	f
+netlink_recv_msg	netlink.c	/^static void netlink_recv_msg(struct sk_buff *skb) $/;"	f	file:
+new_if	proto/cmb_proto.h	/^    uint8_t new_if;             \/\/ new channel interference$/;"	m	struct:cmb_arf_rfchange_msg
+next	proto/mdns.h	/^    struct mdns_rr *next;$/;"	m	struct:mdns_rr	typeref:struct:mdns_rr::mdns_rr
+ngrec	proto/igmp.h	/^    uint16_t    ngrec;$/;"	m	struct:igmp_v3_report_hdr
+nh	air_vif.h	/^    LIST_ENTRY(client_node) nh;$/;"	m	struct:client_node
+ni_next	air_coplane.h	/^    TAILQ_ENTRY(nw_iface) ni_next;$/;"	m	struct:nw_iface
+nl	air_vif.h	/^    TAILQ_ENTRY(client_node) nl;$/;"	m	struct:client_node
+nl_sk	air_vif.h	/^    struct sock *nl_sk;$/;"	m	struct:air_vif	typeref:struct:air_vif::sock
+nl_sk	netlink.c	/^static struct sock *nl_sk = NULL;$/;"	v	typeref:struct:sock	file:
+node	air_vif.h	/^    struct hlist_node node;$/;"	m	struct:blocked_domain	typeref:struct:blocked_domain::hlist_node
+node	air_vif.h	/^    struct hlist_node node;$/;"	m	struct:blocked_ip	typeref:struct:blocked_ip::hlist_node
+noise	proto/cmb_proto.h	/^    uint8_t noise;              \/\/ Noise$/;"	m	struct:cmb_arf_nbr
+nscount	txrx.c	/^    uint16_t nscount;$/;"	m	struct:dns_header	file:
+nsrcs	proto/igmp.h	/^    u_int16_t   nsrcs;$/;"	m	struct:igmp_v3_grec
+num_nbrs	proto/cmb_proto.h	/^    uint8_t num_nbrs;           \/\/ Num neighbors$/;"	m	struct:cmb_arf_nbrinfo_msg
+num_src	proto/igmp.h	/^    uint16_t num_src;$/;"	m	struct:igmp_v3_query
+nw_iface	air_coplane.h	/^struct nw_iface {$/;"	s
+nw_iface_list	air_coplane.h	/^    TAILQ_HEAD( ,nw_iface) nw_iface_list;$/;"	m	struct:airpro_coplane
+nw_iface_lock	air_coplane.h	/^    spinlock_t nw_iface_lock;$/;"	m	struct:airpro_coplane
+opcode	dhcp.h	/^    uint8_t opcode;$/;"	m	struct:dhcp_hdr
+opcode	dns.h	/^    uint8_t opcode:4;      \/* purpose of message *\/$/;"	m	struct:dns_hdr
+opcode	proto/arp.h	/^    uint16_t opcode;$/;"	m	struct:arp_hdr
+opcode	proto/dhcp.h	/^    uint8_t opcode;$/;"	m	struct:dhcp_hdr
+opcode	proto/dns.h	/^    uint8_t opcode:4;      \/* purpose of message *\/$/;"	m	struct:dns_hdr
+opcode	proto/mdns.h	/^    uint8_t opcode:4;      \/* purpose of message *\/$/;"	m	struct:mdns_hdr
+options	dhcp.h	/^    uint8_t options[];$/;"	m	struct:dhcp_hdr
+options	proto/dhcp.h	/^    uint8_t options[];$/;"	m	struct:dhcp_hdr
+parse_dns_response	dns.c	/^static int parse_dns_response(struct sk_buff *skb, unsigned int ofs)$/;"	f	file:
+parse_dns_response	txrx.c	/^static int parse_dns_response(struct sk_buff *skb) {$/;"	f	file:
+parse_layer2_header	txrx.c	/^static unsigned int parse_layer2_header(struct sk_buff *skb, unsigned int *proto, unsigned int *vlan)$/;"	f	file:
+pcp	proto/ethernet.h	/^        uint16_t pcp:3;$/;"	m	struct:ethernet_vlan_hdr::__anon2
+pcp	proto/ethernet.h	/^        uint16_t pcp:3;$/;"	m	struct:ethernet_vlan_hdr::__anon3
+pcp	proto/ethernet.h	/^        uint16_t pcp:3;$/;"	m	struct:ethernet_vlan_hdr::__anon4
+pcp	proto/ethernet.h	/^        uint16_t pcp:3;$/;"	m	struct:ethernet_vlan_hdr::__anon5
+phy	air_common.h	/^typedef enum phy {$/;"	g
+phy_t	air_common.h	/^} phy_t;$/;"	t	typeref:enum:phy
+phymode	air_coplane.h	/^    int                phymode;$/;"	m	struct:wlan_sta
+pid	netlink.c	/^int pid = 0;$/;"	v
+pktidx	proto/mdns.h	/^    uint8_t pktidx;$/;"	m	struct:mdns_rr
+pmk	proto/cmb_proto.h	/^    uint8_t  pmk[32];$/;"	m	struct:cmb_pmk_update_msg
+port	proto/mdns.h	/^    uint16_t port;$/;"	m	struct:srv
+power	proto/cmb_proto.h	/^    uint8_t power;              \/\/ New power$/;"	m	struct:cmb_arf_rfchange_msg
+power	proto/cmb_proto.h	/^    uint8_t power;          \/\/ Current power$/;"	m	struct:cmb_arf_radio
+power_change	proto/cmb_proto.h	/^    uint8_t power_change:1;     \/\/ power change$/;"	m	struct:cmb_arf_rfchange_msg
+priority	proto/cmb_proto.h	/^    uint8_t priority;$/;"	m	struct:cmb_arf_leader_msg
+priority	proto/mdns.h	/^    uint16_t priority;$/;"	m	struct:srv
+proc_dir	sysctl.c	/^static struct proc_dir_entry *proc_dir;$/;"	v	typeref:struct:proc_dir_entry	file:
+proc_flush	sysctl.c	/^static struct proc_dir_entry *proc_flush;$/;"	v	typeref:struct:proc_dir_entry	file:
+proc_info	sysctl.c	/^static struct proc_dir_entry *proc_info;$/;"	v	typeref:struct:proc_dir_entry	file:
+proto	proto/arp.h	/^    uint16_t proto;$/;"	m	struct:arp_hdr
+proto	proto/ipv4.h	/^    uint8_t proto;$/;"	m	struct:ipv4_hdr
+proto	proto/mdns.h	/^    char proto[64]; \/\/Application protocol$/;"	m	struct:mdns_cfg_rules
+proto_len	proto/arp.h	/^    uint8_t proto_len;$/;"	m	struct:arp_hdr
+psh	proto/tcp.h	/^    uint16_t psh:1;$/;"	m	struct:tcp_hdr
+q_count	dns.h	/^    uint16_t q_count;      \/* number of question entries *\/$/;"	m	struct:dns_hdr
+q_count	proto/dns.h	/^    uint16_t q_count;      \/* number of question entries *\/$/;"	m	struct:dns_hdr
+q_count	proto/mdns.h	/^    uint16_t q_count;      \/* number of question entries *\/$/;"	m	struct:mdns_hdr
+qdcount	txrx.c	/^    uint16_t qdcount;$/;"	m	struct:dns_header	file:
+qqic	proto/igmp.h	/^    uint8_t qqic;$/;"	m	struct:igmp_v3_query
+qr	dns.h	/^    uint8_t qr:1;          \/* response flag *\/$/;"	m	struct:dns_hdr
+qr	proto/dns.h	/^    uint8_t qr:1;          \/* response flag *\/$/;"	m	struct:dns_hdr
+qr	proto/mdns.h	/^    uint8_t qr:1;          \/* response flag *\/$/;"	m	struct:mdns_hdr
+quota_down	proto/cmb_proto.h	/^    uint32_t quota_down; \/\/ quota limit as received by RADIUS server or controller$/;"	m	struct:cmb_ci_sess_msg
+quota_down	proto/cmb_proto.h	/^    uint32_t quota_down; \/\/ quota limit as received by RADIUS server or controller$/;"	m	struct:cmb_ga_msg
+quota_type	proto/cmb_proto.h	/^    uint8_t  quota_type; \/\/ quota type for data limit for client$/;"	m	struct:cmb_ci_sess_msg
+quota_type	proto/cmb_proto.h	/^    uint8_t  quota_type; \/\/ quota type for data limit for client$/;"	m	struct:cmb_ga_msg
+quota_up	proto/cmb_proto.h	/^    uint32_t quota_up; \/\/ quota limit as received by RADIUS server or controller$/;"	m	struct:cmb_ci_sess_msg
+quota_up	proto/cmb_proto.h	/^    uint32_t quota_up; \/\/ quota limit as received by RADIUS server or controller$/;"	m	struct:cmb_ga_msg
+ra	dns.h	/^    uint8_t ra:1;          \/* recursion available *\/$/;"	m	struct:dns_hdr
+ra	proto/dns.h	/^    uint8_t ra:1;          \/* recursion available *\/$/;"	m	struct:dns_hdr
+ra	proto/mdns.h	/^    uint8_t ra:1;          \/* recursion available *\/$/;"	m	struct:mdns_hdr
+radio_id	proto/cmb_proto.h	/^    uint8_t  radio_id;$/;"	m	struct:cmb_pmk_update_msg
+radio_idx	proto/cmb_proto.h	/^    uint8_t radio_idx:1;        \/\/ Radio index$/;"	m	struct:cmb_arf_nbrinfo_msg
+radio_idx	proto/cmb_proto.h	/^    uint8_t radio_idx:1;        \/\/ Radio index$/;"	m	struct:cmb_arf_rfchange_msg
+radio_idx	proto/cmb_proto.h	/^    uint8_t radio_idx:1;    \/\/ Radio index$/;"	m	struct:cmb_arf_radio
+radio_idx	proto/cmb_proto.h	/^    uint8_t radio_idx;          \/\/ Radio index$/;"	m	struct:cmb_clb_update_msg
+radio_type	proto/cmb_proto.h	/^    uint8_t  radio_type;$/;"	m	struct:cmb_roam_msg
+radios	proto/cmb_proto.h	/^    struct cmb_arf_radio radios[2];$/;"	m	struct:cmb_arf_devinfo_msg	typeref:struct:cmb_arf_devinfo_msg::cmb_arf_radio
+radius_server_idx	proto/cmb_proto.h	/^    int8_t   radius_server_idx; \/\/ the server index which was used for doing radius auth and ongoing accounting$/;"	m	struct:cmb_ci_sess_msg
+radius_server_idx	proto/cmb_proto.h	/^    int8_t   radius_server_idx; \/\/ the server index which was used for doing radius auth and ongoing accounting$/;"	m	struct:cmb_ga_msg
+ratelimit_bucket	air_coplane.h	/^struct ratelimit_bucket {$/;"	s
+ratelimit_check_update	rate_limit.c	/^static int ratelimit_check_update(struct ratelimit_bucket *rl, unsigned long now, size_t len)$/;"	f	file:
+ratelimit_config	air_coplane.h	/^struct ratelimit_config {$/;"	s
+rc_hash	air_coplane.h	/^    LIST_ENTRY(wlan_sta_rc) rc_hash;$/;"	m	struct:wlan_sta_rc
+rc_next	air_coplane.h	/^    TAILQ_ENTRY(wlan_sta_rc) rc_next;$/;"	m	struct:wlan_sta_rc
+rcode	dns.h	/^    uint8_t rcode:4;       \/* response code *\/$/;"	m	struct:dns_hdr
+rcode	proto/dns.h	/^    uint8_t rcode:4;       \/* response code *\/$/;"	m	struct:dns_hdr
+rcode	proto/mdns.h	/^    uint8_t rcode:4;       \/* response code *\/$/;"	m	struct:mdns_hdr
+rd	dns.h	/^    uint8_t rd:1;          \/* recursion desired *\/$/;"	m	struct:dns_hdr
+rd	proto/dns.h	/^    uint8_t rd:1;          \/* recursion desired *\/$/;"	m	struct:dns_hdr
+rd	proto/mdns.h	/^    uint8_t rd:1;          \/* recursion desired *\/$/;"	m	struct:mdns_hdr
+rdata	proto/mdns.h	/^    char rdata[64];$/;"	m	struct:mdns_rr
+rdlength	proto/mdns.h	/^    uint16_t rdlength;$/;"	m	struct:mdns_rr
+remove_blocked_domain	main.c	/^static int remove_blocked_domain(struct air_vif *vif, const char *domain) {$/;"	f	file:
+remove_client_from_coplane_table	main.c	/^int remove_client_from_coplane_table(uint8_t *macaddr)$/;"	f
+remove_client_from_reg_table	main.c	/^int remove_client_from_reg_table(uint8_t *macaddr, char *ifname)$/;"	f
+res1	proto/tcp.h	/^    uint16_t res1:4;$/;"	m	struct:tcp_hdr
+resv1	proto/igmp.h	/^    uint8_t     resv1;$/;"	m	struct:igmp_v3_report_hdr
+resv2	proto/igmp.h	/^    uint16_t    resv2;$/;"	m	struct:igmp_v3_report_hdr
+resv_s_qrv	proto/igmp.h	/^    uint8_t resv_s_qrv; \/* M2U will set the whole field to 0 *\/$/;"	m	struct:igmp_v3_query
+rl	air_coplane.h	/^    struct ratelimit_bucket *rl[AIR_RL_DIR_MAX];$/;"	m	struct:wlan_sta	typeref:struct:wlan_sta::ratelimit_bucket
+rl	air_vif.h	/^    struct ratelimit_bucket *rl[AIR_RL_DIR_MAX];$/;"	m	struct:client_node	typeref:struct:client_node::ratelimit_bucket
+rl_dl_update	air_coplane.h	/^    uint8_t rl_dl_update;$/;"	m	struct:wlan_sta_rc
+rl_down	proto/cmb_proto.h	/^    uint32_t rl_down; \/\/ down rate limit as received by RADIUS server or controller$/;"	m	struct:cmb_ci_sess_msg
+rl_down	proto/cmb_proto.h	/^    uint32_t rl_down; \/\/ down rate limit as received by RADIUS server or controller$/;"	m	struct:cmb_ga_msg
+rl_drop_packet	rate_limit.c	/^int rl_drop_packet(struct wlan_sta *se, size_t len, unsigned int dir)$/;"	f
+rl_ul_update	air_coplane.h	/^    uint8_t rl_ul_update;$/;"	m	struct:wlan_sta_rc
+rl_up	proto/cmb_proto.h	/^    uint32_t rl_up; \/\/ up rate limit as received by RADIUS server or controller$/;"	m	struct:cmb_ci_sess_msg
+rl_up	proto/cmb_proto.h	/^    uint32_t rl_up; \/\/ up rate limit as received by RADIUS server or controller$/;"	m	struct:cmb_ga_msg
+rssi	air_coplane.h	/^    int                rssi;$/;"	m	struct:wlan_sta
+rssi	proto/cmb_proto.h	/^    uint8_t rssi;               \/\/ RSSI$/;"	m	struct:cmb_arf_nbr
+rst	proto/tcp.h	/^    uint16_t rst:1;$/;"	m	struct:tcp_hdr
+rule_type	air_common.h	/^typedef enum rule_type {$/;"	g
+rule_type_t	air_common.h	/^} rule_type_t;$/;"	t	typeref:enum:rule_type
+rules	proto/mdns.h	/^    mdns_rules_t rules[MAX_BONJOUR_RULES];$/;"	m	struct:mdns_acl_cfg
+rx_bytes	air_coplane.h	/^    uint64_t           rx_bytes;$/;"	m	struct:wlan_sta
+rx_bytes	proto/cmb_proto.h	/^    uint64_t rx_bytes;$/;"	m	struct:cmb_acct_stats_msg
+rx_pkts	air_coplane.h	/^    uint64_t           rx_pkts;$/;"	m	struct:wlan_sta
+rx_pkts	proto/cmb_proto.h	/^    uint32_t rx_pkts;$/;"	m	struct:cmb_acct_stats_msg
+rxbytes	air_vif.h	/^    u32 rxbytes;$/;"	m	struct:client_node
+rxratekbps	air_coplane.h	/^    int                rxratekbps;$/;"	m	struct:wlan_sta
+sec	dhcp.h	/^    uint16_t sec;$/;"	m	struct:dhcp_hdr
+sec	proto/dhcp.h	/^    uint16_t sec;$/;"	m	struct:dhcp_hdr
+send_netlink_msg	netlink.c	/^static int send_netlink_msg(int pid, char *msg) $/;"	f	file:
+send_nl_event	netlink.c	/^int send_nl_event(char *msg)$/;"	f
+seq	proto/tcp.h	/^    uint32_t seq;$/;"	m	struct:tcp_hdr
+session_id	proto/cmb_proto.h	/^    uint8_t  session_id[10]; \/\/ used for accounting, ap_mac+session_id, client mac is added when radius pkt is formed$/;"	m	struct:cmb_ci_sess_msg
+session_id	proto/cmb_proto.h	/^    uint8_t  session_id[10]; \/\/ used for accounting, ap_mac+session_id, client mac is added when radius pkt is formed$/;"	m	struct:cmb_ga_msg
+session_id	proto/cmb_proto.h	/^    uint8_t  session_id[10]; \/\/ used for accounting, if current AP session-id mismatches then AP2 will send accounting stop$/;"	m	struct:cmb_acct_stats_msg
+session_time	proto/cmb_proto.h	/^    uint32_t session_time; \/\/ in case the current AP has to do stop then it can pick the session time from this message$/;"	m	struct:cmb_acct_stats_msg
+session_time	proto/cmb_proto.h	/^    uint32_t session_time; \/\/ zero session time means hotspot session is no longer valid$/;"	m	struct:cmb_ci_sess_msg
+session_time	proto/cmb_proto.h	/^    uint32_t session_time; \/\/ zero session time means hotspot session is no longer valid$/;"	m	struct:cmb_ga_msg
+siaddr	dhcp.h	/^    uint8_t siaddr[4];$/;"	m	struct:dhcp_hdr
+siaddr	proto/dhcp.h	/^    uint8_t siaddr[4];$/;"	m	struct:dhcp_hdr
+sip	proto/arp.h	/^    uint32_t sip;$/;"	m	struct:arp_ipv4_pkt
+sip	proto/ipv4.h	/^    uint32_t sip;$/;"	m	struct:ipv4_hdr
+size	air_coplane.h	/^    uint32_t size; \/* bucket size in bytes *\/$/;"	m	struct:ratelimit_config
+size	air_ioctl.h	/^    uint32_t          size;             \/\/ Size of the bucket (e.g., burst size)$/;"	m	struct:adpi_ratelimit_bucket
+smac	proto/mdns.h	/^    char smac[18];$/;"	m	struct:mdns_pkt_info
+sname	dhcp.h	/^    uint8_t sname[64];$/;"	m	struct:dhcp_hdr
+sname	proto/dhcp.h	/^    uint8_t sname[64];$/;"	m	struct:dhcp_hdr
+sname	proto/mdns.h	/^    char sname[64]; \/\/Service name$/;"	m	struct:mdns_cfg_rules
+snoop_dns_response	dns.c	/^int snoop_dns_response(struct sk_buff *skb, unsigned int ofs)$/;"	f
+sport	proto/tcp.h	/^    uint16_t sport;$/;"	m	struct:tcp_hdr
+sport	proto/udp.h	/^    uint16_t sport;$/;"	m	struct:udp_hdr
+src	proto/ethernet.h	/^    uint8_t src[MAC_ADDR_LEN];$/;"	m	struct:ethernet_hdr
+src	proto/ethernet.h	/^    uint8_t src[MAC_ADDR_LEN];$/;"	m	struct:ethernet_vlan_hdr
+src_mac	air_coplane.h	/^    uint8_t            src_mac[MAX_MAC_ADDR_LEN];$/;"	m	struct:wlan_sta
+src_mac	proto/arp.h	/^    uint8_t src_mac[MAC_ADDR_LEN];$/;"	m	struct:arp_ipv4_pkt
+srv	proto/mdns.h	/^struct srv {$/;"	s
+ss	air_coplane.h	/^    uint8_t            ss[1024]; \/\/for os name and desc$/;"	m	struct:wlan_sta
+ssid	air_coplane.h	/^    char               ssid[32+1];$/;"	m	struct:wlan_sta
+ssid	proto/cmb_proto.h	/^    char     ssid[36]; \/\/ Change from char to uint8_t to make it of same data type as that of wlan config.$/;"	m	struct:cmb_ga_msg
+ssid	proto/cmb_proto.h	/^    uint8_t  ssid[36]; \/\/ 33 really, just rounding to nearest roundish number$/;"	m	struct:cmb_pmk_update_msg
+ssid	proto/cmb_proto.h	/^    uint8_t  ssid[36];$/;"	m	struct:cmb_ci_sess_msg
+ssid	proto/cmb_proto.h	/^    uint8_t  ssid[36];$/;"	m	struct:cmb_roam_msg
+sta_add	air_api.h	/^	int (*sta_add)(const u8 *macaddr, const char *ifname);$/;"	m	struct:airdpi_ops
+sta_del	air_api.h	/^	int (*sta_del)(const u8 *macaddr, const char *ifname);$/;"	m	struct:airdpi_ops
+sta_table_lookup	txrx.c	/^static struct wlan_sta *sta_table_lookup(uint8_t *macaddr, int dir, uint8_t ifindex)$/;"	f	file:
+status	proto/cmb_proto.h	/^    uint8_t status:1;       \/\/ Radio ON \/ Off$/;"	m	struct:cmb_arf_radio
+sub_type	proto/cmb_proto.h	/^    uint8_t             sub_type; \/\/ part of ethernet hdr type to be always CMB_ETHER_SUB_TYPE$/;"	m	struct:cmb_notify_hdr
+syn	proto/tcp.h	/^    uint16_t syn:1;$/;"	m	struct:tcp_hdr
+target_mac	proto/arp.h	/^    uint8_t target_mac[MAC_ADDR_LEN];$/;"	m	struct:arp_ipv4_pkt
+tc	dns.h	/^    uint8_t tc:1;          \/* truncated message *\/$/;"	m	struct:dns_hdr
+tc	proto/dns.h	/^    uint8_t tc:1;          \/* truncated message *\/$/;"	m	struct:dns_hdr
+tc	proto/mdns.h	/^    uint8_t tc:1;          \/* truncated message *\/$/;"	m	struct:mdns_hdr
+tci	proto/ethernet.h	/^    } tci;$/;"	m	struct:ethernet_vlan_hdr	typeref:struct:ethernet_vlan_hdr::__anon2
+tci	proto/ethernet.h	/^    } tci;$/;"	m	struct:ethernet_vlan_hdr	typeref:struct:ethernet_vlan_hdr::__anon3
+tci	proto/ethernet.h	/^    } tci;$/;"	m	struct:ethernet_vlan_hdr	typeref:struct:ethernet_vlan_hdr::__anon4
+tci	proto/ethernet.h	/^    } tci;$/;"	m	struct:ethernet_vlan_hdr	typeref:struct:ethernet_vlan_hdr::__anon5
+tcp_hdr	proto/tcp.h	/^struct tcp_hdr {$/;"	s
+tid	dhcp.h	/^    uint32_t tid;$/;"	m	struct:dhcp_hdr
+tid	proto/dhcp.h	/^    uint32_t tid;$/;"	m	struct:dhcp_hdr
+tip	proto/arp.h	/^    uint32_t tip;$/;"	m	struct:arp_ipv4_pkt
+tlen	proto/ipv4.h	/^    uint16_t tlen;$/;"	m	struct:ipv4_hdr
+tokens	air_coplane.h	/^    unsigned long tokens; \/* Tokens in bucket. This is unsigned long so we can use cmpxchg *\/$/;"	m	struct:ratelimit_bucket
+tokens_per_jiffy	air_coplane.h	/^    uint32_t tokens_per_jiffy; \/* Tokens earned per jiffy, zero if no rate limiting *\/$/;"	m	struct:ratelimit_bucket
+top_domains	air_vif.h	/^    struct domain_entry top_domains[MAX_DOMAINS];$/;"	m	struct:air_vif	typeref:struct:air_vif::domain_entry
+tos	proto/ipv4.h	/^    uint8_t tos;$/;"	m	struct:ipv4_hdr
+tpid	proto/ethernet.h	/^    uint16_t tpid;$/;"	m	struct:ethernet_vlan_hdr
+ts	air_vif.h	/^    u64 ts;$/;"	m	struct:client_node
+ttl	dns.h	/^  uint32_t ttl;$/;"	m	struct:dns_rr
+ttl	proto/dns.h	/^  uint32_t ttl;$/;"	m	struct:dns_rr
+ttl	proto/ipv4.h	/^    uint8_t ttl;$/;"	m	struct:ipv4_hdr
+ttl	proto/mdns.h	/^    int ttl;$/;"	m	struct:mdns_rr
+tx_bytes	air_coplane.h	/^    uint64_t           tx_bytes;$/;"	m	struct:wlan_sta
+tx_bytes	proto/cmb_proto.h	/^    uint64_t tx_bytes;$/;"	m	struct:cmb_acct_stats_msg
+tx_pkts	air_coplane.h	/^    uint64_t           tx_pkts;$/;"	m	struct:wlan_sta
+tx_pkts	proto/cmb_proto.h	/^    uint32_t tx_pkts;$/;"	m	struct:cmb_acct_stats_msg
+txbytes	air_vif.h	/^    u32 txbytes;$/;"	m	struct:client_node
+txratekbps	air_coplane.h	/^    int                txratekbps;$/;"	m	struct:wlan_sta
+type	dns.h	/^  uint16_t type;$/;"	m	struct:dns_rr
+type	proto/cmb_proto.h	/^    uint8_t             type;$/;"	m	struct:cmb_notify_hdr
+type	proto/dns.h	/^  uint16_t type;$/;"	m	struct:dns_rr
+type	proto/ethernet.h	/^    uint16_t type;$/;"	m	struct:ethernet_hdr
+type	proto/ethernet.h	/^    uint16_t type;$/;"	m	struct:ethernet_vlan_hdr
+type	proto/igmp.h	/^    u_int8_t    type;$/;"	m	struct:igmp_v3_grec
+type	proto/igmp.h	/^    uint8_t     type; \/* Always 0x22 *\/$/;"	m	struct:igmp_v3_report_hdr
+type	proto/igmp.h	/^    uint8_t type;$/;"	m	struct:igmp_hdr
+type	proto/mdns.h	/^    uint16_t type;$/;"	m	struct:mdns_rr
+udp_hdr	proto/udp.h	/^struct udp_hdr {$/;"	s
+ul_bytes_per_sec	air_coplane.h	/^    uint32_t ul_bytes_per_sec;$/;"	m	struct:wlan_sta_rc
+unused	dns.h	/^    uint8_t unused:3;      \/* unused bits (MBZ as of 4.9.3a3) *\/$/;"	m	struct:dns_hdr
+unused	proto/dns.h	/^    uint8_t unused:3;      \/* unused bits (MBZ as of 4.9.3a3) *\/$/;"	m	struct:dns_hdr
+unused	proto/mdns.h	/^    uint8_t unused:3;      \/* unused bits (MBZ as of 4.9.3a3) *\/$/;"	m	struct:mdns_hdr
+update_client_quota	txrx.c	/^static int update_client_quota(struct sk_buff *skb, struct client_node *cn, int dir)$/;"	f	file:
+update_vif_top_domains	dns.c	/^void update_vif_top_domains(const char *domain_name) $/;"	f
+urg	proto/tcp.h	/^    uint16_t urg:1;$/;"	m	struct:tcp_hdr
+urg_ptr	proto/tcp.h	/^    uint16_t urg_ptr;$/;"	m	struct:tcp_hdr
+user_name	proto/cmb_proto.h	/^    char     user_name[256]; \/\/ max of 255 size of username$/;"	m	struct:cmb_ci_sess_msg
+user_name	proto/cmb_proto.h	/^    char     user_name[256]; \/\/ max of 255 size of username$/;"	m	struct:cmb_ga_msg
+user_wlan_rl	rate_limit.c	/^struct ratelimit_bucket *user_wlan_rl[MAX_WLANS][AIR_RL_DIR_MAX];$/;"	v	typeref:struct:ratelimit_bucket
+ver	proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_acct_stats_msg
+ver	proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_ci_sess_msg
+ver	proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_ga_msg
+ver	proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_pmk_update_msg
+ver	proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_roam_data_ready_update_msg
+ver	proto/cmb_proto.h	/^    uint8_t  ver; \/\/ version of the msg$/;"	m	struct:cmb_roam_msg
+ver	proto/cmb_proto.h	/^    uint8_t ver;                \/\/ version of the msg$/;"	m	struct:cmb_arf_devinfo_msg
+ver	proto/cmb_proto.h	/^    uint8_t ver;                \/\/ version of the msg$/;"	m	struct:cmb_arf_leader_msg
+ver	proto/cmb_proto.h	/^    uint8_t ver;                \/\/ version of the msg$/;"	m	struct:cmb_arf_nbrinfo_msg
+ver	proto/cmb_proto.h	/^    uint8_t ver;                \/\/ version of the msg$/;"	m	struct:cmb_arf_rfchange_msg
+ver	proto/cmb_proto.h	/^    uint8_t ver;                \/\/ version of the msg$/;"	m	struct:cmb_clb_update_msg
+ver	proto/cmb_proto.h	/^    uint8_t ver; \/\/ version of message$/;"	m	struct:cmb_cflags_msg
+ver	proto/ipv4.h	/^    uint8_t ver:4;$/;"	m	struct:ipv4_hdr
+vid	proto/ethernet.h	/^        uint16_t vid:12;$/;"	m	struct:ethernet_vlan_hdr::__anon2
+vid	proto/ethernet.h	/^        uint16_t vid:12;$/;"	m	struct:ethernet_vlan_hdr::__anon3
+vid	proto/ethernet.h	/^        uint16_t vid:12;$/;"	m	struct:ethernet_vlan_hdr::__anon4
+vid	proto/ethernet.h	/^        uint16_t vid:12;$/;"	m	struct:ethernet_vlan_hdr::__anon5
+vidfrom	proto/mdns.h	/^    uint16_t vidfrom;$/;"	m	struct:mdns_cfg_rules
+vidto	proto/mdns.h	/^    uint16_t vidto;$/;"	m	struct:mdns_cfg_rules
+vif	main.c	/^struct air_vif *vif;$/;"	v	typeref:struct:air_vif
+vifmodule_exit	main.c	/^module_exit(vifmodule_exit);$/;"	v
+vifmodule_exit	main.c	/^static void __exit vifmodule_exit(void)$/;"	f	file:
+vifmodule_init	main.c	/^module_init(vifmodule_init);$/;"	v
+vifmodule_init	main.c	/^static int __init vifmodule_init(void)$/;"	f	file:
+vlan	proto/cmb_proto.h	/^    uint16_t vlan; \/\/ n\/w order$/;"	m	struct:cmb_ci_sess_msg
+vlan	proto/cmb_proto.h	/^    uint16_t vlan; \/\/ n\/w order$/;"	m	struct:cmb_ga_msg
+vlan	proto/cmb_proto.h	/^    uint16_t vlan; \/\/ n\/w order$/;"	m	struct:cmb_roam_msg
+vlan_id	proto/cmb_proto.h	/^    uint16_t vlan_id;$/;"	m	struct:cmb_pmk_update_msg
+vlanid	proto/mdns.h	/^    uint16_t vlanid;$/;"	m	struct:mdns_pkt_info
+webs_ow_idx	air_coplane.h	/^    uint8_t            webs_ow_idx;\/\/overwrite index after top 10$/;"	m	struct:wlan_sta
+weight	proto/mdns.h	/^    uint16_t weight;$/;"	m	struct:srv
+width	proto/cmb_proto.h	/^    uint8_t width;              \/\/ New width$/;"	m	struct:cmb_arf_rfchange_msg
+width	proto/cmb_proto.h	/^    uint8_t width;          \/\/ Current width$/;"	m	struct:cmb_arf_radio
+window	proto/tcp.h	/^    uint16_t window;$/;"	m	struct:tcp_hdr
+wlan_client	air_coplane.h	/^    struct wlan_client_list wlan_client;$/;"	m	struct:airpro_coplane	typeref:struct:airpro_coplane::wlan_client_list
+wlan_client_list	air_coplane.h	/^struct wlan_client_list {$/;"	s
+wlan_client_lock	air_coplane.h	/^    spinlock_t wlan_client_lock;$/;"	m	struct:wlan_client_list
+wlan_coplane_sta_hash	air_coplane.h	/^    ATH_LIST_HEAD(, wlan_sta) wlan_coplane_sta_hash[WLAN_STA_HASHSIZE];$/;"	m	struct:wlan_client_list
+wlan_coplane_sta_list	air_coplane.h	/^    TAILQ_HEAD( ,wlan_sta) wlan_coplane_sta_list;$/;"	m	struct:wlan_client_list
+wlan_id	air_coplane.h	/^    int                wlan_id; \/* wlan-id of sta 0... (MAX_WLANS-1) *\/$/;"	m	struct:wlan_sta
+wlan_idx	air_ioctl.h	/^    int               wlan_idx;         \/\/ Index or ID of the WLAN$/;"	m	struct:adpi_ratelimit_bucket
+wlan_opmode	air_coplane.h	/^enum wlan_opmode {$/;"	g
+wlan_rl	rate_limit.c	/^struct ratelimit_bucket *wlan_rl[MAX_WLANS][AIR_RL_DIR_MAX];$/;"	v	typeref:struct:ratelimit_bucket
+wlan_sta	air_coplane.h	/^struct wlan_sta {$/;"	s
+wlan_sta_rc	air_coplane.h	/^struct wlan_sta_rc {$/;"	s
+wlan_sta_rc_hash	air_coplane.h	/^    ATH_LIST_HEAD(, wlan_sta_rc) wlan_sta_rc_hash[WLAN_STA_HASHSIZE];$/;"	m	struct:airpro_coplane
+wlan_sta_rc_list	air_coplane.h	/^    TAILQ_HEAD( ,wlan_sta_rc) wlan_sta_rc_list;$/;"	m	struct:airpro_coplane
+wlan_sta_rc_lock	air_coplane.h	/^    spinlock_t wlan_sta_rc_lock;$/;"	m	struct:airpro_coplane
+wlanidx	proto/mdns.h	/^    uint16_t wlanidx;$/;"	m	struct:mdns_pkt_info
+ws_hash	air_coplane.h	/^    LIST_ENTRY(wlan_sta) ws_hash;$/;"	m	struct:wlan_sta
+ws_next	air_coplane.h	/^    TAILQ_ENTRY(wlan_sta) ws_next;$/;"	m	struct:wlan_sta
+yiaddr	dhcp.h	/^    uint8_t yiaddr[4];$/;"	m	struct:dhcp_hdr
+yiaddr	proto/dhcp.h	/^    uint8_t yiaddr[4];$/;"	m	struct:dhcp_hdr
