@@ -48,7 +48,6 @@ static int find_free_client_slot(void) {
 
 // Client I/O callback
 static void client_cb(EV_P_ ev_io *w, int revents) {
-    unixcomm_log_info("Entering client_cb");
     unixcomm_handle_t *client = (unixcomm_handle_t *)w->data;
     if (!client || client->fd < 0) {
         unixcomm_log_error("Client callback with invalid client data or fd");
@@ -65,7 +64,6 @@ static void client_cb(EV_P_ ev_io *w, int revents) {
             goto cleanup_client;
         }
 
-        unixcomm_log_info("Message received, validating fields");
         // Validate message fields
         if (message.request.topic_len > 0 && !message.topic) {
             unixcomm_log_error("Invalid message: non-zero topic_len (%u) with null topic",
@@ -91,15 +89,14 @@ static void client_cb(EV_P_ ev_io *w, int revents) {
             unixcomm_log_info("Warning: Received message with invalid PID 0");
         }
 
-        unixcomm_log_info("Received message, data size: %zu", message.data_size);
         // Enqueue into QM queue and signal MQTT worker
         qm_item_t *qi = CALLOC(1, sizeof(qm_item_t));
         if (!qi) {
             unixcomm_log_error("Failed to allocate qm_item_t");
             goto cleanup_message;
         }
+        
         // Fill request metadata
-        //memcpy(&qi->req, &message.request, sizeof(qm_request_t));
         qi->req.data_type =  message.request.data_type;
         if (message.topic && message.request.topic_len) {
             qi->topic = MALLOC(message.request.topic_len + 1);
@@ -130,8 +127,6 @@ static void client_cb(EV_P_ ev_io *w, int revents) {
         }
 cleanup_message:
         unixcomm_log_info("Cleaning up message");
-        // Log pointers before freeing
-        unixcomm_log_info("Message pointers: data=%p, topic=%p", message.data, message.topic);
         unixcomm_message_destroy(&message);
         return;
 
