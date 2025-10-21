@@ -309,112 +309,6 @@ size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
     return realsize;
 }
 
-#if 0
-// Updated send_request function
-bool send_request(void) 
-{
-    struct DeviceInfo device;
-    struct curl_buffer response = { .data = malloc(1), .size = 0 };
-    char cloud_url[128];
-    bool ret = false;
-    struct curl_slist *headers = NULL;
-    CURL *curl;
-    CURLcode res;
-
-    if (response.data == NULL) {
-        fprintf(stderr, "Failed to allocate memory for response buffer.\n");
-        return false;
-    }
-
-    if (get_cloud_url(cloud_url) != 0) {
-        free(response.data);
-        return false;
-    }
-
-    get_device_details(&device);
-    char *json_string = parse_device_info_to_json_string(device);
-    if (!json_string) {
-        free(response.data);
-        return false;
-    }
-
-    printf("json string = %s\n", json_string);
-
-    curl = curl_easy_init();
-    headers = curl_slist_append(headers, "Accept: application/json");
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-    headers = curl_slist_append(headers, "charset: utf-8");
-
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, cloud_url);
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_string);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&response);
-
-        res = curl_easy_perform(curl);
-
-        if (res != CURLE_OK) {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-            curl_easy_cleanup(curl);
-            curl_slist_free_all(headers);
-            free(json_string);
-            free(response.data);
-            return false;
-        }
-
-        curl_easy_cleanup(curl);
-    }
-
-    curl_slist_free_all(headers);
-
-    printf("response = %s\n", response.data);
-
-    // Clean non-printable characters
-    for (size_t i = 0; i < response.size; i++) {
-        if ((unsigned char)response.data[i] < 32 && response.data[i] != '\n' && response.data[i] != '\r') {
-            response.data[i] = ' ';
-        }
-    }
-
-    char *cleaned_response = utf8_clean(response.data);
-    if (!cleaned_response) {
-        fprintf(stderr, "utf8_clean() failed\n");
-        free(json_string);
-        free(response.data);
-        return false;
-    }
-
-    json_error_t error;
-    json_t *json = json_loads(cleaned_response, 0, &error);
-    if (!json) {
-        fprintf(stderr, "json_loads() failed: %s\n", error.text);
-        free(json_string);
-        free(cleaned_response);
-        free(response.data);
-        return false;
-    }
-
-    json_t *error_message = json_object_get(json, "error");
-    if (json_is_string(error_message)) {
-        json_decref(json);
-        free(json_string);
-        free(cleaned_response);
-        free(response.data);
-        return false;
-    }
-
-    json_decref(json);
-    ret = qm_process_initial_data(cleaned_response);
-
-    free(json_string);
-    free(cleaned_response);
-    free(response.data);
-
-    return ret;
-}
-#endif
-
 bool send_request(void)
 {
     struct DeviceInfo device;
@@ -485,7 +379,7 @@ bool send_request(void)
     LOG(INFO, "RESPONSE JSON = %s\n", response.data);
 
     ret = qm_process_initial_data(cleaned_response);
-
+    printf("Ankit: ret = %d \n", ret);
 cleanup:
     if (json) json_decref(json);
     if (curl) curl_easy_cleanup(curl);

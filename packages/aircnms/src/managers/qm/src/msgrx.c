@@ -4,6 +4,34 @@
 #include "qm.h"
 #include "unixcomm.h"
 
+void qm_restart_process()
+{
+    FILE *fp;
+    char pid_str[16];
+    char kill_cmd[32];
+
+    // Get the PID of the process
+    fp = popen("pidof qm", "r");
+    if (fp == NULL) {
+        perror("Failed to run pidof command");
+        return;
+    }
+
+    // Read the PID
+    if (fgets(pid_str, sizeof(pid_str), fp) != NULL) {
+        // Prepare the kill command
+        snprintf(kill_cmd, sizeof(kill_cmd), "kill -9 %s", pid_str);
+        LOG(INFO, "Executing: %s", kill_cmd);
+
+        // Execute the kill command
+        system(kill_cmd);
+    } else {
+        LOG(INFO, "No process found for /usr/sbin/dm\n");
+    }
+
+    pclose(fp);
+    return;
+}
 void qm_restart_dm_process()
 {
     FILE *fp;
