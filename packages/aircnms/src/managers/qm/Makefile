@@ -7,7 +7,9 @@ UNIT_SRC += src/qm_newjson.c
 #UNIT_SRC += src/qm_log.c
 UNIT_SRC += src/qm_air.c 
 UNIT_SRC += src/qm_decrypt.c 
+UNIT_SRC += src/qm_websocket.c 
 UNIT_SRC += src/qm_server_req.c 
+UNIT_SRC += src/qm_device_state.c 
 
 UNIT_SRC += src/qm_unixcomm_server.c
 
@@ -39,6 +41,7 @@ UNIT_LDFLAGS += -lcrypto
 UNIT_LDFLAGS += -lssl
 UNIT_LDFLAGS += -lunixcomm
 UNIT_LDFLAGS += -lpthread
+UNIT_LDFLAGS += -lwebsockets
 
 ifeq ($(UNIT_TEST_FLAG), UNIT_TEST_ENABLE)
 UNIT_CFLAGS += -DCONFIG_UNIT_TEST_ENABLE

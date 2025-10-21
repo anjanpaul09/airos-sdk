@@ -1,0 +1,9 @@
+/overlay/logs/system.log {
+    size 15k
+    missingok
+    notifempty
+    copytruncate
+    rotate 0
+}
+
+

@@ -12,7 +12,7 @@ define Build/Prepare
 	#cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/build/hostapd/src/common/wpa_ctrl.o $(STAGING_DIR)/usr/lib/
 	#cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/src/common/wpa_ctrl.h $(STAGING_DIR)/usr/include/
 endef
-AIRCNMS_DEPS += libnl libev jansson libmosquitto zlib libprotobuf-c libuci libcurl kmod-airdpi libubus libubox libjson-c
+AIRCNMS_DEPS += libnl libev jansson libmosquitto zlib libprotobuf-c libuci libcurl kmod-airdpi libubus libubox libjson-c libwebsockets-openssl
 AIRCNMS_DEPS := $(foreach X,$(AIRCNMS_DEPS),+$(X))
 
 define Package/aircnms
@@ -27,7 +27,8 @@ TARGET_EXTRACFLAGS += \
 		      -I $(STAGING_DIR)/usr/include/airdpi \
 		      -I $(STAGING_DIR)/usr/include/libnl3 \
 		      -I $(LINUX_DIR)/include \
-		      -I $(STAGING_DIR)/target-$(BOARD)/include
+		      -I $(STAGING_DIR)/target-$(BOARD)/include \
+		      -L -$(STAGING_DIR)/usr/lib
 
 
 
@@ -154,7 +155,6 @@ ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK_JEDI)
 	$(INSTALL_BIN) ./files/airinit_jedi $(1)/etc/init.d/airinit
 endif
 	$(INSTALL_BIN) ./files/airinit_logger $(1)/etc/init.d/airinit_logger
-	$(CP) ./files/aircnms_logger.sh $(1)/usr/sbin
 
 	$(CP) $(PKG_BUILD_DIR)/libs/common/libcommon.so.1.0.0 $(1)/usr/lib
 	rm -rf $(1)/usr/lib/libcommon.so

@@ -17,44 +17,32 @@
 #include "os_socket.h"
 #include "os_backtrace.h"
 #include "qm.h"
+#include "qm_device_state.h"
 
 bool qm_set_aircnms_param();
 bool qm_check_valid_device_id();
 bool qm_set_online_status();
 bool qm_device_discovery_request();
 
-int main()
+int main(void)
 {
     struct ev_loop *loop = EV_DEFAULT;
-    
-    log_open("QM",0);
-   
+
+    log_open("QM", 0);
     qm_set_aircnms_param();
 
-    if (!qm_check_valid_device_id()) {
-        if (!qm_device_discovery_request()) {
-            LOG(ERR, "Cloud Registration Failed..");
-            return -1;
-        }
-    } else {
-        qm_set_online_status();
-    }
+    // Initialize the global device state system
+    device_state_init();
 
-    qm_mqtt_init();
-    qm_queue_init();
-    if (!qm_mqtt_start_worker()) {
-        LOG(ERR, "QM: Failed to start MQTT worker thread");
-        return -1;
-    }
-    // Initialize unixcomm server for async message handling
-    if (!qm_unixcomm_server_init()) {
-        LOG(ERR, "QM: Failed to initialize unixcomm server");
-        return -1;
-    }
-
+    // Start the event loop (libev handles async events)
     ev_run(loop, 0);
 
+    // Cleanup before exit
+    ws_cleanup();
     qm_unixcomm_server_cleanup();
     qm_mqtt_stop_worker();
     qm_mqtt_stop();
+    device_state_deinit();
+
+    return 0;
 }
