@@ -2,10 +2,8 @@ config system
 	option hostname 'Airpro'
 	option timezone 'UTC'
 	option ttylogin '0'
-	option log_size '15'
 	option urandom_seed '0'
 	option compat_version '1.1'
-        option log_file '/overlay/logs/system.log'
 
 config timeserver 'ntp'
 	option enabled '1'
