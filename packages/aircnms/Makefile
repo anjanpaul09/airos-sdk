@@ -155,6 +155,7 @@ ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK_JEDI)
 	$(INSTALL_BIN) ./files/airinit_jedi $(1)/etc/init.d/airinit
 endif
 	$(INSTALL_BIN) ./files/airinit_logger $(1)/etc/init.d/airinit_logger
+	$(INSTALL_BIN) ./files/aircnms_logger.sh  $(1)/usr/sbin/aircnms_logger.sh
 
 	$(CP) $(PKG_BUILD_DIR)/libs/common/libcommon.so.1.0.0 $(1)/usr/lib
 	rm -rf $(1)/usr/lib/libcommon.so
