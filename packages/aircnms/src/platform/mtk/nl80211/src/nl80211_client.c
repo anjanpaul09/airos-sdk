@@ -21,7 +21,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
-#include "report.h"
+#include "stats_report.h"
 #include "ext_event.h"
 
 #define MAX_IFACES 8
@@ -259,6 +259,13 @@ static int nl80211_parse_station_cb(struct nl_msg *msg, void *arg)
         rec->radio_type = RADIO_TYPE_NONE;
     }
     rec->channel = get_channel(rec->radio_type);
+
+    strncpy(rec->osinfo, "other", sizeof(rec->osinfo) - 1);
+    rec->osinfo[sizeof(rec->osinfo) - 1] = '\0';
+
+    strncpy(rec->client_type, "wireless", sizeof(rec->client_type) - 1);
+    rec->client_type[sizeof(rec->client_type) - 1] = '\0';
+
 
     rec->is_connected = 1;
     fill_client_info_from_proc(rec, ifname);

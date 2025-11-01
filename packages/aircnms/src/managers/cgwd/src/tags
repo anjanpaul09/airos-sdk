@@ -1,0 +1,80 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+JSON_REPORT_CLIENT	cgw_mqtt.c	/^    JSON_REPORT_CLIENT = 1,$/;"	e	enum:json_report	file:
+JSON_REPORT_DEVICE	cgw_mqtt.c	/^    JSON_REPORT_DEVICE = 0,$/;"	e	enum:json_report	file:
+JSON_REPORT_NEIGHBOR	cgw_mqtt.c	/^    JSON_REPORT_NEIGHBOR = 3$/;"	e	enum:json_report	file:
+JSON_REPORT_VIF	cgw_mqtt.c	/^    JSON_REPORT_VIF = 2,$/;"	e	enum:json_report	file:
+MAX_LAN_IP_RETRIES	cgw_init.c	26;"	d	file:
+MAX_MACADDR_SIZE	cgw_init.c	21;"	d	file:
+MAX_MQTT_DATA_TOPICS	cgw_mqtt.c	27;"	d	file:
+MAX_MQTT_SEND_DATA_SIZE	cgw_mqtt.c	26;"	d	file:
+MAX_TOPICS	cgw_init.c	23;"	d	file:
+MAX_TOPIC_LEN	cgw_init.c	22;"	d	file:
+MODULE_ID	cgw_mqtt.c	19;"	d	file:
+QM_LOG_TOPIC_PREFIX	cgw_mqtt.c	25;"	d	file:
+STATS_MQTT_INTERVAL	cgw_mqtt.c	23;"	d	file:
+STATS_MQTT_PORT	cgw_mqtt.c	21;"	d	file:
+STATS_MQTT_QOS	cgw_mqtt.c	22;"	d	file:
+STATS_MQTT_RECONNECT	cgw_mqtt.c	24;"	d	file:
+UCI_BUF_LEN	cgw_init.c	25;"	d	file:
+UCI_BUF_LEN	cgw_mqtt.c	509;"	d	file:
+air_dev	cgw_mqtt.c	/^air_device_t air_dev;$/;"	v
+cgw_add_stats_topic_aircnms	cgw_init.c	/^void cgw_add_stats_topic_aircnms(stats_topic_t *stats_topic)$/;"	f
+cgw_add_topic_aircnms	cgw_init.c	/^void cgw_add_topic_aircnms(cgw_mqtt_topic_list *topic_list)$/;"	f
+cgw_check_online_status	cgw_init.c	/^int cgw_check_online_status()$/;"	f
+cgw_check_valid_device_id	cgw_init.c	/^bool cgw_check_valid_device_id() $/;"	f
+cgw_get_stats_topic_aircnms	cgw_init.c	/^void cgw_get_stats_topic_aircnms(stats_topic_t *stats_topic)$/;"	f
+cgw_params_init	cgw_init.c	/^bool cgw_params_init()$/;"	f
+cgw_set_online_status	cgw_init.c	/^bool cgw_set_online_status()$/;"	f
+cgw_ubus_service_init	cgw_ubus.c	/^bool cgw_ubus_service_init()$/;"	f
+cgw_update_topic_lst	cgw_init.c	/^int cgw_update_topic_lst(cgw_mqtt_topic_list *topic_list)$/;"	f
+cmd_buf	cgw_init.c	/^int cmd_buf(const char *command, char *buffer, size_t buffer_size)$/;"	f
+decompress_deserialize_sm_stats	cgw_mqtt.c	/^bool decompress_deserialize_sm_stats(const uint8_t *compressed_data, size_t compressed_size, sm_stats_t *stats)$/;"	f
+g_mqtt_connected	cgw_mqtt.c	/^static bool g_mqtt_connected = false;$/;"	v	file:
+g_mqtt_worker_running	cgw_mqtt.c	/^static bool g_mqtt_worker_running = false;$/;"	v	file:
+g_queue_async	cgw_mqtt.c	/^static ev_async g_queue_async;$/;"	v	file:
+g_reconnect_timer	cgw_mqtt.c	/^static ev_timer g_reconnect_timer;$/;"	v	file:
+g_running	main.c	/^static volatile sig_atomic_t g_running = 1;$/;"	v	file:
+get_current_timestamp_ms	cgw_mqtt.c	/^uint64_t get_current_timestamp_ms() {$/;"	f
+get_uptime_seconds	cgw_init.c	/^int get_uptime_seconds() $/;"	f
+get_wan_macaddr	cgw_init.c	/^static char *get_wan_macaddr(void)$/;"	f	file:
+json_report	cgw_mqtt.c	/^typedef enum json_report {$/;"	g	file:
+json_report_type	cgw_mqtt.c	/^} json_report_type;$/;"	t	typeref:enum:json_report	file:
+main	main.c	/^int main(int argc, char *argv[])$/;"	f
+prev_timestamp	cgw_mqtt.c	/^static uint64_t prev_timestamp = 0;$/;"	v	file:
+qm_agg_stats_interval	cgw_mqtt.c	/^static int              qm_agg_stats_interval;$/;"	v	file:
+qm_log_enabled	cgw_mqtt.c	/^bool                    qm_log_enabled = false;$/;"	v
+qm_log_interval	cgw_mqtt.c	/^static int              qm_log_interval = 0; \/\/ 0 = disabled$/;"	v	file:
+qm_log_topic	cgw_mqtt.c	/^static char             qm_log_topic[128];$/;"	v	file:
+qm_mosqev_init	cgw_mqtt.c	/^static bool             qm_mosqev_init = false;$/;"	v	file:
+qm_mosquitto_init	cgw_mqtt.c	/^static bool             qm_mosquitto_init = false;$/;"	v	file:
+qm_mqtt	cgw_mqtt.c	/^static mosqev_t         qm_mqtt;$/;"	v	file:
+qm_mqtt_broker	cgw_mqtt.c	/^static char             qm_mqtt_broker[HOST_NAME_MAX];$/;"	v	file:
+qm_mqtt_compress	cgw_mqtt.c	/^static uint8_t          qm_mqtt_compress = 0;$/;"	v	file:
+qm_mqtt_config_valid	cgw_mqtt.c	/^bool qm_mqtt_config_valid(void)$/;"	f
+qm_mqtt_init	cgw_mqtt.c	/^bool qm_mqtt_init(void)$/;"	f
+qm_mqtt_is_connected	cgw_mqtt.c	/^bool qm_mqtt_is_connected()$/;"	f
+qm_mqtt_port	cgw_mqtt.c	/^static int              qm_mqtt_port;$/;"	v	file:
+qm_mqtt_publish_queue	cgw_mqtt.c	/^void qm_mqtt_publish_queue()$/;"	f
+qm_mqtt_qos	cgw_mqtt.c	/^static int              qm_mqtt_qos = STATS_MQTT_QOS;$/;"	v	file:
+qm_mqtt_reconnect	cgw_mqtt.c	/^void qm_mqtt_reconnect()$/;"	f
+qm_mqtt_reconnect_ts	cgw_mqtt.c	/^static int64_t          qm_mqtt_reconnect_ts = 0;$/;"	v	file:
+qm_mqtt_set	cgw_mqtt.c	/^bool qm_mqtt_set(const char *broker, const char *port, const char *topic, const char *qos, int compress)$/;"	f
+qm_mqtt_signal_new_item	cgw_mqtt.c	/^void qm_mqtt_signal_new_item(void) {$/;"	f
+qm_mqtt_start_worker	cgw_mqtt.c	/^bool qm_mqtt_start_worker(void) {$/;"	f
+qm_mqtt_stop	cgw_mqtt.c	/^void qm_mqtt_stop(void)$/;"	f
+qm_mqtt_stop_worker	cgw_mqtt.c	/^void qm_mqtt_stop_worker(void) {$/;"	f
+qm_mqtt_topic	cgw_mqtt.c	/^static char             qm_mqtt_topic[HOST_NAME_MAX] = MQTT_BROKER_TOPIC;$/;"	v	file:
+qm_publish_json	cgw_mqtt.c	/^bool qm_publish_json(char *data, char *topic)$/;"	f
+qm_send_config_cloud	cgw_mqtt.c	/^bool qm_send_config_cloud(qm_item_t *qi)$/;"	f
+qm_send_event_cloud	cgw_mqtt.c	/^bool qm_send_event_cloud(qm_item_t *qi)$/;"	f
+qm_send_stats_json	cgw_mqtt.c	/^bool qm_send_stats_json(qm_item_t *qi)$/;"	f
+queue_cb	cgw_mqtt.c	/^static void queue_cb(EV_P_ ev_async *w, int revents) {$/;"	f	file:
+reconnect_cb	cgw_mqtt.c	/^static void reconnect_cb(EV_P_ ev_timer *w, int revents) {$/;"	f	file:
+remove_newline	cgw_init.c	/^void remove_newline(char *str)$/;"	f
+signal_handler	main.c	/^static void signal_handler(int sig)$/;"	f	file:
+uci_get_mqtt_params	cgw_mqtt.c	/^void uci_get_mqtt_params()$/;"	f

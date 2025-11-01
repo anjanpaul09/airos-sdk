@@ -133,7 +133,7 @@ int nl_sm_init(struct ev_loop *sm_evloop)
     if (!sm_evloop)
         return -1;
 
-    ds_dlist_init(&g_ext_event_list, sm_ext_event_t, node);
+    ds_dlist_init(&g_ext_event_list, netstats_ext_event_t, node);
     add_mcast_subscription(&nl_sm_global, "mlme");
     add_mcast_subscription(&nl_sm_global, "scan");
 

@@ -13,7 +13,7 @@
 #include <netlink/attr.h>
 #include <linux/nl80211.h>
 #include <time.h>
-#include "report.h" 
+#include "stats_report.h" 
 #include "MT7621.h"
 
 #define CHAN_WIDTH_20MHZ      20

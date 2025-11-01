@@ -20,7 +20,7 @@
 #include "target_nl80211.h"
 #include "nl80211_client.h"
 #include "nl80211_survey.h"
-#include "report.h"
+#include "stats_report.h"
 //Anjan
 
 #define MODULE_ID LOG_MODULE_ID_TARGET
@@ -30,7 +30,7 @@
 #define IFACE_NAME_LEN 16
 #define PROC_FILE "cat /proc/airpro/stainfo"
 
-static int iface_count;
+int iface_count;
 /******************************************************************************
  *  VIF definitions
  *****************************************************************************/
