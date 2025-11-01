@@ -12,7 +12,7 @@ define Build/Prepare
 	#cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/build/hostapd/src/common/wpa_ctrl.o $(STAGING_DIR)/usr/lib/
 	#cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/src/common/wpa_ctrl.h $(STAGING_DIR)/usr/include/
 endef
-AIRCNMS_DEPS += libnl libev jansson libmosquitto zlib libprotobuf-c libuci libcurl kmod-airdpi libubus libubox libjson-c libwebsockets-openssl
+AIRCNMS_DEPS += libnl libev jansson libmosquitto zlib libprotobuf-c libuci libcurl kmod-airdpi libubus libubox libjson-c libwebsockets-openssl +libblobmsg-json
 AIRCNMS_DEPS := $(foreach X,$(AIRCNMS_DEPS),+$(X))
 
 define Package/aircnms
@@ -28,7 +28,7 @@ TARGET_EXTRACFLAGS += \
 		      -I $(STAGING_DIR)/usr/include/libnl3 \
 		      -I $(LINUX_DIR)/include \
 		      -I $(STAGING_DIR)/target-$(BOARD)/include \
-		      -L -$(STAGING_DIR)/usr/lib
+		      -L$(STAGING_DIR)/usr/lib
 
 
 
@@ -68,16 +68,16 @@ ifneq ($(DEVELOPER)$(CONFIG_PACKAGE_aircnms),)
 	BUILD_LIBLOG:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/log $(MAKE_PACKAGE_ARGS)
 	BUILD_LIBMOSQEV:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/mosqev $(MAKE_PACKAGE_ARGS)
 	BUILD_LIBUNIXCOMM:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/unixcomm $(MAKE_PACKAGE_ARGS)
-	#BUILD_LIBDATAPIPELINE:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/datapipeline $(MAKE_PACKAGE_ARGS)
 	# ############################## LIB ENDS #######################################
 
 ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK)
 	BUILD_LIBNL80211:= $(MAKE) -C $(PKG_BUILD_DIR)/platform/mtk/nl80211 $(MAKE_PACKAGE_ARGS)
 endif
-	BUILD_MGRQM:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/qm $(MAKE_PACKAGE_ARGS)
-	BUILD_MGRCM:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/cm $(MAKE_PACKAGE_ARGS)
-	BUILD_MGRSM:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/sm $(MAKE_PACKAGE_ARGS)
-	BUILD_MGRDM:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/dm $(MAKE_PACKAGE_ARGS)
+	BUILD_MGRCGWD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/cgwd $(MAKE_PACKAGE_ARGS)
+	BUILD_MGRNETSTATSD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/netstatsd $(MAKE_PACKAGE_ARGS)
+	BUILD_MGRNETCONFD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/netconfd $(MAKE_PACKAGE_ARGS)
+	BUILD_MGRCMDEXECD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/cmdexecd $(MAKE_PACKAGE_ARGS)
+	BUILD_MGRNETEVD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/netevd $(MAKE_PACKAGE_ARGS)
 	BUILD_AIRCLI:= $(MAKE) -C $(PKG_BUILD_DIR)/tools/airubusd $(MAKE_PACKAGE_ARGS)
 endif
 
@@ -106,6 +106,13 @@ define Build/Compile
 	$(CP) $(PKG_BUILD_DIR)/libs/unixcomm/libunixcomm.so.1.0.0 $(STAGING_DIR)/usr/lib
 	rm -rf $(STAGING_DIR)/usr/lib/libunixcomm.so
 	( cd $(STAGING_DIR)/usr/lib/ ; ln -s libunixcomm.so.1.0.0 libunixcomm.so )
+	
+	#$(BUILD_LIBUBUSIPC)
+	#$(CP) $(PKG_BUILD_DIR)/libs/ubus-ipc/libubus-ipc.so.1.0.0 $(STAGING_DIR)/usr/lib
+	#rm -rf $(STAGING_DIR)/usr/lib/libubus-ipc.so
+	#( cd $(STAGING_DIR)/usr/lib/ ; ln -s libubus-ipc.so.1.0.0 libubus-ipc.so )
+
+	#$(BUILD_LIBUBUSIPC_EXAMPLES)
 
 	#$(BUILD_LIBDATAPIPELINE)
 	#$(CP) $(PKG_BUILD_DIR)/libs/datapipeline/libdatapipeline.so.1.0.0 $(STAGING_DIR)/usr/lib
@@ -124,12 +131,12 @@ ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK)
 	( cd $(STAGING_DIR)/usr/lib/ ; ln -s libnl80211.so.1.0.0 libnl80211.so )
 endif
 
-	$(BUILD_MGRQM)
-	$(BUILD_MGRCM)
-	$(BUILD_MGRSM)
-	$(BUILD_MGRDM)
+	$(BUILD_MGRCGWD)
+	$(BUILD_MGRNETSTATSD)
+	$(BUILD_MGRNETCONFD)
+	$(BUILD_MGRCMDEXECD)
+	$(BUILD_MGRNETEVD)
 	$(BUILD_AIRCLI)
-	#$(BUILD_TESTQM)
 endef
 
 define Build/InstallDev
@@ -142,10 +149,11 @@ define Package/aircnms/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_DIR) $(1)/usr/lib
 
-	$(INSTALL_BIN) ./files/qminit $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/cminit $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/sminit $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/dminit $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/air_cgwdinit $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/air_netstatsdinit $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/air_netconfdinit $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/air_cmdexecdinit $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/air_netevdinit $(1)/etc/init.d
 
 ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK)
 	$(INSTALL_BIN) ./files/airinit_mtk $(1)/etc/init.d/airinit
@@ -155,7 +163,6 @@ ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK_JEDI)
 	$(INSTALL_BIN) ./files/airinit_jedi $(1)/etc/init.d/airinit
 endif
 	$(INSTALL_BIN) ./files/airinit_logger $(1)/etc/init.d/airinit_logger
-	$(INSTALL_BIN) ./files/aircnms_logger.sh  $(1)/usr/sbin/aircnms_logger.sh
 
 	$(CP) $(PKG_BUILD_DIR)/libs/common/libcommon.so.1.0.0 $(1)/usr/lib
 	rm -rf $(1)/usr/lib/libcommon.so
@@ -191,12 +198,16 @@ ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK)
 	( cd $(1)/usr/lib ; ln -s libnl80211.so.1.0.0 libnl80211.so )
 endif
 
-	$(CP) $(PKG_BUILD_DIR)/managers/qm/qm $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/managers/cm/cm $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/managers/sm/sm $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/managers/dm/dm $(1)/usr/sbin
+	#$(CP) $(PKG_BUILD_DIR)/libs/ubus-ipc/libubus-ipc.so.1.0.0 $(1)/usr/lib
+	#rm -rf $(1)/usr/lib/libubus-ipc.so
+	#( cd $(1)/usr/lib/ ; ln -s libubus-ipc.so.1.0.0 libubus-ipc.so )
+
+	$(CP) $(PKG_BUILD_DIR)/managers/cgwd/cgwd $(1)/usr/sbin/air-cgwd
+	$(CP) $(PKG_BUILD_DIR)/managers/netstatsd/netstatsd $(1)/usr/sbin/air-netstatsd
+	$(CP) $(PKG_BUILD_DIR)/managers/netconfd/netconfd $(1)/usr/sbin/air-netconfd
+	$(CP) $(PKG_BUILD_DIR)/managers/cmdexecd/cmdexecd $(1)/usr/sbin/air-cmdexecd
+	$(CP) $(PKG_BUILD_DIR)/managers/netevd/netevd $(1)/usr/sbin/air-netevd
 	$(CP) $(PKG_BUILD_DIR)/tools/airubusd/airubusd $(1)/usr/sbin
-	#$(CP) $(PKG_BUILD_DIR)/tools/testqm/testqm $(1)/usr/sbin
 
 endef
 

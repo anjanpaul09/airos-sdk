@@ -35,7 +35,12 @@
 #include "nl80211_scan.h"
 #include "nl80211_device.h"
 
-#include "report.h"
+// Forward declarations
+bool nl80211_stats_scan_get(neighbor_report_data_t *report);
+bool nl80211_stats_vif_get(vif_record_t *record);
+bool nl80211_stats_vap_get(vif_record_t *record);
+
+#include "stats_report.h"
 //Anjan
 #include "MT7621.h"
 

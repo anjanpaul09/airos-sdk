@@ -10,7 +10,7 @@
 #define IPADDR_MAX_LEN 16
 #define MAX_VIF 32
 #define MAX_RADIO 2
-#define MAX_CLIENTS 32
+#define MAX_CLIENTS 200
 #define MAX_NEIGHBOUR 100
 
 /* statistics type  */
@@ -127,6 +127,8 @@ typedef struct {
     char hostname[HOSTNAME_MAX_LEN]; // Hostname of the client
     char ipaddr[IPADDR_MAX_LEN];     // IP Address as string
     char ssid[SSID_MAX_LEN];         // SSID of connected network
+    char osinfo[64];    
+    char client_type[16];
     uint64_t rx_bytes;       // Received bytes
     uint64_t tx_bytes;       // Transmitted bytes
     int32_t rssi;

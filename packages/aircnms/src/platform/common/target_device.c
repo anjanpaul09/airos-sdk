@@ -313,6 +313,8 @@ bool linux_device_wifi_util_get(device_wifiutil_t *w_util)
 #endif
 
 #ifdef CONFIG_PLATFORM_MTK
+    // Forward declaration - nl80211_stats_vap_get is platform-specific
+    extern bool nl80211_stats_vap_get(vif_record_t *record);
     if (nl80211_stats_vap_get(&vif_record)) {
         for (int i = 0; i < vif_record.n_vif; i++) {
             w_util->num_sta += vif_record.vif[i].num_sta;

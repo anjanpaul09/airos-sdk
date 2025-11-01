@@ -2,7 +2,7 @@
 
 void nl_ext_event_enqueue(int event, unsigned char *mac, char *ifname)
 {
-    sm_ext_event_t *nl = malloc(sizeof(sm_ext_event_t));
+    netstats_ext_event_t *nl = malloc(sizeof(netstats_ext_event_t));
     if (!nl) {
     return;
     }
