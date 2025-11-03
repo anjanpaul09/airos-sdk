@@ -119,8 +119,19 @@ void cgw_mqtt_subscriber_set(mosqev_t *self, void *data, const char *topic, void
         return;
     }
     
-    // Ensure null termination for string operations
-    // Note: msg may not be null-terminated, so we need to be careful
-    LOG(INFO, "CGW: FROM-CLOUD TOPIC: %s MSG: %.*s", topic, (int)msglen, payload); 
+    // Many syslog implementations truncate a single log line (~1KB).
+    // Log header with total length, then chunk the payload over multiple lines to avoid truncation.
+    LOG(INFO, "CGW: FROM-CLOUD TOPIC: %s msglen=%ld", topic, payloadlen);
+
+    const size_t chunk_size = 900; // stay under typical syslog line limits
+    size_t offset = 0;
+    int chunk_idx = 0;
+    while (offset < (size_t)payloadlen) {
+        size_t remaining = (size_t)payloadlen - offset;
+        size_t this_chunk = remaining < chunk_size ? remaining : chunk_size;
+        LOG(INFO, "CGW: FROM-CLOUD PAYLOAD[%d]: %.*s", chunk_idx, (int)this_chunk, payload + offset);
+        offset += this_chunk;
+        chunk_idx++;
+    }
     cgw_handle_msgrx(payload, payloadlen, (char *)topic);
 }
