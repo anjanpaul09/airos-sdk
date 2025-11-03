@@ -58,16 +58,30 @@ int remove_client_from_coplane_table(uint8_t *macaddr)
 
     hash = WLAN_STA_HASH(macaddr);
 
+    printk("AIRDPI: removing client from queue: MAC=%02x:%02x:%02x:%02x:%02x:%02x hash=%d\n",
+           macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5], hash);
+
+    OS_SPIN_WLAN_STA_LOCK(&coplane->wlan_client.wlan_client_lock);
     if (!TAILQ_EMPTY(&coplane->wlan_client.wlan_coplane_sta_list)) {
         TAILQ_FOREACH_SAFE(sta, &coplane->wlan_client.wlan_coplane_sta_list, ws_next, sta_next) {
             if (memcmp(sta->src_mac, macaddr, ETH_ALEN) == 0) {
                 TAILQ_REMOVE(&coplane->wlan_client.wlan_coplane_sta_list, sta, ws_next);
                 LIST_REMOVE(sta, ws_hash);
+                OS_SPIN_WLAN_STA_UNLOCK(&coplane->wlan_client.wlan_client_lock);
+                
+                printk("AIRDPI: client removed from queue successfully: MAC=%02x:%02x:%02x:%02x:%02x:%02x wlan-id=%d\n",
+                       macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5],
+                       sta->wlan_id);
+                
                 kfree(sta);
                 return 0;       
             }
         }
     }
+    OS_SPIN_WLAN_STA_UNLOCK(&coplane->wlan_client.wlan_client_lock);
+    
+    printk("AIRDPI: client not found in queue for removal: MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
+           macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
     
     return -1;
 }
@@ -80,12 +94,15 @@ int remove_client_from_reg_table(uint8_t *macaddr, char *ifname)
     // Check in vif client hash table
     hash = CLIENT_HASH(macaddr);
 
+    OS_SPIN_LOCK(&coplane->reg.lock);
     LIST_FOREACH(cn, &coplane->reg.client_hash[hash], nh) {
         if (!strcmp(cn->ifname, ifname) &&
             memcmp(cn->macaddr, macaddr, ETH_ALEN) == 0) {
 
             LIST_REMOVE(cn, nh);
             TAILQ_REMOVE(&coplane->reg.client_list, cn, nl);
+            OS_SPIN_UNLOCK(&coplane->reg.lock);
+            
             kfree(cn);
             printk("Client removed from reg table: %02x:%02x:%02x:%02x:%02x:%02x\n",
                    macaddr[0], macaddr[1], macaddr[2],
@@ -93,6 +110,7 @@ int remove_client_from_reg_table(uint8_t *macaddr, char *ifname)
             return 0;
         }
     }
+    OS_SPIN_UNLOCK(&coplane->reg.lock);
 
     return -1; // Client not found
 }
@@ -148,13 +166,17 @@ int air_init_netfilter_hook(void)
     return 0;
 }
 
-int air_vif_module_init(void)
+int airdpi_module_init(void)
 {
     int i;
 
-    coplane = kmalloc(sizeof(struct airpro_coplane), GFP_KERNEL);
+    if (airdpi_register_ops(&airdpi_g_ops)) {
+        printk("AIRDPI: CRITICAL - failed to register ops, backports callbacks will not work!\n");
+    }
+
+    coplane = kzalloc(sizeof(struct airpro_coplane), GFP_KERNEL);
     if (!coplane) {
-        return -1;
+        return -ENOMEM;
     }
     memset(coplane, 0, sizeof(struct airpro_coplane));
 
@@ -191,13 +213,6 @@ int air_vif_module_init(void)
         return -EINVAL;
     }
 
-    /* Register airdpi ops so backports/mac80211 can call us safely */
-    if (airdpi_register_ops(&airdpi_g_ops)) {
-        printk("AIRDPI: failed to register ops\n");
-    } else {
-        printk("AIRDPI: ops registered\n");
-    }
-
     //netlink_init();
 
     printk("air coplane init %p\n", coplane);
@@ -205,7 +220,7 @@ int air_vif_module_init(void)
     return 0;
 }
 
-int air_vif_module_exit(void)
+int airdpi_module_exit(void)
 {
     struct blocked_domain *bd;
     struct blocked_ip *bi;
@@ -245,18 +260,18 @@ int air_vif_module_exit(void)
     return 0;
 }
 
-static int __init vifmodule_init(void)
+static int __init airdpi_init_module(void)
 {
-    air_vif_module_init();
+    airdpi_module_init();
 
     return 0;
 }
 
-static void __exit vifmodule_exit(void)
+static void __exit airdpi_exit_module(void)
 {
-    air_vif_module_exit();
+    airdpi_module_exit();
 }
 
-module_init(vifmodule_init);
-module_exit(vifmodule_exit);
+module_init(airdpi_init_module);
+module_exit(airdpi_exit_module);
 MODULE_LICENSE("GPL");

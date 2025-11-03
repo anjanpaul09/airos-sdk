@@ -4,6 +4,7 @@
 #include "log.h"
 #include "netconf.h"
 #include "memutil.h"
+#include <stdint.h>
 
 netconf_queue_t g_netconf_queue;
 
@@ -11,6 +12,9 @@ netconf_queue_t g_netconf_queue;
 char *g_netconf_log_buf = NULL;
 int g_netconf_log_buf_size = 0;
 int g_netconf_log_drop_count = 0; // number of dropped lines
+
+// Queue sequence number counter
+static uint32_t g_queue_seq = 0;
 
 void netconf_queue_item_free_buf(netconf_item_t *qi)
 {
@@ -103,6 +107,23 @@ bool netconf_queue_append_item(netconf_item_t **qitem, netconf_response_t *res)
     if (!netconf_queue_make_room(qi, res)) {
         return false;
     }
+    
+    // Assign queue sequence number and log
+    g_queue_seq++;
+    uint32_t queue_num = g_queue_seq;
+    
+    const char *data_type_str = "unknown";
+    switch (qi->req.data_type) {
+        case NETCONF_DATA_CONF: data_type_str = "CONF"; break;
+        case NETCONF_DATA_ACL: data_type_str = "ACL"; break;
+        case NETCONF_DATA_RL: data_type_str = "RL"; break;
+        case NETCONF_DATA_STATS: data_type_str = "STATS"; break;
+        default: break;
+    }
+    
+    LOG(INFO, "QUEUE_PUT seq=%u type=%s msglen=%zu qlen=%d", 
+        queue_num, data_type_str, qi->size, g_netconf_queue.length + 1);
+    
     ds_dlist_insert_tail(&g_netconf_queue.queue, qi);
     g_netconf_queue.length++;
     g_netconf_queue.size += qi->size;
@@ -208,6 +229,7 @@ bool netconf_queue_get(netconf_item_t **qitem)
 {
     *qitem = ds_dlist_remove_head(&g_netconf_queue.queue);
     if (!*qitem) return false;
+    
     g_netconf_queue.length--;
     g_netconf_queue.size -= (*qitem)->size;
     return true;
@@ -220,6 +242,19 @@ bool netconf_queue_msg_process()
 
     for (qi = ds_dlist_head(&g_netconf_queue.queue); qi != NULL; qi = next) {
         next = ds_dlist_next(&g_netconf_queue.queue, qi);
+        
+        const char *data_type_str = "unknown";
+        switch (qi->req.data_type) {
+            case NETCONF_DATA_CONF: data_type_str = "CONF"; break;
+            case NETCONF_DATA_ACL: data_type_str = "ACL"; break;
+            case NETCONF_DATA_RL: data_type_str = "RL"; break;
+            case NETCONF_DATA_STATS: data_type_str = "STATS"; break;
+            default: break;
+        }
+        
+        LOG(INFO, "QUEUE_DEQUEUE type=%s msglen=%zu qlen=%d", 
+            data_type_str, qi->size, g_netconf_queue.length);
+        
         if (netconf_process_msg(qi)) {
             netconf_queue_remove(qi);
         }

@@ -8,8 +8,7 @@ UNIT_SRC += src/netstats_prepare_stats.c
 UNIT_SRC += src/netstats_process_stats.c 
 UNIT_SRC += src/netstats_common.c 
 UNIT_SRC += src/netstats_queue.c
-UNIT_SRC += src/netstats_ubus_rx.c
-UNIT_SRC += src/netstats_ubus_tx.c
+UNIT_SRC += src/netstats_ubus.c
 
 UNIT_SRC += ../../platform/common/target_device.c
 

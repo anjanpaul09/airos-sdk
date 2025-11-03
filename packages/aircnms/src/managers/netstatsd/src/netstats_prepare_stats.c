@@ -215,7 +215,7 @@ bool netstats_copy_stats(netstats_stats_t *dst, void *sts)
     return true;
 }
 
-bool netstats_prepare_stats(NETSTATS_STATS_TYPE type, void *rpt)
+size_t netstats_prepare_stats(NETSTATS_STATS_TYPE type, void *rpt)
 {
     netstats_stats_t *s = calloc(1, sizeof(netstats_stats_t));
     long buf_len;
@@ -224,7 +224,7 @@ bool netstats_prepare_stats(NETSTATS_STATS_TYPE type, void *rpt)
 
     if (!s) {
         LOG(ERR, "NETSTATS (Failed to allocate netstats_stats_t)");
-        return false;
+        return 0;
     }
 
     s->type = type;
@@ -232,20 +232,20 @@ bool netstats_prepare_stats(NETSTATS_STATS_TYPE type, void *rpt)
     if (!netstats_copy_stats(s, rpt)) {
         LOG(ERR, "netstats_copy_stats failed");
         free(s);
-        return false;
+        return 0;
     }
 
     if (sizeof(netstats_stats_t) > STATS_MQTT_BUF_SZ) {
         LOG(ERR, "NETSTATS (Failed - netstats_stats_t size exceeds netstats_mqtt_buf size!)");
         free(s);
-        return false;
+        return 0;
     }
 
     buf_len = serialize_compress_netstats_stats(s, netstats_mqtt_buf, STATS_MQTT_BUF_SZ);
     if (buf_len == 0) {
         LOG(ERR, "serialize_compress_netstats_stats failed");
         free(s);
-        return false;
+        return 0;
     }
 
     LOG(DEBUG, "Serialization successful, compressed size: %ld bytes", buf_len);
@@ -253,7 +253,7 @@ bool netstats_prepare_stats(NETSTATS_STATS_TYPE type, void *rpt)
     netstats_item_t *qi = CALLOC(1, sizeof(netstats_item_t));
     if (!qi) {
         free(s);
-        return false;
+        return 0;
     }
         
     // Fill request metadata
@@ -264,7 +264,7 @@ bool netstats_prepare_stats(NETSTATS_STATS_TYPE type, void *rpt)
             netstats_queue_item_free(qi);
             free(s);
             LOG(ERR, "Failed to allocate buffer for queue item");
-            return false;
+            return 0;
         }
         memcpy(qi->buf, netstats_mqtt_buf, buf_len);
         qi->size = buf_len;
@@ -275,31 +275,31 @@ bool netstats_prepare_stats(NETSTATS_STATS_TYPE type, void *rpt)
         if (qi) netstats_queue_item_free(qi);
         free(s);
         LOG(ERR, "Failed to put item in queue");
-        return false;
+        return 0;
     }
 
     free(s);
-    return true;
+    return (size_t)buf_len;
 }
 
 /* Prepare device stats */
-bool netstats_put_device(device_report_data_t *rpt)
+size_t netstats_put_device(device_report_data_t *rpt)
 {
     return netstats_prepare_stats(NETSTATS_T_DEVICE, rpt);
 }
 
 /* Prepare VIF stats */
-bool netstats_put_vif(vif_report_data_t *rpt)
+size_t netstats_put_vif(vif_report_data_t *rpt)
 {
     return netstats_prepare_stats(NETSTATS_T_VIF, rpt);
 }
 
-bool netstats_put_client(client_report_data_t *rpt)
+size_t netstats_put_client(client_report_data_t *rpt)
 {
     return netstats_prepare_stats(NETSTATS_T_CLIENT, rpt);
 }
         
-bool netstats_put_neighbor(neighbor_report_data_t *rpt)
+size_t netstats_put_neighbor(neighbor_report_data_t *rpt)
 {
     return netstats_prepare_stats(NETSTATS_T_NEIGHBOR, rpt);
 }

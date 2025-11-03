@@ -15,15 +15,12 @@ start_service()
     procd_close_instance
 }
 
-stop_service()
-{
-    procd_kill_user "$PROG"
-}
+# stop_service() is not needed - procd handles stopping automatically
 
 restart_service()
 {
-    stop_service
+    stop
     sleep 1
-    start_service
+    start
 }
 

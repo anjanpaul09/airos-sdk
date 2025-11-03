@@ -42,13 +42,8 @@ int main(int argc, char **argv)
         return -1;
     }
     
-    if (!netstats_ubus_tx_service_init()) {
-        LOG(ERR, "Initializing NETSTATS TX ""(Failed to start stats ubus)");
-        return -1;
-    }
-
-    if (!netstats_ubus_rx_service_init()) {
-        LOG(ERR, "Initializing NETSTATS RX ""(Failed to start stats ubus)");
+    if (!netstats_ubus_service_init()) {
+        LOG(ERR, "Initializing NETSTATS ""(Failed to start ubus service)");
         return -1;
     }
     
@@ -66,15 +61,8 @@ int main(int argc, char **argv)
     }
     ev_run(EV_DEFAULT, 0);
 
-#if 0
-    if (!sm_dequeue_timer_init()) {
-        return -1;
-    }
-#endif
-
     ev_default_destroy();
-    netstats_ubus_tx_service_cleanup();
-    netstats_ubus_rx_service_cleanup();
+    netstats_ubus_service_cleanup();
     target_close(TARGET_INIT_MGR_SM, loop);
 
     LOGN("Exiting NETSTATS");

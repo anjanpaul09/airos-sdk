@@ -17,8 +17,6 @@
 
 bool target_stats_clients_get(client_report_data_t *client_list);
 
-#define MODULE_ID LOG_MODULE_ID_MAIN
-
 #define netstats_client_report_stat_percent_get(v1, v2) \
     ((v2 > 0 && v1 < v2) ? (v1*100/v2) : 0)
 
@@ -298,12 +296,12 @@ static void netstats_client_report_stats(netstats_client_ctx_t *client_ctx)
 
     // Send final report
     if (result_ctx->n_client > 0) {
-        netstats_put_client(result_ctx);
+        size_t msglen = netstats_put_client(result_ctx);
     
         LOG(INFO,
-            "Sending client report at '%s' n-client '%d'",
-            netstats_timestamp_ms_to_date(result_ctx->timestamp_ms),
-            result_ctx->n_client);
+            "msgtype=client clients=%d msglen=%zu",
+            result_ctx->n_client,
+            msglen);
     }
 
     // Free result immediately after sending

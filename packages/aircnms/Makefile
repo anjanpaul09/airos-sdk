@@ -149,11 +149,11 @@ define Package/aircnms/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_DIR) $(1)/usr/lib
 
-	$(INSTALL_BIN) ./files/air_cgwdinit $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/air_netstatsdinit $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/air_netconfdinit $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/air_cmdexecdinit $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/air_netevdinit $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/aircgwd $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/airnetstatsd $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/airnetconfd $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/aircmdexecd $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/airnetevd $(1)/etc/init.d
 
 ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK)
 	$(INSTALL_BIN) ./files/airinit_mtk $(1)/etc/init.d/airinit
@@ -162,8 +162,6 @@ endif
 ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK_JEDI)
 	$(INSTALL_BIN) ./files/airinit_jedi $(1)/etc/init.d/airinit
 endif
-	$(INSTALL_BIN) ./files/airinit_logger $(1)/etc/init.d/airinit_logger
-
 	$(CP) $(PKG_BUILD_DIR)/libs/common/libcommon.so.1.0.0 $(1)/usr/lib
 	rm -rf $(1)/usr/lib/libcommon.so
 	( cd $(1)/usr/lib/ ; ln -s libcommon.so.1.0.0 libcommon.so )

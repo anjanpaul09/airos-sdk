@@ -16,7 +16,6 @@
 #include "netstats.h"
 
 int target_stats_device_get(device_record_t *device_entry);
-#define MODULE_ID LOG_MODULE_ID_MAIN
 
 #define DEVICE_THERMAL_TIMER_SEC                60
 
@@ -159,22 +158,19 @@ void netstats_device_report(EV_P_ ev_timer *w, int revents)
                          &request_ctx->reporting_timestamp,
                          &device_ctx->report_ts);
 
-    LOG(INFO,
-        "uptime=%u, mem=%u/%u, cpu=%u",
-        report_ctx->record.uptime,
-        report_ctx->record.mem_util.mem_used,
-        report_ctx->record.mem_util.mem_total,
-        report_ctx->record.cpu_util.cpu_util);
-    
     report_ctx->timestamp_ms =
         request_ctx->reporting_timestamp - device_ctx->report_ts +
         get_timestamp();
 
+    size_t msglen = netstats_put_device(report_ctx);
+    
     LOG(INFO,
-        "Sending device report at '%s'",
-        netstats_timestamp_ms_to_date(report_ctx->timestamp_ms));
-
-    netstats_put_device(report_ctx);
+        "msgtype=device msglen=%zu uptime=%u mem=%u/%u cpu=%u",
+        msglen,
+        report_ctx->record.uptime,
+        report_ctx->record.mem_util.mem_used,
+        report_ctx->record.mem_util.mem_total,
+        report_ctx->record.cpu_util.cpu_util);
 
     NETSTATS_SANITY_CHECK_TIME(report_ctx->timestamp_ms,
                          &request_ctx->reporting_timestamp,

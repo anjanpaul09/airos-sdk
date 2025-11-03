@@ -184,8 +184,11 @@ struct client_node *client_reg_table_alloc(char *macaddr)
     IEEE80211_ADDR_COPY(cn->macaddr, macaddr);
     cn->connected_tms = ktime_get_real_seconds(); // Store connection timestamp
     hash = CLIENT_HASH(macaddr);
+    
+    OS_SPIN_LOCK(&coplane->reg.lock);
     LIST_INSERT_HEAD(&coplane->reg.client_hash[hash], cn, nh);
     TAILQ_INSERT_TAIL(&coplane->reg.client_list, cn, nl);
+    OS_SPIN_UNLOCK(&coplane->reg.lock);
     
     return cn;
 }
@@ -352,13 +355,21 @@ struct wlan_sta *sta_table_lookup(uint8_t *macaddr, int dir, uint8_t ifindex)
             sta_new->rl[AIR_RL_DIR_DOWNLINK] = user_wlan_rl[ifindex][AIR_RL_DIR_DOWNLINK];
         }
       
-        printk("AIRDPI: added entry to client list & queue = %02x:%02x:%02x hash=%d wlan-id=%d\n", sta_new->src_mac[3], sta_new->src_mac[4], sta_new->src_mac[5], hash, sta_new->wlan_id);
+        printk("AIRDPI: adding client to queue: MAC=%02x:%02x:%02x:%02x:%02x:%02x hash=%d wlan-id=%d\n",
+               sta_new->src_mac[0], sta_new->src_mac[1], sta_new->src_mac[2],
+               sta_new->src_mac[3], sta_new->src_mac[4], sta_new->src_mac[5],
+               hash, sta_new->wlan_id);
 
         OS_SPIN_WLAN_STA_LOCK(&coplane->wlan_client.wlan_client_lock);
 
         TAILQ_INSERT_TAIL(&coplane->wlan_client.wlan_coplane_sta_list, sta_new, ws_next);
         LIST_INSERT_HEAD(&coplane->wlan_client.wlan_coplane_sta_hash[hash], sta_new, ws_hash);
         OS_SPIN_WLAN_STA_UNLOCK(&coplane->wlan_client.wlan_client_lock);
+        
+        printk("AIRDPI: client added to queue successfully: MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
+               sta_new->src_mac[0], sta_new->src_mac[1], sta_new->src_mac[2],
+               sta_new->src_mac[3], sta_new->src_mac[4], sta_new->src_mac[5]);
+        
         return sta_new;
     }
 

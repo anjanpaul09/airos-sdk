@@ -335,16 +335,30 @@ bool cgw_send_stats_json(cgw_item_t *qi)
 
     char data[MAX_MQTT_SEND_DATA_SIZE] = {0};
     
+    // Helper to get type string
+    const char *msgtype_str = "unknown";
+    switch (stats->type) {
+        case NETSTATS_T_NEIGHBOR: msgtype_str = "neighbor"; break;
+        case NETSTATS_T_CLIENT: msgtype_str = "client"; break;
+        case NETSTATS_T_DEVICE: msgtype_str = "device"; break;
+        case NETSTATS_T_VIF: msgtype_str = "vif"; break;
+        default: break;
+    }
+    
     switch (stats->type) {
         case NETSTATS_T_DEVICE: 
             {
                 ret = cgw_parse_device_newjson(&stats->u.device, data);
+                size_t msglen = strlen(data);
+                LOG(INFO, "CGWD->CLOUD: msgtype=%s msglen=%zu", msgtype_str, msglen);
                 ret = cgw_publish_json(data, stats_topic.device);
 
             }break;
         case NETSTATS_T_VIF: 
             {
                 ret = cgw_parse_vif_newjson(&stats->u.vif, data);
+                size_t msglen = strlen(data);
+                LOG(INFO, "CGWD->CLOUD: msgtype=%s msglen=%zu", msgtype_str, msglen);
                 ret = cgw_publish_json(data, stats_topic.vif);
 
             }break;
@@ -352,12 +366,16 @@ bool cgw_send_stats_json(cgw_item_t *qi)
         {
             client_report_data_t *client = &stats->u.client;
             ret = cgw_parse_client_newjson(client, data);
+            size_t msglen = strlen(data);
+            LOG(INFO, "CGWD->CLOUD: msgtype=%s msglen=%zu", msgtype_str, msglen);
             ret = cgw_publish_json(data, stats_topic.client);
             break;
         }
         case NETSTATS_T_NEIGHBOR: 
         {
             ret = cgw_parse_neighbor_newjson(&stats->u.neighbor, data);
+            size_t msglen = strlen(data);
+            LOG(INFO, "CGWD->CLOUD: msgtype=%s msglen=%zu", msgtype_str, msglen);
             ret = cgw_publish_json(data, stats_topic.neighbor);
 
         }break;

@@ -17,7 +17,7 @@ bool netconf_process_msg(netconf_item_t *ci)
     void *mbuf = ci->buf;
     netconf_request_t req = ci->req;
     
-    LOG(INFO, "NETCONF: RECIEVED MSG =%s len=%d\n", (char *)mbuf, (int)mlen);
+    LOG(INFO, "RECIEVED MSG =%s len=%d\n", (char *)mbuf, (int)mlen);
 
     memcpy(data, mbuf, mlen);
     data[ci->size] = '\0';

@@ -144,9 +144,9 @@ static inline uint64_t get_timestamp(void)
 }
 
 
-bool netstats_put_device(device_report_data_t *rpt);
-bool netstats_put_vif(vif_report_data_t *rpt);
-bool netstats_put_client(client_report_data_t *rpt);
+size_t netstats_put_device(device_report_data_t *rpt);
+size_t netstats_put_vif(vif_report_data_t *rpt);
+size_t netstats_put_client(client_report_data_t *rpt);
 
 // Initialization functions
 bool netstats_initiate_stats(void);
@@ -156,6 +156,11 @@ bool netstats_dequeue_timer_init(void);
 bool netstats_init_neighbor_stats(void);
 
 // UBUS functions
+// Unified initialization - combines both TX and RX
+bool netstats_ubus_service_init(void);
+void netstats_ubus_service_cleanup(void);
+
+// Legacy functions - kept for backward compatibility (deprecated, use unified functions above)
 bool netstats_ubus_tx_service_init(void);
 void netstats_ubus_tx_service_cleanup(void);
 bool netstats_ubus_rx_service_init(void);
@@ -163,7 +168,7 @@ void netstats_ubus_rx_service_cleanup(void);
 
 // Stats publishing
 void netstats_publish_stats(netstats_item_t *qi);
-bool netstats_put_neighbor(neighbor_report_data_t *rpt);
+size_t netstats_put_neighbor(neighbor_report_data_t *rpt);
 
 // Platform-specific function declarations
 extern int target_stats_device_get(device_record_t *device_entry);

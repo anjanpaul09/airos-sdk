@@ -20,6 +20,10 @@ int airdpi_sta_add(const u8 *macaddr, const char *ifname)
     if (!macaddr)
         return -EINVAL;
 
+    printk("AIRDPI: client event received: MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s\n",
+           macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5],
+           ifname ? ifname : "NULL");
+
     cn = client_reg_table_lookup((uint8_t *)macaddr);
     if (!cn) {
         cn = client_reg_table_alloc((uint8_t *)macaddr);
@@ -45,6 +49,10 @@ int airdpi_sta_del(const u8 *macaddr, const char *ifname)
 
     if (!macaddr)
         return -EINVAL;
+
+    printk("AIRDPI: client disconnection event received: MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s\n",
+           macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5],
+           ifname ? ifname : "NULL");
 
     if (ifname)
         rc_reg = remove_client_from_reg_table((uint8_t *)macaddr, (char *)ifname);

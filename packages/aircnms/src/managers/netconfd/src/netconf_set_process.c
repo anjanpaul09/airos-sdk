@@ -203,6 +203,17 @@ bool netconf_process_vif_list(json_t *vif_list)
         n_vif++;
     }
     record->n_vif = n_vif;
+    
+    // Log parameters before setting
+    LOG(INFO, "SET_VIF params n_vif=%d", n_vif);
+    for (int j = 0; j < n_vif && j < sizeof(record->vif_param)/sizeof(record->vif_param[0]); j++) {
+        LOG(INFO, "SET_VIF[%d] recordId=%s ssid=%s encryption=%s status=%d enable=%s vlanId=%s device=%s", 
+            j, record->vif_param[j].record_id, record->vif_param[j].ssid, 
+            record->vif_param[j].encryption, record->vif_param[j].status,
+            record->vif_param[j].enable, record->vif_param[j].vlan_id, 
+            record->vif_param[j].device);
+    }
+    
     ret = target_config_vif_set(record);
     free(record);
     return ret;
@@ -287,6 +298,17 @@ bool netconf_process_radio_list(json_t *radio_list)
         n_radio++;
     }
     record->n_radio = n_radio;
+    
+    // Log parameters before setting
+    LOG(INFO, "SET_RADIO params n_radio=%d", n_radio);
+    for (int j = 0; j < n_radio && j < sizeof(record->radio_param)/sizeof(record->radio_param[0]); j++) {
+        LOG(INFO, "SET_RADIO[%d] recordId=%s radioType=%s channel=%s txpower=%s disabled=%s country=%s channelWidth=%s", 
+            j, record->radio_param[j].record_id, record->radio_param[j].radio_type,
+            record->radio_param[j].channel, record->radio_param[j].txpower,
+            record->radio_param[j].disabled, record->radio_param[j].country,
+            record->radio_param[j].channel_width);
+    }
+    
     ret = target_config_radio_set(record);
     free(record);
     return ret;
@@ -301,6 +323,7 @@ bool netconf_process_blacklist(json_t *blackList)
     json_t *add_list = json_object_get(blackList, "add");
     if (json_is_array(add_list)) {
         printf("MAC addresses to add:\n");
+        LOG(INFO, "SET_ACL blacklist add count=%zu type=%s", json_array_size(add_list), type);
         for (size_t i = 0; i < json_array_size(add_list); i++) {
             json_t *mac = json_array_get(add_list, i);
             if (json_is_string(mac)) {
@@ -310,8 +333,10 @@ bool netconf_process_blacklist(json_t *blackList)
                 if (strncmp(type, "ssid", 4) == 0) {
                     char ssid[64];
                     strlcpy(ssid, json_string_value(json_object_get(blackList, "ssid")), sizeof(ssid));
+                    LOG(INFO, "SET_ACL blacklist add_ssid mac=%s ssid=%s", tmp_mac, ssid);
                     netconf_handle_add_blacklist_ssid(tmp_mac, ssid);
                 } else {
+                    LOG(INFO, "SET_ACL blacklist add mac=%s", tmp_mac);
                     netconf_handle_add_blacklist(tmp_mac);
                 }
             }
@@ -321,12 +346,14 @@ bool netconf_process_blacklist(json_t *blackList)
     json_t *remove_list = json_object_get(blackList, "remove");
     if (json_is_array(remove_list)) {
         printf("MAC addresses to remove:\n");
+        LOG(INFO, "SET_ACL blacklist remove count=%zu", json_array_size(remove_list));
         for (size_t i = 0; i < json_array_size(remove_list); i++) {
             json_t *mac = json_array_get(remove_list, i);
             if (json_is_string(mac)) {
                 printf("%s\n", json_string_value(mac));
                 memset(tmp_mac, 0, sizeof(tmp_mac));
                 strcpy(tmp_mac, json_string_value(mac));
+                LOG(INFO, "SET_ACL blacklist remove mac=%s", tmp_mac);
                 netconf_handle_remove_blacklist(tmp_mac);
             }
         }
@@ -342,6 +369,7 @@ int netconf_process_whitelist(json_t *whiteList)
     json_t *add_list = json_object_get(whiteList, "add");
     if (json_is_array(add_list)) {
         printf("MAC addresses to add:\n");
+        LOG(INFO, "SET_ACL whitelist add count=%zu type=%s", json_array_size(add_list), type);
         for (size_t i = 0; i < json_array_size(add_list); i++) {
             json_t *mac = json_array_get(add_list, i);
             if (json_is_string(mac)) {
@@ -351,8 +379,10 @@ int netconf_process_whitelist(json_t *whiteList)
                 if (strncmp(type, "ssid", 4) == 0) {
                     char ssid[64];
                     strlcpy(ssid, json_string_value(json_object_get(whiteList, "ssid")), sizeof(ssid));
+                    LOG(INFO, "SET_ACL whitelist add_ssid mac=%s ssid=%s", tmp_mac, ssid);
                     netconf_handle_add_whitelist_ssid(tmp_mac, ssid);
                 } else {
+                    LOG(INFO, "SET_ACL whitelist add mac=%s", tmp_mac);
                     netconf_handle_add_whitelist(tmp_mac);
                 }
             }
@@ -362,12 +392,14 @@ int netconf_process_whitelist(json_t *whiteList)
     json_t *remove_list = json_object_get(whiteList, "remove");
     if (json_is_array(remove_list)) {
         printf("MAC addresses to remove:\n");
+        LOG(INFO, "SET_ACL whitelist remove count=%zu", json_array_size(remove_list));
         for (size_t i = 0; i < json_array_size(remove_list); i++) {
             json_t *mac = json_array_get(remove_list, i);
             if (json_is_string(mac)) {
                 printf("%s\n", json_string_value(mac));
                 memset(tmp_mac, 0, sizeof(tmp_mac));
                 strcpy(tmp_mac, json_string_value(mac));
+                LOG(INFO, "SET_ACL whitelist remove mac=%s", tmp_mac);
                 netconf_handle_remove_whitelist(tmp_mac);
             }
         }
@@ -492,6 +524,10 @@ int netconf_process_user_rl_msg(char *buf)
     }
     
     os_nif_macaddr_from_str(&mac, tmp_mac); 
+    
+    // Log parameters before setting
+    LOG(INFO, "SET_USER_RL mac=%s uplink=%d downlink=%d", tmp_mac, uplink, downlink);
+    
     if (uplink >= 0) {
         air_user_rate_limit(mac.addr, uplink, AIR_DIR_UPLINK);
     }

@@ -16,8 +16,6 @@
 #include "netstats.h"
 bool target_stats_vif_get(vif_record_t *record);
 
-#define MODULE_ID LOG_MODULE_ID_MAIN
-
 
 /* new part VIF */
 typedef struct
@@ -133,12 +131,13 @@ void netstats_vif_report(EV_P_ ev_timer *w, int revents)
         request_ctx->reporting_timestamp - vif_ctx->report_ts +
         get_timestamp();
 
+    size_t msglen = netstats_put_vif(report_ctx);
+    
     LOG(INFO,
-        "Sending vif report at '%s' n-vif '%d' n-radio '%d'",
-        netstats_timestamp_ms_to_date(report_ctx->timestamp_ms), report_ctx->record.n_vif, 
-        report_ctx->record.n_radio);
-
-    netstats_put_vif(report_ctx);
+        "msgtype=vif vaps=%d radios=%d msglen=%zu",
+        report_ctx->record.n_vif, 
+        report_ctx->record.n_radio,
+        msglen);
     
     NETSTATS_SANITY_CHECK_TIME(report_ctx->timestamp_ms,
                          &request_ctx->reporting_timestamp,

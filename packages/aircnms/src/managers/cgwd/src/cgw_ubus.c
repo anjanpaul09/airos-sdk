@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <time.h>
 #include <unistd.h>
+#include <zlib.h>
 #include "cgw.h"
 #include "report.h"
 #include "unixcomm.h"
@@ -24,6 +25,52 @@ static ev_io ubus_watcher;
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
+
+// Helper function to get message type string from enum
+static const char* get_stats_type_str(NETSTATS_STATS_TYPE type)
+{
+    switch (type) {
+        case NETSTATS_T_NEIGHBOR: return "neighbor";
+        case NETSTATS_T_CLIENT: return "client";
+        case NETSTATS_T_DEVICE: return "device";
+        case NETSTATS_T_VIF: return "vif";
+        default: return "unknown";
+    }
+}
+
+// Helper function to peek at message type from compressed data
+static NETSTATS_STATS_TYPE peek_stats_type(const uint8_t *compressed_data, size_t compressed_size)
+{
+    if (!compressed_data || compressed_size == 0) {
+        return 0;
+    }
+    
+    // Use a reasonable buffer size - most messages decompress to < 8KB
+    // We only need first few bytes for type, so this should be sufficient
+    uint8_t decompressed_data[8192];
+    uLongf decompressed_size = sizeof(decompressed_data);
+    
+    int ret = uncompress(decompressed_data, &decompressed_size, compressed_data, compressed_size);
+    if (ret != Z_OK) {
+        // Decompression failed - data might be corrupted or buffer too small
+        // This is not critical, we'll still process it correctly later
+        return 0;
+    }
+    
+    if (decompressed_size < sizeof(NETSTATS_STATS_TYPE)) {
+        return 0; // Not enough data after decompression
+    }
+    
+    NETSTATS_STATS_TYPE type;
+    memcpy(&type, decompressed_data, sizeof(type));
+    
+    // Validate type is in valid range
+    if (type >= NETSTATS_T_NEIGHBOR && type <= NETSTATS_T_VIF) {
+        return type;
+    }
+    
+    return 0; // Invalid type
+}
 
 static int ubus_get_state_handler(struct ubus_context *ctx,
                                   struct ubus_object *obj,
@@ -89,6 +136,20 @@ static int ubus_netstats_handler(struct ubus_context* ctx, struct ubus_object* o
     int len = blobmsg_data_len(tb[DATA]);
 
     LOG(DEBUG, "Declared size: %d | Actual data length: %d", size, len);
+
+    // Try to peek at message type for logging
+    // Use actual blobmsg data length (len) for decompression, not declared size
+    const char *msgtype_str = "unknown";
+    if (data && len > 0) {
+        NETSTATS_STATS_TYPE type = peek_stats_type((const uint8_t *)data, len);
+        if (type > 0 && type <= NETSTATS_T_VIF) {
+            msgtype_str = get_stats_type_str(type);
+        }
+    }
+
+    // Log message received from netstatsd (format matches NETSTATS)
+    // Use declared size for msglen (compressed size as sent by netstatsd)
+    LOG(INFO, "NETSTATSD->CGWD: msgtype=%s msglen=%d", msgtype_str, size);
 
     // Enqueue into QM queue and signal MQTT worker
     cgw_item_t *qi = CALLOC(1, sizeof(cgw_item_t));

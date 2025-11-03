@@ -60,6 +60,9 @@ static int ubus_netconf_config_handler(struct ubus_context* ctx, struct ubus_obj
     printf("  📦 Declared size: %d | Actual data length: %d\n",
                 size, len);
 
+    // Log message received
+    LOG(INFO, "MSG_RECV type=CONF msglen=%d", size);
+
         // Enqueue into QM queue and signal MQTT worker
         netconf_item_t *qi = CALLOC(1, sizeof(netconf_item_t));
         if (!qi) {
@@ -123,6 +126,9 @@ static int ubus_netconf_acl_handler(struct ubus_context* ctx, struct ubus_object
 
     printf("  📦 Declared size: %d | Actual data length: %d\n",
                 size, len);
+
+    // Log message received
+    LOG(INFO, "MSG_RECV type=ACL msglen=%d", size);
 
         // Enqueue into QM queue and signal MQTT worker
         netconf_item_t *qi = CALLOC(1, sizeof(netconf_item_t));
@@ -190,6 +196,9 @@ static int ubus_netconf_rl_handler(struct ubus_context* ctx, struct ubus_object*
 
     printf("  📦 Declared size: %d | Actual data length: %d\n",
                 size, len);
+
+    // Log message received
+    LOG(INFO, "MSG_RECV type=RL msglen=%d", size);
 
         // Enqueue into QM queue and signal MQTT worker
         netconf_item_t *qi = CALLOC(1, sizeof(netconf_item_t));

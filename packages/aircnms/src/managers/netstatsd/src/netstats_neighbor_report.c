@@ -15,8 +15,6 @@
 #include "memutil.h"
 bool target_stats_neighbor_get(neighbor_report_data_t *report);
 
-#define MODULE_ID LOG_MODULE_ID_MAIN
-
 typedef struct
 {
     bool                            initialized;
@@ -93,11 +91,13 @@ static void netstats_neighbor_report_stats(netstats_neighbor_ctx_t *neighbor_ctx
         request_ctx->reporting_timestamp - neighbor_ctx->report_ts +
         get_timestamp();
 
-    LOG(INFO,
-        "Sending neighbor report at '%s'",
-        netstats_timestamp_ms_to_date(report_ctx->timestamp_ms));
     if (status && report_ctx->n_entry > 0) {
-        netstats_put_neighbor(report_ctx);
+        size_t msglen = netstats_put_neighbor(report_ctx);
+        
+        LOG(INFO,
+            "msgtype=neighbor entries=%d msglen=%zu",
+            report_ctx->n_entry,
+            msglen);
     } 
     
     return;    

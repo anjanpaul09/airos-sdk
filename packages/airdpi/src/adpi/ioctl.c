@@ -250,6 +250,7 @@ long air_device_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
             pr_info("Allocating client_info memory successfully\n");
 
+            OS_SPIN_LOCK(&coplane->reg.lock);
             TAILQ_FOREACH_SAFE(node, &coplane->reg.client_list, nl, tmp) {
                 if (count >= 32) {
                     break; // Limit to 32 entries
@@ -260,6 +261,7 @@ long air_device_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
                 pr_info("Client %d: IP = %u, MAC = %pM, Hostname = %s\n", count + 1, node->ip, node->macaddr, node->hostname);
                 count++;
             }
+            OS_SPIN_UNLOCK(&coplane->reg.lock);
 
             client_info->count = count;
             pr_info("Client count: %d\n", client_info->count);
@@ -376,7 +378,3 @@ long air_device_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
     return 0;
 }
-
-/* Duplicate signatures removed: helpers are defined above using airpro_coplane */
-
-
