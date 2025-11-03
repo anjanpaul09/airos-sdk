@@ -307,23 +307,16 @@ bool target_config_vif_set(vif_record_t *record)
 #endif
 
 #ifdef CONFIG_PLATFORM_MTK 
-            // INTERFACE UPRATE
-            if( record->vif_param[vid].is_uprate) {
-                air_interface_rate_limit(vif_name, record->vif_param[vid].uprate, AIR_DIR_UPLINK, "wlan");
-            }
-            //INTERFACE DOWNRATE
-            if( record->vif_param[vid].is_downrate) {
-                air_interface_rate_limit(vif_name, record->vif_param[vid].downrate, AIR_DIR_DOWNLINK, "wlan");
-            }
-            // INTERFACE PER UPRATE
-            if( record->vif_param[vid].is_wlan_uprate) {
-                air_interface_rate_limit(vif_name, record->vif_param[vid].wlan_uprate, AIR_DIR_UPLINK, "wlan_per_user");
-            }
-            //INTERFACE PER DOWNRATE
-            if( record->vif_param[vid].is_wlan_downrate) {
-                air_interface_rate_limit(vif_name, record->vif_param[vid].wlan_downrate, AIR_DIR_DOWNLINK, "wlan_per_user");
-            }
-            
+            // Single call to set both uplink and downlink
+            air_interface_rate_limit(vif_name, 
+                        record->vif_param[vid].is_uprate ? record->vif_param[vid].uprate : 0,
+                        record->vif_param[vid].is_downrate ? record->vif_param[vid].downrate : 0,
+                        "wlan");
+            air_interface_rate_limit(vif_name, 
+                        record->vif_param[vid].is_wlan_uprate ? record->vif_param[vid].wlan_uprate : 0,
+                        record->vif_param[vid].is_wlan_downrate ? record->vif_param[vid].wlan_downrate : 0,
+                        "wlan_per_user");
+
             //CAPTIVE PORTAL
             netconf_handle_captive_portal(vif_name, &vif_params);
 #endif
@@ -449,22 +442,14 @@ bool target_config_vif_set(vif_record_t *record)
 #endif
 
 #ifdef CONFIG_PLATFORM_MTK 
-            // INTERFACE UPRATE
-            if( record->vif_param[vid].is_uprate) {
-                air_interface_rate_limit(vif_name, record->vif_param[vid].uprate, AIR_DIR_UPLINK, "wlan");
-            }
-            //INTERFACE DOWNRATE
-            if( record->vif_param[vid].is_downrate) {
-                air_interface_rate_limit(vif_name, record->vif_param[vid].downrate, AIR_DIR_DOWNLINK, "wlan");
-            }
-            // INTERFACE PER UPRATE
-            if( record->vif_param[vid].is_wlan_uprate) {
-                air_interface_rate_limit(vif_name, record->vif_param[vid].wlan_uprate, AIR_DIR_UPLINK, "wlan_per_user");
-            }
-            //INTERFACE PER DOWNRATE
-            if( record->vif_param[vid].is_wlan_downrate) {
-                air_interface_rate_limit(vif_name, record->vif_param[vid].wlan_downrate, AIR_DIR_DOWNLINK, "wlan_per_user");
-            }
+            air_interface_rate_limit(vif_name, 
+                        record->vif_param[vid].is_uprate ? record->vif_param[vid].uprate : 0,
+                        record->vif_param[vid].is_downrate ? record->vif_param[vid].downrate : 0,
+                        "wlan");
+            air_interface_rate_limit(vif_name, 
+                        record->vif_param[vid].is_wlan_uprate ? record->vif_param[vid].wlan_uprate : 0,
+                        record->vif_param[vid].is_wlan_downrate ? record->vif_param[vid].wlan_downrate : 0,
+                        "wlan_per_user");
             
             //CAPTIVE PORTAL
             netconf_handle_captive_portal(vif_name, &vif_params);

@@ -31,11 +31,12 @@ struct adpi_del_sta_entry {
 };
 
 struct adpi_ratelimit_bucket {
-    uint8_t           macaddr[MAX_MAC_ADDR_LEN];
-    uint32_t          bytes_per_sec;    // Data rate limit in bytes per second
-    uint32_t          size;             // Size of the bucket (e.g., burst size)
-    int               wlan_idx;         // Index or ID of the WLAN
-    int               direction;        // Direction of the traffic (e.g., 0 for upload, 1 for download)
+    uint8_t macaddr[MAX_MAC_ADDR_LEN];
+    uint32_t uplink_bytes_per_sec;     // Uplink rate limit
+    uint32_t uplink_size;               // Uplink burst size
+    uint32_t downlink_bytes_per_sec;   // Downlink rate limit
+    uint32_t downlink_size;             // Downlink burst size
+    int wlan_idx;                       // Index or ID of the WLAN
 };
 
 struct adpi_domain_entry {

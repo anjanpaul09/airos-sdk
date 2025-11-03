@@ -78,7 +78,7 @@ endif
 	BUILD_MGRNETCONFD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/netconfd $(MAKE_PACKAGE_ARGS)
 	BUILD_MGRCMDEXECD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/cmdexecd $(MAKE_PACKAGE_ARGS)
 	BUILD_MGRNETEVD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/netevd $(MAKE_PACKAGE_ARGS)
-	BUILD_AIRCLI:= $(MAKE) -C $(PKG_BUILD_DIR)/tools/airubusd $(MAKE_PACKAGE_ARGS)
+	#BUILD_AIRCLI:= $(MAKE) -C $(PKG_BUILD_DIR)/tools/airubusd $(MAKE_PACKAGE_ARGS)
 endif
 
 define Build/Compile
@@ -136,7 +136,7 @@ endif
 	$(BUILD_MGRNETCONFD)
 	$(BUILD_MGRCMDEXECD)
 	$(BUILD_MGRNETEVD)
-	$(BUILD_AIRCLI)
+	#$(BUILD_AIRCLI)
 endef
 
 define Build/InstallDev
@@ -205,7 +205,7 @@ endif
 	$(CP) $(PKG_BUILD_DIR)/managers/netconfd/netconfd $(1)/usr/sbin/air-netconfd
 	$(CP) $(PKG_BUILD_DIR)/managers/cmdexecd/cmdexecd $(1)/usr/sbin/air-cmdexecd
 	$(CP) $(PKG_BUILD_DIR)/managers/netevd/netevd $(1)/usr/sbin/air-netevd
-	$(CP) $(PKG_BUILD_DIR)/tools/airubusd/airubusd $(1)/usr/sbin
+	#$(CP) $(PKG_BUILD_DIR)/tools/airubusd/airubusd $(1)/usr/sbin
 
 endef
 

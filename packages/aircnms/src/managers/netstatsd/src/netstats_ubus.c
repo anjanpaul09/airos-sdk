@@ -105,7 +105,71 @@ void test_get_state(void)
  * =================================================== */
 
 /* ---------------------------------------------------
- * Handler for incoming ubus commands
+ * Handler for neighbor scan trigger command
+ * --------------------------------------------------- */
+static int ubus_neighbor_scan_handler(struct ubus_context* ctx, struct ubus_object* obj,
+                              struct ubus_request_data* req, const char* method,
+                              struct blob_attr* msg) 
+{
+    (void)obj;
+    (void)method;
+    (void)msg;
+    
+    extern bool target_stats_neighbor_get(neighbor_report_data_t *report);
+    neighbor_report_data_t report = {0};
+    
+    LOG(INFO, "NEIGHBOR_SCAN: Triggered via ubus");
+    
+    // Trigger neighbor scan
+    bool status = target_stats_neighbor_get(&report);
+    
+    // Prepare response
+    struct blob_buf b = {};
+    blob_buf_init(&b, 0);
+    
+    if (status && report.n_entry > 0) {
+        blobmsg_add_u32(&b, "status", 0);  // Success
+        blobmsg_add_u32(&b, "entries", report.n_entry);
+        blobmsg_add_u64(&b, "timestamp_ms", report.timestamp_ms);
+        
+        // Add neighbor entries as array
+        struct blob_attr *neighbors = blobmsg_open_array(&b, "neighbors");
+        for (int i = 0; i < report.n_entry; i++) {
+            struct blob_attr *entry = blobmsg_open_table(&b, NULL);
+            
+            int32_t rssi = report.record[i].rssi;
+            // Fix for unsigned wraparound
+            if (rssi > 1000) {
+                rssi = (int32_t)((uint32_t)rssi - UINT32_MAX - 1);
+            }
+            
+            blobmsg_add_string(&b, "bssid", report.record[i].bssid);
+            blobmsg_add_string(&b, "ssid", report.record[i].ssid[0] ? report.record[i].ssid : "");
+            blobmsg_add_u32(&b, "rssi", (uint32_t)rssi);
+            blobmsg_add_u32(&b, "channel", report.record[i].channel);
+            blobmsg_add_u32(&b, "width", report.record[i].chan_width);
+            blobmsg_add_u32(&b, "radio_type", report.record[i].radio_type);
+            blobmsg_add_u64(&b, "tsf", report.record[i].tsf);
+            
+            blobmsg_close_table(&b, entry);
+        }
+        blobmsg_close_array(&b, neighbors);
+    } else {
+        blobmsg_add_u32(&b, "status", -1);  // Error
+        blobmsg_add_string(&b, "error", status ? "No neighbors found" : "Scan failed");
+        blobmsg_add_u32(&b, "entries", 0);
+    }
+    
+    ubus_send_reply(ctx, req, b.head);
+    blob_buf_free(&b);
+    
+    LOG(INFO, "NEIGHBOR_SCAN: Completed entries=%d", report.n_entry);
+    
+    return 0;
+}
+
+/* ---------------------------------------------------
+ * Handler for incoming ubus commands (legacy)
  * --------------------------------------------------- */
 static int ubus_netstats_cmd_handler(struct ubus_context* ctx, struct ubus_object* obj,
                               struct ubus_request_data* req, const char* method,
@@ -179,11 +243,14 @@ static bool netstats_ubus_rx_service_init_internal(void)
     obj.name = "netstatsd";
     obj.type = &(struct ubus_object_type){.name = "netstats"};
     static struct ubus_method methods[4];
-    methods[0].name = "neighbor.trigger";            // cloud config
+    methods[0].name = "neighbor.trigger";            // legacy trigger (starts periodic reporting)
     methods[0].handler = ubus_netstats_cmd_handler;
     methods[0].policy = NULL;
+    methods[1].name = "neighbor.scan";              // trigger immediate scan and return results
+    methods[1].handler = ubus_neighbor_scan_handler;
+    methods[1].policy = NULL;
     obj.methods = methods;
-    obj.n_methods = 1;
+    obj.n_methods = 2;
 
     if (ubus_add_object(g_netstats_ubus_ctx, &obj) != 0) {
         LOG(ERR, "Failed to add ubus object");

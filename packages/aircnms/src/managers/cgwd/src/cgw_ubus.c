@@ -72,6 +72,56 @@ static NETSTATS_STATS_TYPE peek_stats_type(const uint8_t *compressed_data, size_
     return 0; // Invalid type
 }
 
+// Helper function to peek at neighbor entries count from compressed data
+static int peek_neighbor_entries(const uint8_t *compressed_data, size_t compressed_size)
+{
+    if (!compressed_data || compressed_size == 0) {
+        return -1;
+    }
+    
+    // Decompress enough to read type, size, and neighbor data header
+    uint8_t decompressed_data[8192];
+    uLongf decompressed_size = sizeof(decompressed_data);
+    
+    int ret = uncompress(decompressed_data, &decompressed_size, compressed_data, compressed_size);
+    if (ret != Z_OK) {
+        return -1;
+    }
+    
+    size_t offset = 0;
+    
+    // Read type
+    if (offset + sizeof(NETSTATS_STATS_TYPE) > decompressed_size) {
+        return -1;
+    }
+    NETSTATS_STATS_TYPE type;
+    memcpy(&type, decompressed_data + offset, sizeof(type));
+    offset += sizeof(type);
+    
+    if (type != NETSTATS_T_NEIGHBOR) {
+        return -1; // Not a neighbor message
+    }
+    
+    // Read size
+    if (offset + sizeof(int) > decompressed_size) {
+        return -1;
+    }
+    int stats_size;
+    memcpy(&stats_size, decompressed_data + offset, sizeof(stats_size));
+    offset += sizeof(stats_size);
+    
+    // Read neighbor_report_data_t header (timestamp_ms + n_entry)
+    if (offset + sizeof(uint64_t) + sizeof(int) > decompressed_size) {
+        return -1;
+    }
+    
+    offset += sizeof(uint64_t); // Skip timestamp_ms
+    int n_entry;
+    memcpy(&n_entry, decompressed_data + offset, sizeof(n_entry));
+    
+    return n_entry;
+}
+
 static int ubus_get_state_handler(struct ubus_context *ctx,
                                   struct ubus_object *obj,
                                   struct ubus_request_data *req,
@@ -140,16 +190,25 @@ static int ubus_netstats_handler(struct ubus_context* ctx, struct ubus_object* o
     // Try to peek at message type for logging
     // Use actual blobmsg data length (len) for decompression, not declared size
     const char *msgtype_str = "unknown";
+    int entries = -1;
     if (data && len > 0) {
         NETSTATS_STATS_TYPE type = peek_stats_type((const uint8_t *)data, len);
         if (type > 0 && type <= NETSTATS_T_VIF) {
             msgtype_str = get_stats_type_str(type);
+            // For neighbor messages, also peek at entries count
+            if (type == NETSTATS_T_NEIGHBOR) {
+                entries = peek_neighbor_entries((const uint8_t *)data, len);
+            }
         }
     }
 
     // Log message received from netstatsd (format matches NETSTATS)
     // Use declared size for msglen (compressed size as sent by netstatsd)
-    LOG(INFO, "NETSTATSD->CGWD: msgtype=%s msglen=%d", msgtype_str, size);
+    if (entries >= 0) {
+        LOG(INFO, "NETSTATSD->CGWD: msgtype=%s entries=%d msglen=%d", msgtype_str, entries, size);
+    } else {
+        LOG(INFO, "NETSTATSD->CGWD: msgtype=%s msglen=%d", msgtype_str, size);
+    }
 
     // Enqueue into QM queue and signal MQTT worker
     cgw_item_t *qi = CALLOC(1, sizeof(cgw_item_t));

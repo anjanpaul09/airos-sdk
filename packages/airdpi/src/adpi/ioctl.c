@@ -71,125 +71,251 @@ long air_device_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     switch (cmd) {
         case IOCTL_ADPI_RATELIMIT_WLAN: {
-                struct adpi_ratelimit_bucket crb;
-                struct ratelimit_bucket *rb = NULL, *old_rb;
-                size_t dir;
+            struct adpi_ratelimit_bucket crb;
+            struct ratelimit_bucket *rb_uplink = NULL, *rb_downlink = NULL;
+            struct ratelimit_bucket *old_rb_uplink, *old_rb_downlink;
 
-                if (copy_from_user(&crb, (void *)arg, sizeof(crb)))
-                    return -EFAULT;
-                if (crb.wlan_idx >= MAX_WLANS)
-                    return -EINVAL;
-                if (crb.direction != AIR_RL_DIR_DOWNLINK && crb.direction != AIR_RL_DIR_UPLINK)
-                    return -EINVAL;
-                
-                dir = crb.direction == AIR_RL_DIR_UPLINK ? AIR_RL_DIR_UPLINK : AIR_RL_DIR_DOWNLINK;
+            if (copy_from_user(&crb, (void *)arg, sizeof(crb)))
+                return -EFAULT;
 
-                printk("WLAN RL AIRDPI: ifindex=%d, rate=%d, size=%d, dir=%d\n", 
-                                         crb.wlan_idx, crb.bytes_per_sec, crb.size, crb.direction);
-                if (crb.bytes_per_sec != 0) {
-                    if (!(rb = kmalloc(sizeof(*rb), GFP_USER))) {
-                        return -ENOMEM;
-                    }
-                    rb->tokens = crb.size; /* start with full bucket */
-                    rb->last_update = jiffies;
-                    rb->tokens_per_jiffy = crb.bytes_per_sec/HZ;
-                    rb->max_tokens = crb.size;
-                    rb->dropped = 0;
-                } else {
-                   dir = crb.direction == AIR_RL_DIR_UPLINK ? AIR_RL_DIR_UPLINK : AIR_RL_DIR_DOWNLINK;
-                   rb = NULL;  // No rate limiting, set rb to NULL
-                   printk("Clearing rate limit for wlan_idx=%d, dir=%d\n", crb.wlan_idx, crb.direction);
-                }
+            if (crb.wlan_idx >= MAX_WLANS)
+                return -EINVAL;
 
-                old_rb = wlan_rl[crb.wlan_idx][dir];
-                wlan_rl[crb.wlan_idx][dir] = rb;
-                if (old_rb) {
-                    synchronize_net();
-                    kfree(old_rb);
-                }
+            printk("WLAN RL AIRDPI: ifindex=%d, uplink_rate=%d, uplink_size=%d, "
+                    "downlink_rate=%d, downlink_size=%d\n",
+                    crb.wlan_idx, crb.uplink_bytes_per_sec, crb.uplink_size,
+                    crb.downlink_bytes_per_sec, crb.downlink_size);
+
+            /* Setup uplink rate limit */
+            if (crb.uplink_bytes_per_sec != 0) {
+                rb_uplink = kmalloc(sizeof(*rb_uplink), GFP_KERNEL);
+                if (!rb_uplink)
+                    return -ENOMEM;
+
+                rb_uplink->tokens = crb.uplink_size;
+                rb_uplink->last_update = jiffies;
+                rb_uplink->tokens_per_jiffy = crb.uplink_bytes_per_sec / HZ;
+                rb_uplink->max_tokens = crb.uplink_size;
+                rb_uplink->dropped = 0;
+            } else {
+                /* Clear uplink rate limit - rb_uplink is already NULL */
+                printk("WLAN RL AIRDPI: Clearing uplink rate limit for wlan_idx=%d\n", crb.wlan_idx);
+                rb_uplink = NULL;
             }
-            break;
+
+            /* Setup downlink rate limit */
+            if (crb.downlink_bytes_per_sec != 0) {
+                rb_downlink = kmalloc(sizeof(*rb_downlink), GFP_KERNEL);
+                if (!rb_downlink) {
+                    /* Clean up uplink if downlink allocation fails */
+                    if (rb_uplink)
+                        kfree(rb_uplink);
+                    return -ENOMEM;
+                }
+                rb_downlink->tokens = crb.downlink_size;
+                rb_downlink->last_update = jiffies;
+                rb_downlink->tokens_per_jiffy = crb.downlink_bytes_per_sec / HZ;
+                rb_downlink->max_tokens = crb.downlink_size;
+                rb_downlink->dropped = 0;
+            } else {
+                /* Clear downlink rate limit - rb_downlink is already NULL */
+                printk("WLAN RL AIRDPI: Clearing downlink rate limit for wlan_idx=%d\n", crb.wlan_idx);
+                rb_downlink = NULL;
+            }
+
+            /* Atomically update both directions */
+            old_rb_uplink = wlan_rl[crb.wlan_idx][AIR_RL_DIR_UPLINK];
+            old_rb_downlink = wlan_rl[crb.wlan_idx][AIR_RL_DIR_DOWNLINK];
+
+            wlan_rl[crb.wlan_idx][AIR_RL_DIR_UPLINK] = rb_uplink;
+            wlan_rl[crb.wlan_idx][AIR_RL_DIR_DOWNLINK] = rb_downlink;
+
+            /* Wait for existing users to finish, then free old buckets */
+            synchronize_net();
+    
+            if (old_rb_uplink)
+                kfree(old_rb_uplink);
+            if (old_rb_downlink)
+                kfree(old_rb_downlink);
+
+        } break;
         case IOCTL_ADPI_RATELIMIT_WLAN_PER_USER: { //all the user will connected to this interface
-                struct adpi_ratelimit_bucket crb;
-                struct ratelimit_bucket *rb = NULL, *old_rb;
-                size_t dir;
+            struct adpi_ratelimit_bucket crb;
+            struct ratelimit_bucket *rb_uplink = NULL, *rb_downlink = NULL;
+            struct ratelimit_bucket *old_rb_uplink, *old_rb_downlink;
 
-                if (copy_from_user(&crb, (void *)arg, sizeof(crb)))
-                    return -EFAULT;
-                if (crb.wlan_idx >= MAX_WLANS)
-                    return -EINVAL;
-                if (crb.direction != AIR_RL_DIR_DOWNLINK && crb.direction != AIR_RL_DIR_UPLINK)
-                    return -EINVAL;
-                
-                dir = crb.direction == AIR_RL_DIR_UPLINK ? AIR_RL_DIR_UPLINK : AIR_RL_DIR_DOWNLINK;
+            if (copy_from_user(&crb, (void *)arg, sizeof(crb)))
+                return -EFAULT;
 
-                printk("WLAN PER USER RL AIRDPI: ifindex=%d, rate=%d, size=%d, dir=%d\n", 
-                                         crb.wlan_idx, crb.bytes_per_sec, crb.size, crb.direction);
-                if (crb.bytes_per_sec != 0) {
-                    if (!(rb = kmalloc(sizeof(*rb), GFP_USER))) {
-                        return -ENOMEM;
-                    }
-                    rb->tokens = crb.size; /* start with full bucket */
-                    rb->last_update = jiffies;
-                    rb->tokens_per_jiffy = crb.bytes_per_sec/HZ;
-                    rb->max_tokens = crb.size;
-                    rb->dropped = 0;
-                } else {
-                   dir = crb.direction == AIR_RL_DIR_UPLINK ? AIR_RL_DIR_UPLINK : AIR_RL_DIR_DOWNLINK;
-                   rb = NULL;  // No rate limiting, set rb to NULL
-                   printk("Clearing rate limit for wlan_idx=%d, dir=%d\n", crb.wlan_idx, crb.direction);
-                }
+            if (crb.wlan_idx >= MAX_WLANS)
+                return -EINVAL;
 
-                old_rb = user_wlan_rl[crb.wlan_idx][dir];
-                user_wlan_rl[crb.wlan_idx][dir] = rb;
-                if (old_rb) {
-                    synchronize_net();
-                    kfree(old_rb);
-                }
+            printk("WLAN PER USER RL AIRDPI: ifindex=%d, uplink_rate=%d, uplink_size=%d, "
+                    "downlink_rate=%d, downlink_size=%d\n",
+                    crb.wlan_idx, crb.uplink_bytes_per_sec, crb.uplink_size,
+                    crb.downlink_bytes_per_sec, crb.downlink_size);
+
+            /* Setup uplink rate limit */
+            if (crb.uplink_bytes_per_sec != 0) {
+                rb_uplink = kmalloc(sizeof(*rb_uplink), GFP_KERNEL);
+                if (!rb_uplink)
+                    return -ENOMEM;
+
+                rb_uplink->tokens = crb.uplink_size;
+                rb_uplink->last_update = jiffies;
+                rb_uplink->tokens_per_jiffy = crb.uplink_bytes_per_sec / HZ;
+                rb_uplink->max_tokens = crb.uplink_size;
+                rb_uplink->dropped = 0;
+            } else {
+                /* Clear uplink rate limit - rb_uplink is already NULL */
+                printk("WLAN PER USER RL AIRDPI: Clearing uplink rate limit for wlan_idx=%d\n", crb.wlan_idx);
+                rb_uplink = NULL;
             }
-            break;
+
+            /* Setup downlink rate limit */
+            if (crb.downlink_bytes_per_sec != 0) {
+                rb_downlink = kmalloc(sizeof(*rb_downlink), GFP_KERNEL);
+                if (!rb_downlink) {
+                    /* Clean up uplink if downlink allocation fails */
+                    if (rb_uplink)
+                        kfree(rb_uplink);
+                    return -ENOMEM;
+                }
+                rb_downlink->tokens = crb.downlink_size;
+                rb_downlink->last_update = jiffies;
+                rb_downlink->tokens_per_jiffy = crb.downlink_bytes_per_sec / HZ;
+                rb_downlink->max_tokens = crb.downlink_size;
+                rb_downlink->dropped = 0;
+            } else {
+                /* Clear downlink rate limit - rb_downlink is already NULL */
+                printk("WLAN PER USER RL AIRDPI: Clearing downlink rate limit for wlan_idx=%d\n", crb.wlan_idx);
+                rb_downlink = NULL;
+            }
+
+            /* Atomically update both directions */
+            old_rb_uplink = user_wlan_rl[crb.wlan_idx][AIR_RL_DIR_UPLINK];
+            old_rb_downlink = user_wlan_rl[crb.wlan_idx][AIR_RL_DIR_DOWNLINK];
+
+            user_wlan_rl[crb.wlan_idx][AIR_RL_DIR_UPLINK] = rb_uplink;
+            user_wlan_rl[crb.wlan_idx][AIR_RL_DIR_DOWNLINK] = rb_downlink;
+
+            /* Wait for existing users to finish, then free old buckets */
+            synchronize_net();
+    
+            if (old_rb_uplink)
+                kfree(old_rb_uplink);
+            if (old_rb_downlink)
+                kfree(old_rb_downlink);
+        } break;
         case IOCTL_ADPI_RATELIMIT_WLAN_USER: {
-                struct adpi_ratelimit_bucket crb;
-                struct ratelimit_bucket *rb = NULL;
-                struct wlan_sta *sta;
-                int hash;
+            struct adpi_ratelimit_bucket crb;
+            struct ratelimit_bucket *rb_uplink = NULL, *rb_downlink = NULL;
+            struct ratelimit_bucket *old_rb_uplink = NULL, *old_rb_downlink = NULL;
+            struct wlan_sta *sta;
+            int hash;
+            int sta_found = 0;
 
-                if (copy_from_user(&crb, (void *)arg, sizeof(crb)))
-                    return -EFAULT;
-                if (crb.wlan_idx >= MAX_WLANS)
-                    return -EINVAL;
-                if (crb.direction != AIR_RL_DIR_DOWNLINK && crb.direction != AIR_RL_DIR_UPLINK)
-                    return -EINVAL;
+            if (copy_from_user(&crb, (void *)arg, sizeof(crb)))
+                return -EFAULT;
 
-                printk("USER RL AIRDPI:  rate=%d, size=%d, dir=%d\n"
-                                          , crb.bytes_per_sec, crb.size, crb.direction);
-                
-                if (crb.bytes_per_sec != 0) {  
-                    if (!(rb = kmalloc(sizeof(*rb), GFP_USER))) {
-                        return -ENOMEM;
-                    }
-                    rb->tokens = crb.size; /* start with full bucket */
-                    rb->last_update = jiffies;
-                    rb->tokens_per_jiffy = crb.bytes_per_sec/HZ;
-                    rb->max_tokens = crb.size;
-                    rb->dropped = 0;
-                } else {
-                    // If bytes_per_sec is zero, clear rate limiting
-                   rb = NULL;  // No rate limiting, set rb to NULL
-                   printk("Clearing rate limit for wlan_idx=%d, dir=%d\n", crb.wlan_idx, crb.direction);
-                } 
-                
-                hash = WLAN_STA_HASH(crb.macaddr);
-                OS_SPIN_WLAN_STA_LOCK(&coplane->wlan_client.wlan_client_lock);
-                LIST_FOREACH(sta, &coplane->wlan_client.wlan_coplane_sta_hash[hash], ws_hash) {
-                    if (IEEE80211_ADDR_EQ(sta->src_mac, crb.macaddr)) {
-                        sta->rl[crb.direction] = rb;
-                    }
-                }
-                OS_SPIN_WLAN_STA_UNLOCK(&coplane->wlan_client.wlan_client_lock);
+            if (crb.wlan_idx >= MAX_WLANS)
+                return -EINVAL;
 
+            printk("USER RL AIRDPI: wlan_idx=%d, mac=%02x:%02x:%02x:%02x:%02x:%02x, "
+                    "uplink_rate=%d, uplink_size=%d, downlink_rate=%d, downlink_size=%d\n",
+                    crb.wlan_idx, crb.macaddr[0], crb.macaddr[1], crb.macaddr[2],
+                    crb.macaddr[3], crb.macaddr[4], crb.macaddr[5],
+                    crb.uplink_bytes_per_sec, crb.uplink_size,
+                    crb.downlink_bytes_per_sec, crb.downlink_size);
+
+            /* Setup uplink rate limit */
+            if (crb.uplink_bytes_per_sec != 0) {
+                rb_uplink = kmalloc(sizeof(*rb_uplink), GFP_KERNEL);
+                if (!rb_uplink)
+                    return -ENOMEM;
+
+                rb_uplink->tokens = crb.uplink_size;
+                rb_uplink->last_update = jiffies;
+                rb_uplink->tokens_per_jiffy = crb.uplink_bytes_per_sec / HZ;
+                rb_uplink->max_tokens = crb.uplink_size;
+                rb_uplink->dropped = 0;
+            } else {
+                /* Clear uplink rate limit */
+                printk("USER RL AIRDPI: Clearing uplink rate limit for wlan_idx=%d, user mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
+                        crb.wlan_idx, crb.macaddr[0], crb.macaddr[1], crb.macaddr[2],
+                        crb.macaddr[3], crb.macaddr[4], crb.macaddr[5]);
+                rb_uplink = NULL;
             }
-            break;
+
+            /* Setup downlink rate limit */
+            if (crb.downlink_bytes_per_sec != 0) {
+                rb_downlink = kmalloc(sizeof(*rb_downlink), GFP_KERNEL);
+                if (!rb_downlink) {
+                    /* Clean up uplink if downlink allocation fails */
+                    if (rb_uplink)
+                        kfree(rb_uplink);
+                    return -ENOMEM;
+                }
+
+                rb_downlink->tokens = crb.downlink_size;
+                rb_downlink->last_update = jiffies;
+                rb_downlink->tokens_per_jiffy = crb.downlink_bytes_per_sec / HZ;
+                rb_downlink->max_tokens = crb.downlink_size;
+                rb_downlink->dropped = 0;
+            } else {
+                /* Clear downlink rate limit */
+                printk("USER RL AIRDPI: Clearing downlink rate limit for wlan_idx=%d, user mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
+                        crb.wlan_idx, crb.macaddr[0], crb.macaddr[1], crb.macaddr[2],
+                        crb.macaddr[3], crb.macaddr[4], crb.macaddr[5]);
+                rb_downlink = NULL;
+            }
+
+            /* Find and update the station */
+            hash = WLAN_STA_HASH(crb.macaddr);
+    
+            OS_SPIN_WLAN_STA_LOCK(&coplane->wlan_client.wlan_client_lock);
+    
+            LIST_FOREACH(sta, &coplane->wlan_client.wlan_coplane_sta_hash[hash], ws_hash) {
+            if (IEEE80211_ADDR_EQ(sta->src_mac, crb.macaddr)) {
+                /* Save old rate limiters */
+                old_rb_uplink = sta->rl[AIR_RL_DIR_UPLINK];
+                old_rb_downlink = sta->rl[AIR_RL_DIR_DOWNLINK];
+            
+                /* Assign new rate limiters */
+                sta->rl[AIR_RL_DIR_UPLINK] = rb_uplink;
+                sta->rl[AIR_RL_DIR_DOWNLINK] = rb_downlink;
+            
+                sta_found = 1;
+                break;  /* Found the station, exit loop */
+                }
+            }
+    
+            OS_SPIN_WLAN_STA_UNLOCK(&coplane->wlan_client.wlan_client_lock);
+
+            if (!sta_found) {
+                printk("Station not found: wlan_idx=%d, mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
+                        crb.wlan_idx, crb.macaddr[0], crb.macaddr[1], crb.macaddr[2],
+                        crb.macaddr[3], crb.macaddr[4], crb.macaddr[5]);
+        
+                /* Free newly allocated rate limiters since station wasn't found */
+                if (rb_uplink)
+                    kfree(rb_uplink);
+                if (rb_downlink)
+                    kfree(rb_downlink);
+        
+                return -ENOENT;
+            }   
+
+            /* Wait for any in-flight packets to finish using old rate limiters */
+            synchronize_net();
+    
+            /* Free old rate limiters */
+            if (old_rb_uplink)
+                kfree(old_rb_uplink);
+            if (old_rb_downlink)
+                kfree(old_rb_downlink);
+
+        } break;
         case IOCTL_ADPI_GET_AP_TOP_DOMAINS: {
                 struct adpi_domain_entry *top_domains_copy;
 
@@ -282,6 +408,7 @@ long air_device_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
             return 0;
             }
             break;
+#if 0
         case IOCTL_ADPI_GET_RATELIMIT_WLAN_USER: {
             struct adpi_ratelimit_bucket crb;
             struct ratelimit_bucket *rb = NULL;
@@ -370,6 +497,7 @@ long air_device_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
         }
         break;
+#endif
         default: {
             printk("ioctl: unknown ioctl command\n");
             return 0;
