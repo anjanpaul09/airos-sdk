@@ -373,9 +373,10 @@ bool cgw_send_stats_json(cgw_item_t *qi)
         }
         case NETSTATS_T_NEIGHBOR: 
         {
-            ret = cgw_parse_neighbor_newjson(&stats->u.neighbor, data);
+            neighbor_report_data_t *neighbor = &stats->u.neighbor;
+            ret = cgw_parse_neighbor_newjson(neighbor, data);
             size_t msglen = strlen(data);
-            LOG(INFO, "CGWD->CLOUD: msgtype=%s msglen=%zu", msgtype_str, msglen);
+            LOG(INFO, "CGWD->CLOUD: msgtype=%s entries=%d msglen=%zu", msgtype_str, neighbor->n_entry, msglen);
             ret = cgw_publish_json(data, stats_topic.neighbor);
 
         }break;

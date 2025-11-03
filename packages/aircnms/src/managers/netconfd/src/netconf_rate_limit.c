@@ -81,6 +81,7 @@ int get_ifindex_from_sysfs(const char *ifname) {
     return ifindex;
 }
 
+#if 0
 void air_interface_rate_limit(char *vif_name, int rate, int dir, char *type)
 {
     struct adpi_ratelimit_bucket crb;
@@ -128,7 +129,72 @@ void air_interface_rate_limit(char *vif_name, int rate, int dir, char *type)
     // Close the device file
     close(fd);
 }
+#endif
 
+// Updated function signature to handle both directions
+void air_interface_rate_limit(char *vif_name, int uprate, int downrate, char *type)
+{
+    struct adpi_ratelimit_bucket crb;
+#ifdef CONFIG_PLATFORM_MTK_JEDI
+    int ifindex = IFNAME_HASH(vif_name);
+#else
+    const char *ifname = get_ifname_from_secname(vif_name);
+    int ifindex = IFNAME_HASH(ifname);
+#endif
+    int fd;
+
+    // Populate the adpi_ratelimit_bucket structure
+    memset(&crb, 0, sizeof(crb));
+    crb.wlan_idx = ifindex;
+
+    // Set uplink rate limit (0 means no limit/clear)
+    if (uprate) {
+        crb.uplink_bytes_per_sec = uprate * 125000;  // Mbps to bytes/sec
+        crb.uplink_size = crb.uplink_bytes_per_sec;  // Burst size
+    } else {
+        crb.uplink_bytes_per_sec = 0;  // Clear uplink limit
+        crb.uplink_size = 0;
+    }
+
+    // Set downlink rate limit (0 means no limit/clear)
+    if (downrate) {
+        crb.downlink_bytes_per_sec = downrate * 125000;  // Mbps to bytes/sec
+        crb.downlink_size = crb.downlink_bytes_per_sec;  // Burst size
+    } else {
+        crb.downlink_bytes_per_sec = 0;  // Clear downlink limit
+        crb.downlink_size = 0;
+    }
+
+    // Open the device file for the ioctl
+    fd = open("/dev/air", O_RDWR);
+    if (fd < 0) {
+        perror("Failed to open device file");
+        return;
+    }
+
+    if (strcmp(type, "wlan") == 0) {
+        // Call the ioctl - now handles both directions in single call
+        if (ioctl(fd, IOCTL_ADPI_RATELIMIT_WLAN, &crb) < 0) {
+            perror("ioctl failed");
+        } else {
+            printf("Rate limit set successfully: ifindex=%d, uplink=%d Mbps, downlink=%d Mbps\n",
+                   crb.wlan_idx, uprate, downrate);
+        }
+    } else if (strcmp(type, "wlan_per_user") == 0) {
+        // Call the ioctl
+        if (ioctl(fd, IOCTL_ADPI_RATELIMIT_WLAN_PER_USER, &crb) < 0) {
+            perror("ioctl failed");
+        } else {
+            printf("Wlan Per User Rate limit set successfully: ifindex=%d, uplink=%d Mbps, downlink=%d Mbps\n",
+                   crb.wlan_idx, uprate, downrate);
+        }
+    }
+
+    // Close the device file
+    close(fd);
+}
+
+#if 0
 void air_user_rate_limit(uint8_t *mac, int rate, int dir)
 {
     struct adpi_ratelimit_bucket crb;
@@ -160,5 +226,53 @@ void air_user_rate_limit(uint8_t *mac, int rate, int dir)
     // Close the device file
     close(fd);
 }
+#endif
 
+void air_user_rate_limit(uint8_t *mac, int uprate, int downrate)
+{
+    struct adpi_ratelimit_bucket crb;
+    int fd;
+
+    // Populate the adpi_ratelimit_bucket structure
+    memset(&crb, 0, sizeof(crb));
+    memcpy(crb.macaddr, mac, MAX_MAC_ADDR_LEN);
+
+    // Set uplink rate limit (0 means no limit/clear)
+    if (uprate) {
+        crb.uplink_bytes_per_sec = uprate * 125000;  // Mbps to bytes/sec
+        crb.uplink_size = crb.uplink_bytes_per_sec;  // Burst size
+    } else {
+        crb.uplink_bytes_per_sec = 0;  // Clear uplink limit
+        crb.uplink_size = 0;
+    }
+
+    // Set downlink rate limit (0 means no limit/clear)
+    if (downrate) {
+        crb.downlink_bytes_per_sec = downrate * 125000;  // Mbps to bytes/sec
+        crb.downlink_size = crb.downlink_bytes_per_sec;  // Burst size
+    } else {
+        crb.downlink_bytes_per_sec = 0;  // Clear downlink limit
+        crb.downlink_size = 0;
+    }
+
+    // Open the device file for the ioctl
+    fd = open("/dev/air", O_RDWR);
+    if (fd < 0) {
+        perror("Failed to open device file");
+        return;
+    }
+
+    // Call the ioctl - now handles both directions in single call
+    if (ioctl(fd, IOCTL_ADPI_RATELIMIT_WLAN_USER, &crb) < 0) {
+        perror("ioctl failed");
+    } else {
+        printf("User rate limit set successfully: mac=%02x:%02x:%02x:%02x:%02x:%02x, "
+               "uplink=%d Mbps, downlink=%d Mbps\n",
+               mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+               uprate, downrate);
+    }
+
+    // Close the device file
+    close(fd);
+}
 

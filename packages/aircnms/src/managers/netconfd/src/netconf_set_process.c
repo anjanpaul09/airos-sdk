@@ -527,13 +527,11 @@ int netconf_process_user_rl_msg(char *buf)
     
     // Log parameters before setting
     LOG(INFO, "SET_USER_RL mac=%s uplink=%d downlink=%d", tmp_mac, uplink, downlink);
-    
-    if (uplink >= 0) {
-        air_user_rate_limit(mac.addr, uplink, AIR_DIR_UPLINK);
-    }
-
-    if (downlink >= 0) {
-        air_user_rate_limit(mac.addr, downlink, AIR_DIR_DOWNLINK);
+   
+    if (uplink >= 0 || downlink >= 0) {
+        air_user_rate_limit(mac.addr,
+                       uplink >= 0 ? uplink : 0,
+                       downlink >= 0 ? downlink : 0);
     }
 
     json_decref(root);

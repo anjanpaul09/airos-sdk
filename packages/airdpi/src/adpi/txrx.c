@@ -348,13 +348,7 @@ struct wlan_sta *sta_table_lookup(uint8_t *macaddr, int dir, uint8_t ifindex)
         IEEE80211_ADDR_COPY(sta_new->src_mac, macaddr);
         sta_new->domain_name_count = 0;
         sta_new->wlan_id = ifindex;
-        if (user_wlan_rl[ifindex][AIR_RL_DIR_UPLINK]) {
-            sta_new->rl[AIR_RL_DIR_UPLINK] = user_wlan_rl[ifindex][AIR_RL_DIR_UPLINK];
-        }
-        if (user_wlan_rl[ifindex][AIR_RL_DIR_DOWNLINK]) {
-            sta_new->rl[AIR_RL_DIR_DOWNLINK] = user_wlan_rl[ifindex][AIR_RL_DIR_DOWNLINK];
-        }
-      
+        
         printk("AIRDPI: adding client to queue: MAC=%02x:%02x:%02x:%02x:%02x:%02x hash=%d wlan-id=%d\n",
                sta_new->src_mac[0], sta_new->src_mac[1], sta_new->src_mac[2],
                sta_new->src_mac[3], sta_new->src_mac[4], sta_new->src_mac[5],

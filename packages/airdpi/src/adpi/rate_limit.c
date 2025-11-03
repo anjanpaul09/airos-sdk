@@ -53,6 +53,16 @@ int rl_drop_packet(struct wlan_sta *se, size_t len, unsigned int dir)
 
     if (se && se->wlan_id < MAX_WLANS) {
         //pr_debug("Checking per-WLAN rate limit: wlan_id=%u, dir=%u\n", se->wlan_id, dir);
+        rl = user_wlan_rl[se->wlan_id][dir];
+        if (!rl) {
+        } else if (ratelimit_check_update(rl, now, len)) {
+            return 1; // Drop packet
+        }
+    }
+
+
+    if (se && se->wlan_id < MAX_WLANS) {
+        //pr_debug("Checking per-WLAN rate limit: wlan_id=%u, dir=%u\n", se->wlan_id, dir);
         rl = wlan_rl[se->wlan_id][dir];
         if (!rl) {
         } else if (ratelimit_check_update(rl, now, len)) {

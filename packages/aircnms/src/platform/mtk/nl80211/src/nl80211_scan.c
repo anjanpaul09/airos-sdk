@@ -13,8 +13,11 @@
 #include <netlink/attr.h>
 #include <linux/nl80211.h>
 #include <time.h>
+#include <stdint.h>
+#include <limits.h>
 #include "stats_report.h" 
 #include "MT7621.h"
+#include "log.h"
 
 #define CHAN_WIDTH_20MHZ      20
 #define CHAN_WIDTH_40MHZ      40
@@ -182,15 +185,38 @@ bool nl80211_get_scan_results(const char *phy_name, neighbor_report_data_t *scan
 
 static void print_neighbor_report(const neighbor_report_data_t *report) 
 {
-    printf("Neighbor Scan Report:\n");
+    const char *radio_type_str[] = {"None", "2G", "5G", "5GL", "5GU", "6G"};
+    
     if (report->n_entry == 0) {
-        printf("No neighbors found!\n");
+        LOG(INFO, "NEIGHBOR_SCAN: No neighbors found");
         return;
     }
+    
+    LOG(INFO, "NEIGHBOR_SCAN: Report total=%d entries", report->n_entry);
+    
     for (int i = 0; i < report->n_entry; ++i) {
         const neighbor_record_t *rec = &report->record[i];
-        printf(" [%d] BSSID: %s, SSID: %s, RSSI: %d dBm, CH: %u, Width: %u, TSF: %llu\n",
-               i + 1, rec->bssid, rec->ssid, rec->rssi, rec->channel, rec->chan_width, rec->tsf);
+        // Ensure RSSI is displayed correctly (handle signed/unsigned conversion)
+        // RSSI should be negative (-100 to 0 dBm). If value is large positive, it's likely unsigned wraparound
+        int32_t rssi = rec->rssi;
+        // Fix for unsigned wraparound: large positive values > 100 are likely wrapped negatives
+        if (rssi > 100) {
+            // Convert unsigned-looking value to signed negative
+            // 42949584 (0x28F5A10) would become -100 when treated as signed int32
+            rssi = (int32_t)((uint32_t)rssi);
+            // If still large, it's definitely wrapped - calculate the negative equivalent
+            if (rssi > INT_MAX / 2) {
+                rssi = (int32_t)(rssi - UINT32_MAX - 1);
+            }
+        }
+        
+        const char *radio_str = (rec->radio_type >= 0 && rec->radio_type <= 5) 
+                               ? radio_type_str[rec->radio_type] : "Unknown";
+        
+        LOG(INFO, "NEIGHBOR_SCAN[%d]: BSSID=%s SSID=%s RSSI=%d dBm CH=%u Width=%u Radio=%s TSF=%llu",
+               i + 1, rec->bssid, rec->ssid[0] ? rec->ssid : "(empty)", 
+               rssi, rec->channel, rec->chan_width, radio_str, 
+               (unsigned long long)rec->tsf);
     }
 }
 
