@@ -7,7 +7,7 @@
 # =============================================================================
 # USER INPUT - MODIFY THESE PATHS AS NEEDED
 # =============================================================================
-SDK_DIR=/home/user/projects/airpro/MTK/ax820/test24/openwrt
+SDK_DIR=/home/anjan/projects/airpro/mtk/mt7621/24.10/openwrt
 OUTPUT_DIR=${PWD}/releases
 # =============================================================================
 # SCRIPT EXECUTION
@@ -86,7 +86,7 @@ elif [ "$BOARD_NAME" = "mt76" ]; then
     rm -rf ${SDK_DIR}/packages/feeds/airdpi
     cp -rf packages/aircnms $SDK_DIR/package/feeds/
     cp -rf packages/airdpi $SDK_DIR/package/feeds/
-    cp -rf patches/mt7621/owrt-24.10/mac80211/999-add-airdpi-api.patch $SDK_DIR/package/kernel/mac80211/patches/subsys/
+    cp -rf patches/mt7621/owrt-24.10/mac80211/999-airdpi-ops.patch $SDK_DIR/package/kernel/mac80211/patches/subsys/
     cp -rf packages/feeds/mt7621/owrt-24.10/mac80211/Makefile $SDK_DIR/package/kernel/mac80211/
     cp -rf packages/luci-app-airos/platform/mt76/luci/* ${SDK_DIR}/feeds/luci/
     cp -rf base-files/platform/mt7621/etc ${SDK_DIR}/package/base-files/files/
