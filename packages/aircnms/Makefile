@@ -8,9 +8,9 @@ include $(INCLUDE_DIR)/package.mk
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) -rf src/* $(PKG_BUILD_DIR)
-	#cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/build/hostapd/src/utils/os_unix.o $(STAGING_DIR)/usr/lib/
-	#cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/build/hostapd/src/common/wpa_ctrl.o $(STAGING_DIR)/usr/lib/
-	#cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/src/common/wpa_ctrl.h $(STAGING_DIR)/usr/include/
+	cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/build/hostapd/src/utils/os_unix.o $(STAGING_DIR)/usr/lib/
+	cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/build/hostapd/src/common/wpa_ctrl.o $(STAGING_DIR)/usr/lib/
+	cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/src/common/wpa_ctrl.h $(STAGING_DIR)/usr/include/
 endef
 AIRCNMS_DEPS += libnl libev jansson libmosquitto zlib libprotobuf-c libuci libcurl kmod-airdpi libubus libubox libjson-c libwebsockets-openssl libblobmsg-json libpcap
 AIRCNMS_DEPS := $(foreach X,$(AIRCNMS_DEPS),+$(X))
