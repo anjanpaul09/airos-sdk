@@ -30,7 +30,7 @@ static void on_signal(int sig) {
 
 int main(int argc, char **argv) 
 {
-    setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
   const char *config_dir = NULL;
   if (argc > 1) {

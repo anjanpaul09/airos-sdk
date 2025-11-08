@@ -1,32 +1,21 @@
-#ifndef NETEV_H
-#define NETEV_H
+#ifndef NETEVD_NETEV_H
+#define NETEVD_NETEV_H
 
-#include <linux/rtnetlink.h>
-#include <netlink/types.h>
+#include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
-#include <stdbool.h>
-#include <errno.h>
-
-struct print_event_args {
-    struct timeval ts; /* internal */
-    bool have_ts; /* must be set false */
-    bool frame, time, reltime, ctime;
-};
-
-struct wait_event {
-    int n_cmds, n_prints;
-    const __u32 *cmds;
-    const __u32 *prints;
-    __u32 cmd;
-    struct print_event_args *pargs;
-};
 
 struct nl80211_state {
-    struct nl_sock *nl_sock;
-    int nl80211_id;
+	struct nl_sock *nl_sock;
+	int nl80211_id;
 };
 
+int nl80211_init(struct nl80211_state *state);
+int listen_events(struct nl80211_state *state, const int n_waits, const __u32 *waits);
 
-#endif // NETEV_H
+/* hostapd event listener */
+int hostapd_events_start(const char *ctrl_dir);
+void hostapd_events_stop(void);
+
+#endif /* NETEVD_NETEV_H */
 

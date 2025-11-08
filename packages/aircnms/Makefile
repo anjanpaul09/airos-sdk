@@ -12,7 +12,7 @@ define Build/Prepare
 	#cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/build/hostapd/src/common/wpa_ctrl.o $(STAGING_DIR)/usr/lib/
 	#cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/src/common/wpa_ctrl.h $(STAGING_DIR)/usr/include/
 endef
-AIRCNMS_DEPS += libnl libev jansson libmosquitto zlib libprotobuf-c libuci libcurl kmod-airdpi libubus libubox libjson-c libwebsockets-openssl +libblobmsg-json
+AIRCNMS_DEPS += libnl libev jansson libmosquitto zlib libprotobuf-c libuci libcurl kmod-airdpi libubus libubox libjson-c libwebsockets-openssl libblobmsg-json libpcap
 AIRCNMS_DEPS := $(foreach X,$(AIRCNMS_DEPS),+$(X))
 
 define Package/aircnms
@@ -78,6 +78,7 @@ endif
 	BUILD_MGRNETCONFD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/netconfd $(MAKE_PACKAGE_ARGS)
 	BUILD_MGRCMDEXECD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/cmdexecd $(MAKE_PACKAGE_ARGS)
 	BUILD_MGRNETEVD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/netevd $(MAKE_PACKAGE_ARGS)
+	BUILD_MGR_ACLD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/acld $(MAKE_PACKAGE_ARGS)
 	#BUILD_AIRCLI:= $(MAKE) -C $(PKG_BUILD_DIR)/tools/airubusd $(MAKE_PACKAGE_ARGS)
 endif
 
@@ -136,6 +137,7 @@ endif
 	$(BUILD_MGRNETCONFD)
 	$(BUILD_MGRCMDEXECD)
 	$(BUILD_MGRNETEVD)
+	$(BUILD_MGR_ACLD)
 	#$(BUILD_AIRCLI)
 endef
 
@@ -205,6 +207,7 @@ endif
 	$(CP) $(PKG_BUILD_DIR)/managers/netconfd/netconfd $(1)/usr/sbin/air-netconfd
 	$(CP) $(PKG_BUILD_DIR)/managers/cmdexecd/cmdexecd $(1)/usr/sbin/air-cmdexecd
 	$(CP) $(PKG_BUILD_DIR)/managers/netevd/netevd $(1)/usr/sbin/air-netevd
+	$(CP) $(PKG_BUILD_DIR)/managers/acld/acld $(1)/usr/sbin/air-acld
 	#$(CP) $(PKG_BUILD_DIR)/tools/airubusd/airubusd $(1)/usr/sbin
 
 endef

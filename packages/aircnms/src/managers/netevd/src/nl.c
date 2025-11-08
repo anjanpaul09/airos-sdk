@@ -1,4 +1,5 @@
 #include <netev.h>
+#include <errno.h>
 
 struct handler_args {
     const char *group;

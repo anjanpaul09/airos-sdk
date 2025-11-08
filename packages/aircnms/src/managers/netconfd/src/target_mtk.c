@@ -6,6 +6,8 @@
 #include "uci_ops.h"  
 #include "netconf.h"
 
+#define HOSTAPD_CONTROL_PATH_DEFAULT "/var/run"
+
 uint32_t flags = 0;  // Global variable
 
 bool set_intf_reset_progress_indication(netconf_intf_reset_t reset)
@@ -110,6 +112,93 @@ void get_ht_mode(char *htmode, struct airpro_mgr_wlan_radio_params rp, char *rad
     }
 }
 
+int util_chan_to_freq(int chan)
+{
+    if (chan == 14)
+        return 2484;
+    else if (chan < 14)
+        return 2407 + chan * 5;
+    else if (chan >= 182 && chan <= 196)
+        return 4000 + chan * 5;
+    else
+        return 5000 + chan * 5;
+    return 0;
+}
+
+bool hostapd_chan_switch(char *radio_name, int channel)
+{
+    int freq;
+    char ifname[12];
+    char phyname[8];
+    char cmd[256];
+
+    freq = 0;
+    freq = util_chan_to_freq(channel);
+
+    if (strcmp(radio_name, "wifi0") == 0) {
+        strcpy(ifname, "phy1-ap0");
+        strcpy(phyname, "phy1");
+    } else if (strcmp(radio_name, "wifi1") == 0) {
+        strcpy(ifname, "phy0-ap0");
+        strcpy(phyname, "phy0");
+    }
+
+    //snprintf(cmd, sizeof(cmd),
+      //       "timeout -s KILL 3 hostapd_cli -p /var/run/hostapd -i %s chan_switch 5 %d",
+        //      ifname, freq);
+#if 0
+    sprintf(cmd, "timeout -s KILL 3 hostapd_cli -i %s chan_switch 5 %d", ifname, freq);
+    printf("Applying: %s\n", cmd);
+    int ret = system(cmd);
+    if (ret != 0) {
+        fprintf(stderr, "Failed to set channel for %s (ret=%d)\n", ifname, ret);
+        return false;
+    }
+#endif
+    return true;
+}
+
+bool hostapd_set_txpower(const char *radio_name, int txpower_dbm)
+{
+    char phyname[8];
+    char cmd[256];
+    int txpower_mbm;
+    const int TXPOWER_MIN_DBM = 0;   // adjust as needed (some chipsets min 5–10)
+    const int TXPOWER_MAX_DBM = 23;  // MT7915 typical max
+
+    // Map radio name to interface
+    if (strcmp(radio_name, "wifi0") == 0) {
+        strcpy(phyname, "phy1");
+    } else if (strcmp(radio_name, "wifi1") == 0) {
+        strcpy(phyname, "phy0");
+    } else {
+        fprintf(stderr, "Unknown radio name: %s\n", radio_name);
+        return false;
+    }
+
+    // Clamp value within allowed range
+    if (txpower_dbm > TXPOWER_MAX_DBM)
+        txpower_dbm = TXPOWER_MAX_DBM;
+    else if (txpower_dbm < TXPOWER_MIN_DBM)
+        txpower_dbm = TXPOWER_MIN_DBM;
+
+    // Convert dBm → mBm (multiply by 100)
+    txpower_mbm = txpower_dbm * 100;
+
+    // Build iw command
+    snprintf(cmd, sizeof(cmd), "iw dev %s set txpower fixed %d", phyname, txpower_mbm);
+    printf("Applying: %s\n", cmd);
+
+    // Execute command
+    int ret = system(cmd);
+    if (ret != 0) {
+        fprintf(stderr, "Failed to set txpower for %s (ret=%d)\n", phyname, ret);
+        return false;
+    }
+
+    return true;
+}
+
 bool target_config_radio_set(radio_record_t *record)
 {
     struct airpro_mgr_wlan_radio_params rad_params;
@@ -159,11 +248,13 @@ bool target_config_radio_set(radio_record_t *record)
 
             ret = uci_set_radio_params(radio_name, &rad_params);
 
-            memset(cmd, 0, sizeof(cmd));
-            sprintf(cmd, "wifi reload %s", radio_name);
+            ret = hostapd_chan_switch(radio_name, atoi(rad_params.channel));
+            ret = hostapd_set_txpower(radio_name, atoi(rad_params.txpower));
+            //memset(cmd, 0, sizeof(cmd));
+            //sprintf(cmd, "wifi reload %s", radio_name);
 
-            int rc = system(cmd);
-            (void)rc;  // System call result may be checked in future
+            //int rc = system(cmd);
+            //(void)rc;  // System call result may be checked in future
 #ifdef CONFIG_PLATFORM_MTK_JEDI
             jedi_set_secondary_radio_params(radio_name, &rad_params);            
 #endif
@@ -277,10 +368,10 @@ bool target_config_vif_set(vif_record_t *record)
             if( strcmp(vif_params.forward_type, "NAT") == 0 && (record->vif_param[vid].is_auth == false)) {
                 printf("Ankit: nat true auth false\n");
                 strlcpy(vif_params.network, "nat_network", sizeof(vif_params.network));
-                rc = system("ifup nat_network");
-                if (rc == 0) {
-                    sleep(3);
-                }
+                //rc = system("ifup nat_network");
+                //if (rc == 0) {
+                  //  sleep(3);
+                //}
             } else {
                 strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
             }
@@ -318,7 +409,7 @@ bool target_config_vif_set(vif_record_t *record)
                         "wlan_per_user");
 
             //CAPTIVE PORTAL
-            netconf_handle_captive_portal(vif_name, &vif_params);
+            //netconf_handle_captive_portal(vif_name, &vif_params);
 #endif
 
         } else if( record->vif_param[vid].status == VIF_DISABLE ) {
@@ -412,10 +503,10 @@ bool target_config_vif_set(vif_record_t *record)
             if( strcmp(vif_params.forward_type, "NAT") == 0 && (record->vif_param[vid].is_auth == false)) {
                 printf("Ankit: nat true auth false\n");
                 strlcpy(vif_params.network, "nat_network", sizeof(vif_params.network));
-                rc = system("ifup nat_network");
-                if (rc == 0) {
-                    sleep(3);
-                }
+                //rc = system("ifup nat_network");
+                //if (rc == 0) {
+                  //  sleep(3);
+                //}
             } else {
                 strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
             }
@@ -452,7 +543,7 @@ bool target_config_vif_set(vif_record_t *record)
                         "wlan_per_user");
             
             //CAPTIVE PORTAL
-            netconf_handle_captive_portal(vif_name, &vif_params);
+            //netconf_handle_captive_portal(vif_name, &vif_params);
 #endif
 
         }
