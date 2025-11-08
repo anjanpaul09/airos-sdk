@@ -202,7 +202,7 @@ void fill_client_info_from_proc(client_record_t *rec, char *sta_ifname)
         strncpy(rec->hostname, "unknown", HOSTNAME_MAX_LEN - 1);
         LOG(INFO, "NOT FOUND IN ADPI: ADDING STA %s MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
                        ifname, rec->macaddr[0], rec->macaddr[1], rec->macaddr[2], rec->macaddr[3], rec->macaddr[4], rec->macaddr[5]);
-        nl_ext_event_enqueue(NL80211_CMD_NEW_STATION, rec->macaddr, sta_ifname);
+        //nl_ext_event_enqueue(NL80211_CMD_NEW_STATION, rec->macaddr, sta_ifname);
     }
 }
 

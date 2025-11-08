@@ -81,8 +81,7 @@ static void json_escape_append(StrBuf *b, const char *s) {
   sb_append(b, "\"");
 }
 
-/* Only lowercase true/false are emitted as JSON booleans. Other casings are treated as strings. */
-static int is_bool_token(const char *v) { return (strcmp(v, "true") == 0) || (strcmp(v, "false") == 0); }
+static int is_bool_token(const char *v) { return !strcasecmp(v,"true") || !strcasecmp(v,"false"); }
 static int is_null_token(const char *v) { return !strcasecmp(v,"null"); }
 static int is_number_token(const char *v) {
   if (!*v) return 0;
@@ -94,23 +93,8 @@ static int is_number_token(const char *v) {
 }
 
 static void json_emit_kv(StrBuf *b, const char *k, const char *v) {
-  int force_string = 0;
-  if (k && (
-      strcmp(k, "disabled") == 0 ||
-      strcmp(k, "userlimit") == 0 ||
-      strcmp(k, "portalId") == 0
-    )) {
-    force_string = 1;
-  }
   json_escape_append(b, k); sb_append(b, ":");
-  if (!force_string) {
-    if (is_null_token(v)) { sb_append(b, v); return; }
-    if (is_bool_token(v)) { sb_append(b, v); return; }
-    if (is_number_token(v)) { sb_append(b, v); return; }
-  } else {
-    if (strcmp(k, "portalId") == 0 && is_null_token(v)) { sb_append(b, "null"); return; }
-  }
-  json_escape_append(b, v);
+  if (is_bool_token(v) || is_null_token(v) || is_number_token(v)) sb_append(b, v); else json_escape_append(b, v);
 }
 
 static int build_wifi_json(StrBuf *out) {
@@ -271,10 +255,39 @@ void on_config_file_changed(const char *dir, const char *name, const char *actio
   FILE *f = fopen(path, "r");
   if (!f) { perror("open conf"); return; }
   StrBuf payload; sb_init(&payload);
-  char buf[1024]; size_t n;
-  while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
-    if (sb_reserve(&payload, n+1)) { fclose(f); sb_free(&payload); return; }
-    memcpy(payload.buf + payload.len, buf, n); payload.len += n; payload.buf[payload.len] = '\0';
+  
+  /* Special handling for cmd.conf: parse lines, ignore #, extract value after cmd= */
+  if (strcmp(name, "cmd.conf") == 0) {
+    char line[1024];
+    int found_cmd = 0;
+    while (fgets(line, sizeof(line), f)) {
+      rstrip(line);
+      /* Skip empty lines and lines starting with # */
+      if (!line[0] || line[0] == '#') continue;
+      /* Look for cmd= */
+      if (strncmp(line, "cmd=", 4) == 0) {
+        char *cmd_value = line + 4;
+        ltrim_inplace(&cmd_value);
+        if (*cmd_value) {
+          sb_append(&payload, cmd_value);
+          found_cmd = 1;
+          break; /* Use first non-commented cmd= line */
+        }
+      }
+    }
+    if (!found_cmd) {
+      fprintf(stderr, "[mqtt-pub] no valid cmd= line found in cmd.conf\n");
+      fclose(f);
+      sb_free(&payload);
+      return;
+    }
+  } else {
+    /* For other conf files, read entire file content */
+    char buf[1024]; size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
+      if (sb_reserve(&payload, n+1)) { fclose(f); sb_free(&payload); return; }
+      memcpy(payload.buf + payload.len, buf, n); payload.len += n; payload.buf[payload.len] = '\0';
+    }
   }
   fclose(f);
 

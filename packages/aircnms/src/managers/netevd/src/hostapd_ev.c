@@ -1,0 +1,143 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#include <dirent.h>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+#include <wpa_ctrl.h>
+
+#define HOSTAPD_CTRL_DIR "/var/run/hostapd"
+#define MAX_CTRLS 16
+#define REPLY_BUF_SZ 4096
+
+struct hostapd_ctrl_entry {
+	char path[256];
+	struct wpa_ctrl *ctrl;
+	int fd;
+};
+
+static struct hostapd_ctrl_entry g_ctrls[MAX_CTRLS];
+static int g_num_ctrls = 0;
+static pthread_t g_thread;
+static int g_running = 0;
+
+static int is_socket(const char *path)
+{
+	struct stat st;
+	if (stat(path, &st) != 0) return 0;
+	return S_ISSOCK(st.st_mode);
+}
+
+static void hostapd_scan_dir(const char *dir)
+{
+	DIR *d = opendir(dir);
+	struct dirent *de;
+	if (!d) return;
+	while ((de = readdir(d)) != NULL) {
+		if (de->d_name[0] == '.') continue;
+		if (g_num_ctrls >= MAX_CTRLS) break;
+		char path[256];
+		size_t dir_len = strlen(dir);
+		size_t name_len = strlen(de->d_name);
+		size_t need = dir_len + 1 + name_len + 1; /* dir + '/' + name + NUL */
+		if (need > sizeof(path)) {
+			/* skip overly long entries to avoid truncation */
+			continue;
+		}
+		/* Build path without snprintf to avoid truncation warnings */
+		memcpy(path, dir, dir_len);
+		path[dir_len] = '/';
+		memcpy(path + dir_len + 1, de->d_name, name_len);
+		path[dir_len + 1 + name_len] = '\0';
+		if (!is_socket(path)) continue;
+		/* Open control */
+		struct wpa_ctrl *ctrl = wpa_ctrl_open(path);
+		if (!ctrl) continue;
+		if (wpa_ctrl_attach(ctrl) != 0) {
+			wpa_ctrl_close(ctrl);
+			continue;
+		}
+		g_ctrls[g_num_ctrls].ctrl = ctrl;
+		g_ctrls[g_num_ctrls].fd = wpa_ctrl_get_fd(ctrl);
+		strncpy(g_ctrls[g_num_ctrls].path, path, sizeof(g_ctrls[g_num_ctrls].path)-1);
+		g_ctrls[g_num_ctrls].path[sizeof(g_ctrls[g_num_ctrls].path)-1] = '\0';
+		printf("hostapd_ev: attached to %s\n", g_ctrls[g_num_ctrls].path);
+		g_num_ctrls++;
+	}
+	closedir(d);
+}
+
+static void *hostapd_ev_thread(void *arg)
+{
+	(void)arg;
+	g_running = 1;
+	while (g_running) {
+		fd_set rfds;
+		int maxfd = -1;
+		FD_ZERO(&rfds);
+		for (int i = 0; i < g_num_ctrls; i++) {
+			if (g_ctrls[i].ctrl && g_ctrls[i].fd >= 0) {
+				FD_SET(g_ctrls[i].fd, &rfds);
+				if (g_ctrls[i].fd > maxfd) maxfd = g_ctrls[i].fd;
+			}
+		}
+		struct timeval tv = { .tv_sec = 2, .tv_usec = 0 };
+		int rc = select(maxfd + 1, &rfds, NULL, NULL, &tv);
+		if (rc < 0) {
+			if (errno == EINTR) continue;
+			perror("hostapd_ev: select");
+			break;
+		}
+		if (rc == 0) {
+			continue; /* timeout */
+		}
+		for (int i = 0; i < g_num_ctrls; i++) {
+			if (g_ctrls[i].ctrl && g_ctrls[i].fd >= 0 && FD_ISSET(g_ctrls[i].fd, &rfds)) {
+				char buf[REPLY_BUF_SZ];
+				size_t len = sizeof(buf) - 1;
+				if (wpa_ctrl_recv(g_ctrls[i].ctrl, buf, &len) == 0) {
+					buf[len] = '\0';
+					/* Print raw event; parsing can be added as needed */
+					printf("hostapd_ev: %s: %s\n", g_ctrls[i].path, buf);
+				} else {
+					printf("hostapd_ev: recv failed on %s\n", g_ctrls[i].path);
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+int hostapd_events_start(const char *ctrl_dir)
+{
+	const char *dir = ctrl_dir ? ctrl_dir : HOSTAPD_CTRL_DIR;
+	hostapd_scan_dir(dir);
+	if (g_num_ctrls == 0) {
+		printf("hostapd_ev: no hostapd control sockets found in %s\n", dir);
+		return -1;
+	}
+	int rc = pthread_create(&g_thread, NULL, hostapd_ev_thread, NULL);
+	if (rc != 0) {
+		perror("hostapd_ev: pthread_create");
+		return -1;
+	}
+	return 0;
+}
+
+void hostapd_events_stop(void)
+{
+	g_running = 0;
+	if (g_thread) pthread_join(g_thread, NULL);
+	for (int i = 0; i < g_num_ctrls; i++) {
+		if (g_ctrls[i].ctrl) {
+			wpa_ctrl_detach(g_ctrls[i].ctrl);
+			wpa_ctrl_close(g_ctrls[i].ctrl);
+			g_ctrls[i].ctrl = NULL;
+		}
+	}
+	g_num_ctrls = 0;
+}

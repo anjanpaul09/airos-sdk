@@ -97,10 +97,28 @@ static int nl80211_scan_dump_recv(struct nl_msg *msg, void *arg)
     if (nla_parse_nested(bss, NL80211_BSS_MAX, tb[NL80211_ATTR_BSS], bss_policy))
         return NL_SKIP;
 
+    /* Extract BSSID first to check for duplicates */
+    char new_bssid[MAX_BSSID_LEN] = {0};
+    if (bss[NL80211_BSS_BSSID])
+        mac_addr_to_str(nla_data(bss[NL80211_BSS_BSSID]), new_bssid, MAX_BSSID_LEN);
+
+    /* Check for duplicate BSSID */
+    if (new_bssid[0] != '\0') {
+        for (int i = 0; i < data->n_entry; i++) {
+            if (strcmp(data->record[i].bssid, new_bssid) == 0) {
+                /* Duplicate found - skip this entry */
+                return NL_SKIP;
+            }
+        }
+    }
+
     rec = &data->record[data->n_entry++];
 
-    if (bss[NL80211_BSS_BSSID])
-        mac_addr_to_str(nla_data(bss[NL80211_BSS_BSSID]), rec->bssid, MAX_BSSID_LEN);
+    /* Copy BSSID (already extracted above for duplicate check) */
+    if (new_bssid[0] != '\0') {
+        strncpy(rec->bssid, new_bssid, MAX_BSSID_LEN - 1);
+        rec->bssid[MAX_BSSID_LEN - 1] = '\0';
+    }
 
     if (bss[NL80211_BSS_INFORMATION_ELEMENTS]) {
         const uint8_t *ie = nla_data(bss[NL80211_BSS_INFORMATION_ELEMENTS]);
@@ -137,8 +155,10 @@ static int nl80211_scan_dump_recv(struct nl_msg *msg, void *arg)
         }
     }
 
-    if (bss[NL80211_BSS_SIGNAL_MBM])
-        rec->rssi = nla_get_u32(bss[NL80211_BSS_SIGNAL_MBM]) / 100;
+    if (bss[NL80211_BSS_SIGNAL_MBM]) {
+        int signal_mbm = nla_get_s32(bss[NL80211_BSS_SIGNAL_MBM]);
+        rec->rssi = signal_mbm / 100;  // mBm → dBm
+    }
 
     if (bss[NL80211_BSS_TSF])
         rec->tsf = nla_get_u64(bss[NL80211_BSS_TSF]);

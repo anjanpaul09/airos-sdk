@@ -5,6 +5,7 @@
 //#include <netlink/genl/ctrl.h>
 #include <netlink/attr.h>
 #include <linux/nl80211.h>
+#include <errno.h>
 
 int iw_debug = 0;
 static int (*registered_handler)(struct nl_msg *, void *);
@@ -241,7 +242,7 @@ int nl_rx_event(struct nl_msg *msg, void *arg)
                 break;
         case NL80211_CMD_DISCONNECT:
                 printf("EVENT: NL80211_CMD_DISCONNECT\n");
-
+                break;
 	case NL80211_CMD_REMAIN_ON_CHANNEL:
                 printf("EVENT: NL80211_CMD_REMAIN_ON_CHANNEL\n");
                 break;
@@ -308,7 +309,7 @@ int valid_handler(struct nl_msg *msg, void *arg)
 }
 
 int do_listen_events(struct nl80211_state *state, const int n_waits, const __u32 *waits,
-                      const int n_prints, const __u32 *prints, struct print_event_args *args)
+                      const int n_prints, const __u32 *prints, void *args)
 {
     struct nl_cb *cb = nl_cb_alloc(iw_debug ? NL_CB_DEBUG : NL_CB_DEFAULT);
     

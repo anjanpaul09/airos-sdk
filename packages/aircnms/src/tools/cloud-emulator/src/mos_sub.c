@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdint.h>
 #include <mosquitto.h>
 
 /*
@@ -203,6 +204,7 @@ static void on_message(struct mosquitto *mosq, void *userdata, const struct mosq
   if (tlen >= 4 && strcmp(topic + tlen - 4, "/vif") == 0) which = "vif";
   else if (tlen >= 7 && strcmp(topic + tlen - 7, "/device") == 0) which = "device";
   else if (tlen >= 7 && strcmp(topic + tlen - 7, "/client") == 0) which = "client";
+  else if (tlen >= 9 && strcmp(topic + tlen - 9, "/neighbor") == 0) which = "neighbor";
 
   if (!which) {
     fprintf(stdout, "[mqtt] %s => %.*s\n", topic, (int)len, payload);
@@ -326,6 +328,58 @@ static void on_message(struct mosquitto *mosq, void *userdata, const struct mosq
     fprintf(stdout, "%8lld %9lld %12lld %9lld %12lld %16lld\n", uptime, downtime, totalClient, uplinkMb, downlinkMb, totalTrafficMb);
 
     /* Memory and CPU sections intentionally not printed */
+    fflush(stdout);
+    return;
+  }
+
+  if (strcmp(which, "neighbor") == 0) {
+    char header[256];
+    snprintf(header, sizeof(header), "Topic=Neighbors (%s) deviceId=%s serialNum=%s macAddr=%s", timestr[0] ? timestr : "", devid, serial, mac);
+    fprintf(stdout, "%s\n", header);
+    for (size_t i = 0; header[i] != '\0'; ++i) fputc('=', stdout);
+    fputc('\n', stdout);
+    
+    /* First pass: count entries */
+    int entry_count = 0;
+    const char *p_count = payload;
+    while ((p_count = strstr(p_count, "\"bssid\"")) != NULL) {
+      entry_count++;
+      p_count++;
+    }
+    
+    fprintf(stdout, "Entries: %d\n", entry_count);
+    fprintf(stdout, "%-18s %-24s %6s %8s %14s %-7s\n", "bssid", "ssid", "rssi", "channel", "channelWidth", "band");
+    fprintf(stdout, "%-18s %-24s %6s %8s %14s %-7s\n", "------------------", "------------------------", "------", "--------", "--------------", "-------");
+    
+    /* Second pass: extract and display entries */
+    p_count = payload;
+    while ((p_count = strstr(p_count, "\"bssid\"")) != NULL) {
+      const char *obj_start = p_count; while (obj_start > payload && *obj_start != '{') obj_start--;
+      const char *obj_end = strchr(p_count, '}'); if (!obj_end) break;
+      char bssid[64]={0}, ssid[128]={0}, band[64]={0};
+      long long rssi=0, channel=0, channelWidth=0;
+      json_extract_str(payload, len, "bssid", obj_start, obj_end, bssid, sizeof(bssid));
+      json_extract_str(payload, len, "ssid", obj_start, obj_end, ssid, sizeof(ssid));
+      json_extract_int(payload, len, "rssi", obj_start, obj_end, &rssi);
+      json_extract_int(payload, len, "channel", obj_start, obj_end, &channel);
+      json_extract_int(payload, len, "channelWidth", obj_start, obj_end, &channelWidth);
+      json_extract_str(payload, len, "band", obj_start, obj_end, band, sizeof(band));
+      /* Fix RSSI if it's a wrapped unsigned value (common in WiFi drivers) */
+      /* Large negative values indicate unsigned wrap: convert by adding 2^32 */
+      /* Example: -4252017705 + 4294967296 = 42949591, then convert to signed: 42949591 - 4294967296 = -105 */
+      if (rssi < -1000) {
+        unsigned long long unsigned_rssi = (unsigned long long)(rssi + (long long)UINT32_MAX + 1);
+        if (unsigned_rssi > INT32_MAX) {
+          rssi = (long long)unsigned_rssi - (long long)UINT32_MAX - 1;
+        } else {
+          rssi = (long long)unsigned_rssi;
+        }
+      } else if (rssi > 1000) {
+        rssi = rssi - (long long)UINT32_MAX - 1;
+      }
+      fprintf(stdout, "%-18s %-24s %6lld %8lld %14lld %-7s\n", bssid, ssid[0] ? ssid : "(empty)", rssi, channel, channelWidth, band);
+      p_count = obj_end + 1;
+    }
     fflush(stdout);
     return;
   }

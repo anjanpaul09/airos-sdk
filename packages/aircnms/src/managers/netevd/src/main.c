@@ -6,12 +6,15 @@ int listen_events(struct nl80211_state *state, const int n_waits, const __u32 *w
 
 int main()
 {
-    struct nl80211_state nlstate;
-    int ret = -1;
+	struct nl80211_state nlstate;
+	int ret = -1;
 
-    ret = nl80211_init(&nlstate);
+	/* start hostapd event listener (non-fatal if not present) */
+	hostapd_events_start(NULL);
 
-    listen_events(&nlstate, 0, 0);
-    return ret;
+	ret = nl80211_init(&nlstate);
+
+	listen_events(&nlstate, 0, 0);
+	return ret;
 }
 
