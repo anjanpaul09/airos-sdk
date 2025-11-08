@@ -12,7 +12,6 @@ UNIT_SRC += src/netconf_rate_limit.c
 UNIT_SRC += src/netconf_ubus_rx.c
 UNIT_SRC += src/netconf_checkwifi.c 
 UNIT_SRC += src/netconf_captive_portal.c 
-UNIT_SRC += src/netconf_unixcomm_server.c 
 UNIT_SRC += src/uci_config/uci_ops.c
 UNIT_SRC += src/uci_config/uci_wireless.c
 ## Remove legacy conn layers; use libunixcomm

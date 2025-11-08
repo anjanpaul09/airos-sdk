@@ -127,13 +127,13 @@ int util_chan_to_freq(int chan)
 
 bool hostapd_chan_switch(char *radio_name, int channel)
 {
-    int freq;
+    //int freq;
     char ifname[12];
     char phyname[8];
-    char cmd[256];
+    //char cmd[256];
 
-    freq = 0;
-    freq = util_chan_to_freq(channel);
+    //freq = 0;
+    //freq = util_chan_to_freq(channel);
 
     if (strcmp(radio_name, "wifi0") == 0) {
         strcpy(ifname, "phy1-ap0");
