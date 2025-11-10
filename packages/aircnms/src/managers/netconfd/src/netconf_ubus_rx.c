@@ -57,9 +57,6 @@ static int ubus_netconf_config_handler(struct ubus_context* ctx, struct ubus_obj
     void *data = blobmsg_data(tb[DATA]);
     int len = blobmsg_data_len(tb[DATA]);
 
-    printf("  📦 Declared size: %d | Actual data length: %d\n",
-                size, len);
-
     // Log message received
     LOG(INFO, "MSG_RECV type=CONF msglen=%d", size);
 

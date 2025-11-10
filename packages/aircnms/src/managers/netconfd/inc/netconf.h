@@ -12,7 +12,7 @@
 #include "log.h"
 #include "os.h"
 #include "os_nif.h"
-//#include "uci_ops.h"
+#include "netconf_validate.h"
 #include <radio_vif.h>
 
 #define NETCONF_MAX_QUEUE_DEPTH (200)
@@ -223,7 +223,11 @@ int jedi_set_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_p
 int jedi_set_primary_radio_params(char *radio_name, struct airpro_mgr_wlan_radio_params *radio_params);
 int jedi_set_secondary_radio_params(char *radio_name, struct airpro_mgr_wlan_radio_params *radio_params);
 int jedi_del_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_params);
-
+bool sanitize_and_validate_vif_params(struct airpro_mgr_wlan_vap_params *p);
+bool sanitize_and_validate_primary_radio_settings(const char *band, struct airpro_mgr_wlan_radio_params *params);
+bool sanitize_and_validate_secondary_radio_settings(const char *radio_name, const char *band, struct airpro_mgr_wlan_radio_params *params);
+void get_ht_mode(char *htmode, struct airpro_mgr_wlan_radio_params rp, const char *radio_name);
+void get_encryption_type(char *encrypt_type, const char *encryption);
 
 const char *get_config_file(const char *iface); 
 int map_interface_to_index(const char *iface); 

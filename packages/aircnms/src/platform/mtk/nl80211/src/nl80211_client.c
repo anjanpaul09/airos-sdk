@@ -206,6 +206,21 @@ void fill_client_info_from_proc(client_record_t *rec, char *sta_ifname)
     }
 }
 
+/* Helper function to grow the records array */
+static int grow_report_data(client_report_data_t *data)
+{
+    int new_capacity = (data->capacity == 0) ? 1 : data->capacity * 2;
+    client_record_t *new_record = (client_record_t *)realloc(data->record,
+                                                               new_capacity * sizeof(client_record_t));
+    if (!new_record) {
+        LOG(ERR, "Failed to reallocate memory for client records");
+        return -1;
+    }
+    data->record = new_record;
+    data->capacity = new_capacity;
+    return 0;
+}
+
 static int nl80211_parse_station_cb(struct nl_msg *msg, void *arg)
 {
     client_cb_ctx_t *ctx = (client_cb_ctx_t *)arg;
@@ -225,6 +240,13 @@ static int nl80211_parse_station_cb(struct nl_msg *msg, void *arg)
 
     if (data->n_client >= MAX_CLIENTS)
         return NL_SKIP;
+
+    if (data->n_client >= data->capacity) {
+        if (grow_report_data(data) < 0) {
+            LOG(ERR, "Failed to grow report data");
+            return NL_SKIP;
+        }
+    }
 
     rec = &data->record[data->n_client++];
     memset(rec, 0, sizeof(*rec));

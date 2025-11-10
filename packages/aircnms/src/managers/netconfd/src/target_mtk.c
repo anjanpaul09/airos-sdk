@@ -29,7 +29,6 @@ bool set_intf_reset_progress_indication(netconf_intf_reset_t reset)
     return true;
 }
 
-
 bool target_config_radio_get(radio_record_t *record)
 {
     struct airpro_mgr_wlan_radio_params rad_params;
@@ -75,43 +74,6 @@ bool target_config_vif_get(vif_record_t *record)
     return true;
 }
 
-void get_ht_mode(char *htmode, struct airpro_mgr_wlan_radio_params rp, char *radio_name)
-{
-    char hwmode_brd[8];
-    if ( strcmp(radio_name, "wifi1") == 0) {//2.4ghz
-        if (strcmp(rp.hwmode, "11BGN") == 0) {
-            strcpy(hwmode_brd, "11ng");
-        } else if(strcmp(rp.hwmode, "11AX") == 0) {
-            strcpy(hwmode_brd, "11axg");
-        } else if(strcmp(rp.hwmode, "11BGN_11AX") == 0) {
-            strcpy(hwmode_brd, "11axg");
-        }
- 
-    } else if (strcmp(radio_name, "wifi0") == 0) {//5ghz
-        if(strcmp(rp.hwmode, "11NA") == 0){
-            strcpy(hwmode_brd, "11na");
-        } else if(strcmp(rp.hwmode, "11AC") == 0){
-            strcpy(hwmode_brd, "11ac");
-        } else if(strcmp(rp.hwmode, "11AX") == 0) {
-            strcpy(hwmode_brd, "11axa");
-        } else if(strcmp(rp.hwmode, "11NA_11AC_11AX") == 0){
-            strcpy(hwmode_brd, "11axa");
-        }
-    } 
-
-    if (strcmp(hwmode_brd, "11ng") == 0) {
-        sprintf(htmode, "HT%s", rp.channel_width);
-    } else if(strcmp(hwmode_brd, "11na") == 0) {
-        sprintf(htmode, "HT%s", rp.channel_width);
-    } else if(strcmp(hwmode_brd, "11axa") == 0) {
-        sprintf(htmode, "HE%s", rp.channel_width);
-    } else if(strcmp(hwmode_brd, "11axg") == 0) {
-        sprintf(htmode, "HE%s", rp.channel_width);
-    } else if(strcmp(hwmode_brd, "11ac") == 0){
-        sprintf(htmode, "VHT%s", rp.channel_width);
-    }
-}
-
 int util_chan_to_freq(int chan)
 {
     if (chan == 14)
@@ -125,42 +87,72 @@ int util_chan_to_freq(int chan)
     return 0;
 }
 
-bool hostapd_chan_switch(char *radio_name, int channel)
+bool hostapd_chan_switch(const char *radio_name, int channel)
 {
-    //int freq;
     char ifname[12];
     char phyname[8];
-    //char cmd[256];
-
-    //freq = 0;
-    //freq = util_chan_to_freq(channel);
-
+    char cmd[256];
+    int freq = 0;
+    
     if (strcmp(radio_name, "wifi0") == 0) {
         strcpy(ifname, "phy1-ap0");
         strcpy(phyname, "phy1");
     } else if (strcmp(radio_name, "wifi1") == 0) {
         strcpy(ifname, "phy0-ap0");
         strcpy(phyname, "phy0");
-    }
-
-    //snprintf(cmd, sizeof(cmd),
-      //       "timeout -s KILL 3 hostapd_cli -p /var/run/hostapd -i %s chan_switch 5 %d",
-        //      ifname, freq);
-#if 0
-    sprintf(cmd, "timeout -s KILL 3 hostapd_cli -i %s chan_switch 5 %d", ifname, freq);
-    printf("Applying: %s\n", cmd);
-    int ret = system(cmd);
-    if (ret != 0) {
-        fprintf(stderr, "Failed to set channel for %s (ret=%d)\n", ifname, ret);
+    } else {
+        fprintf(stderr, "Invalid radio name: %s\n", radio_name);
         return false;
     }
-#endif
-    return true;
+
+    // Convert channel → frequency
+    freq = util_chan_to_freq(channel);
+    if (freq <= 0) {
+        fprintf(stderr, "Invalid channel %d for %s\n", channel, radio_name);
+        return false;
+    }
+
+    snprintf(cmd, sizeof(cmd),
+             "hostapd_cli -p /var/run/hostapd -i %s chan_switch 5 %d",
+             ifname, freq);
+
+    printf("Applying channel switch: %s\n", cmd);
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Child process — execute command
+        execl("/bin/sh", "sh", "-c", cmd, (char *)NULL);
+        _exit(127); // only if execl fails
+    } else if (pid < 0) {
+        perror("fork");
+        return false;
+    }
+
+    // Parent process — wait up to 3 seconds
+    int status = 0;
+    int waited = 0;
+    while (waited < 30) { // check every 100ms
+        pid_t ret = waitpid(pid, &status, WNOHANG);
+        if (ret == pid) {
+            if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+                return true;
+            else
+                break;
+        }
+        usleep(100000); // 100ms
+        waited++;
+    }
+
+    // Timeout — kill the child
+    fprintf(stderr, "Timeout: killing hostapd_cli for %s\n", ifname);
+    kill(pid, SIGKILL);
+    waitpid(pid, &status, 0);
+    return false;
 }
 
 bool hostapd_set_txpower(const char *radio_name, int txpower_dbm)
 {
-    char phyname[8];
+    char phyname[12];
     char cmd[256];
     int txpower_mbm;
     const int TXPOWER_MIN_DBM = 0;   // adjust as needed (some chipsets min 5–10)
@@ -168,9 +160,9 @@ bool hostapd_set_txpower(const char *radio_name, int txpower_dbm)
 
     // Map radio name to interface
     if (strcmp(radio_name, "wifi0") == 0) {
-        strcpy(phyname, "phy1");
+        strcpy(phyname, "phy1-ap0");
     } else if (strcmp(radio_name, "wifi1") == 0) {
-        strcpy(phyname, "phy0");
+        strcpy(phyname, "phy0-ap0");
     } else {
         fprintf(stderr, "Unknown radio name: %s\n", radio_name);
         return false;
@@ -205,9 +197,16 @@ bool target_config_radio_set(radio_record_t *record)
     char cmd[256];
     int rid = 0;
     char radio_name[8] = {0};
+    char phyname[8] = {0};
     int ret;
 
     for (rid = 0; rid < 2; rid++) {
+        if (strcmp(record->radio_param[rid].record_id, "wifi1") == 0) {
+            strcpy(phyname, "2.4GHz");
+        } else if (strcmp(record->radio_param[rid].record_id, "wifi0") == 0) {
+            strcpy(phyname, "5GHz");
+        }
+
         if (record->radio_param[rid].status == RADIO_SETTING_PRIMARY ) {
         
             memset(&rad_params, 0, sizeof(struct airpro_mgr_wlan_radio_params));
@@ -225,6 +224,11 @@ bool target_config_radio_set(radio_record_t *record)
             memset(param, 0, sizeof(param));
             get_ht_mode(param, rad_params, radio_name);
             strcpy(rad_params.htmode, param);
+
+            if (!sanitize_and_validate_primary_radio_settings(phyname, &rad_params)) {
+                printf("Invalid primary radio config for %s — skipping\n", radio_name);
+                continue;
+            }
 
             ret = uci_set_radio_params(radio_name, &rad_params);
             
@@ -245,16 +249,17 @@ bool target_config_radio_set(radio_record_t *record)
         
             strcpy(rad_params.channel, record->radio_param[rid].channel);
             strcpy(rad_params.txpower, record->radio_param[rid].txpower);
+                
+            if (!sanitize_and_validate_secondary_radio_settings(radio_name, phyname, &rad_params)) {
+                printf(" Invalid secondary radio config for %s — skipping\n", radio_name);
+                continue;
+            }
 
             ret = uci_set_radio_params(radio_name, &rad_params);
 
             ret = hostapd_chan_switch(radio_name, atoi(rad_params.channel));
             ret = hostapd_set_txpower(radio_name, atoi(rad_params.txpower));
-            //memset(cmd, 0, sizeof(cmd));
-            //sprintf(cmd, "wifi reload %s", radio_name);
 
-            //int rc = system(cmd);
-            //(void)rc;  // System call result may be checked in future
 #ifdef CONFIG_PLATFORM_MTK_JEDI
             jedi_set_secondary_radio_params(radio_name, &rad_params);            
 #endif
@@ -262,31 +267,6 @@ bool target_config_radio_set(radio_record_t *record)
         }
     }
     return ret;
-}
-
-void get_encryption_type(char *encrypt_type, const char *encryption)
-{
-
-    if (strncmp(encryption, "open", 4) == 0)
-        strncpy(encrypt_type, "none", ENCRYPT_TYPE_MAX_LEN);
-    else if (strncmp(encryption, "wpa-psk", 7) == 0)
-        strncpy(encrypt_type, "psk", ENCRYPT_TYPE_MAX_LEN);
-    else if (strncmp(encryption, "wpa2-psk", 8) == 0)
-        strncpy(encrypt_type, "psk2", ENCRYPT_TYPE_MAX_LEN);
-    else if (strncmp(encryption, "wpa3-psk", 8) == 0)
-        strncpy(encrypt_type, "sae", ENCRYPT_TYPE_MAX_LEN);
-    else if (strncmp(encryption, "wpa/wpa2-psk", 12) == 0)
-        strncpy(encrypt_type, "psk-mixed", ENCRYPT_TYPE_MAX_LEN);
-    else if (strncmp(encryption, "wpa2/wpa3-psk", 13) == 0)
-        strncpy(encrypt_type, "sae-mixed", ENCRYPT_TYPE_MAX_LEN);
-    else if (strncmp(encryption, "wpa2-enterprise", 15) == 0)
-        strncpy(encrypt_type, "wpa2", ENCRYPT_TYPE_MAX_LEN);
-    else if (strncmp(encryption, "wpa3-enterprise", 15) == 0)
-        strncpy(encrypt_type, "wpa3", ENCRYPT_TYPE_MAX_LEN);
-    else
-        strncpy(encrypt_type, "none", ENCRYPT_TYPE_MAX_LEN);
-
-    encrypt_type[ENCRYPT_TYPE_MAX_LEN - 1] = '\0'; // ensure null-termination
 }
 
 bool target_config_vif_set(vif_record_t *record)
@@ -348,7 +328,6 @@ bool target_config_vif_set(vif_record_t *record)
                     memset(cmd, 0, sizeof(cmd));
                     sprintf(cmd, "uci del wireless.%s.acct_server", vif_name);
                     rc = system(cmd);
-                    
             }
 
 #ifdef CONFIG_PLATFORM_MTK 
@@ -376,6 +355,10 @@ bool target_config_vif_set(vif_record_t *record)
                 strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
             }
 #endif
+            if (!sanitize_and_validate_vif_params(&vif_params)) {
+                fprintf(stderr, "Warning: vif_params contains invalid data, skipping UCI set.\n");
+                return -1;
+            }
             
             rc = uci_set_vap_params(vif_name, &vif_params);
 
@@ -422,7 +405,7 @@ bool target_config_vif_set(vif_record_t *record)
             
             strlcpy(vif_params.disabled, "1", sizeof(vif_params.disabled));
             //CAPTIVE PORTAL
-            netconf_handle_captive_portal(vif_name, &vif_params);
+            //netconf_handle_captive_portal(vif_name, &vif_params);
             uci_set_vap_params(vif_name, &vif_params);
             
             memset(cmd, 0, sizeof(cmd));
@@ -512,6 +495,10 @@ bool target_config_vif_set(vif_record_t *record)
             }
 #endif
 
+            if (!sanitize_and_validate_vif_params(&vif_params)) {
+                fprintf(stderr, "Warning: vif_params contains invalid data, skipping UCI set.\n");
+                return -1;
+            }
             uci_set_vap_params(vif_name, &vif_params);
             
             memset(cmd, 0, sizeof(cmd));

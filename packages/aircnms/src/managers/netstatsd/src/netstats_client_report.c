@@ -253,7 +253,7 @@ static void netstats_client_report_stats(netstats_client_ctx_t *client_ctx)
     client_report_data_t *cache_ctx = &client_ctx->cache;
    
     // Allocate report on the fly
-    client_report_data_t *report_ctx = alloc_report_data(16); // Start with reasonable size
+    client_report_data_t *report_ctx = alloc_report_data(0); // will allocate on demand
     
     if (!report_ctx) {
         LOG(ERR, "Failed to allocate report");

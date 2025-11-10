@@ -245,6 +245,7 @@ void strip_trailing(char *str)
 
 int netconf_check_nat_config(nat_config_t *config)
 {
+    int ret = 0;
     char cmd[256];
     char result[128];    
 
@@ -265,7 +266,8 @@ int netconf_check_nat_config(nat_config_t *config)
         strip_trailing(result);
         // Check if the result is empty
         if ( strcmp(config->ipaddr, result) != 0) {
-            add_nat_to_network(config);
+            ret = -1;
+            //add_nat_to_network(config);
         } 
     }
 
@@ -275,7 +277,8 @@ int netconf_check_nat_config(nat_config_t *config)
     if (execute_uci_command(cmd, result, sizeof(result)) == 0) {
         // Check if the result is empty
         if (strlen(result) == 0 || strstr(result, "Entry not found") != NULL) {
-            add_nat_to_firewall();
+            ret = -1;
+            //add_nat_to_firewall();
         } 
     }
 
@@ -285,11 +288,12 @@ int netconf_check_nat_config(nat_config_t *config)
     if (execute_uci_command(cmd, result, sizeof(result)) == 0) {
         // Check if the result is empty
         if (strlen(result) == 0 || strstr(result, "Entry not found") != NULL) {
-            add_nat_to_dhcp();
+            ret = -1;
+            //add_nat_to_dhcp();
         } 
     }
 
-    return 0;
+    return ret;
 }
 
 int netconf_handle_nat_config(nat_config_t *config)
@@ -301,6 +305,7 @@ int netconf_handle_nat_config(nat_config_t *config)
         add_nat_to_network(config);
         add_nat_to_firewall();
         add_nat_to_dhcp();
+        ret = system("ifup nat_network");
         //set network flag
         //set_flag(&flags, FLAG_NETWORK_CHANGE);
     }
