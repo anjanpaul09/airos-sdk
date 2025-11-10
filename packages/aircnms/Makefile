@@ -12,7 +12,7 @@ define Build/Prepare
 	cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/build/hostapd/src/common/wpa_ctrl.o $(STAGING_DIR)/usr/lib/
 	cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/src/common/wpa_ctrl.h $(STAGING_DIR)/usr/include/
 endef
-AIRCNMS_DEPS += libnl libev jansson libmosquitto zlib libprotobuf-c libuci libcurl kmod-airdpi libubus libubox libjson-c libwebsockets-openssl libblobmsg-json libpcap
+AIRCNMS_DEPS += libnl libev hostapd jansson libmosquitto zlib libprotobuf-c libuci libcurl kmod-airdpi libubus libubox libjson-c libwebsockets-openssl libblobmsg-json libpcap
 AIRCNMS_DEPS := $(foreach X,$(AIRCNMS_DEPS),+$(X))
 
 define Package/aircnms
