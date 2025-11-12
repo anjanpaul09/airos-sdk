@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <iconv.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "cgw.h"
 #include "log.h"
@@ -269,40 +270,46 @@ cleanup:
     return result;
 }
 
-// Function to parse DeviceInfo struct to JSON string
+// Function to parse DeviceInfo struct to JSON string with radio, location, and timezone
 char *parse_device_info_to_json_string(struct DeviceInfo device)
 {
     char fw_version[UCI_BUF_LEN];
     int retry_count = 0;
     char ipaddr[32] = {0};
+    char location[64] = {0};
+    char timezone[64] = {0};
+    char uci_value[32] = {0};
+    //char cmd[128] = {0};
     os_ipaddr_t ip;
-    json_t *    json = json_object();
+
+    json_t *json = json_object();
     if (!json) {
         LOG(ERR, "Error creating JSON object");
         return NULL;
     }
-    
+
+    // Get firmware version
     memset(fw_version, 0, sizeof(fw_version));
     get_fw_version(fw_version, UCI_BUF_LEN);
 
+    // Basic device info
     json_object_set_new(json, "serial_number", json_string(device.serial_number));
     json_object_set_new(json, "mac", json_string(device.mac_address));
     json_object_set_new(json, "fw_info", json_string(fw_version));
     json_object_set_new(json, "hw_name", json_string("MTK7621"));
     json_object_set_new(json, "hw_version", json_string("1.0"));
-    
-    memset(ipaddr, 0, sizeof(ipaddr));
 
+    // Get management IP
+    memset(ipaddr, 0, sizeof(ipaddr));
     while (retry_count < MAX_LAN_IP_RETRIES) {
         if (os_nif_ipaddr_get("br-lan", &ip)) {
-            break;  
+            break;
         } else {
             retry_count++;
-            sleep(2);  
+            sleep(2);
         }
     }
-
-    int ret_ip = snprintf(ipaddr, sizeof(ipaddr), "%d.%d.%d.%d", 
+    int ret_ip = snprintf(ipaddr, sizeof(ipaddr), "%d.%d.%d.%d",
                           ip.addr[0], ip.addr[1], ip.addr[2], ip.addr[3]);
     if (ret_ip < 0 || ret_ip >= (int)sizeof(ipaddr)) {
         LOG(ERR, "IP address buffer overflow (ret=%d)", ret_ip);
@@ -310,16 +317,96 @@ char *parse_device_info_to_json_string(struct DeviceInfo device)
         ipaddr[sizeof(ipaddr) - 1] = '\0';
     }
     json_object_set_new(json, "mgmt_ip", json_string(ipaddr));
-    
+
+    // Get public IP
     memset(ipaddr, 0, sizeof(ipaddr));
     if (!get_public_ip(ipaddr)) {
         LOG(INFO, "Failed to retrieve public IP. Setting IP to 0.0.0.0");
         strncpy(ipaddr, "0.0.0.0", sizeof(ipaddr) - 1);
         ipaddr[sizeof(ipaddr) - 1] = '\0';
     }
-
     json_object_set_new(json, "egress_ip", json_string(ipaddr));
 
+    // Create radio object
+    json_t *radio_obj = json_object();
+    json_t *radio_list = json_array();
+
+    // 2.4GHz radio (wifi1)
+    json_t *radio_2g = json_object();
+    json_object_set_new(radio_2g, "band", json_string("2.4GHz"));
+
+    memset(uci_value, 0, sizeof(uci_value));
+    if (cmd_buf("uci get wireless.wifi1.channel", uci_value, sizeof(uci_value)) == 0) {
+        json_object_set_new(radio_2g, "channel", json_string(uci_value));
+    } else {
+        json_object_set_new(radio_2g, "channel", json_string("0"));
+    }
+
+    memset(uci_value, 0, sizeof(uci_value));
+    if (cmd_buf("uci get wireless.wifi1.txpower", uci_value, sizeof(uci_value)) == 0) {
+        json_object_set_new(radio_2g, "txpower", json_string(uci_value));
+    } else {
+        json_object_set_new(radio_2g, "txpower", json_string("0"));
+    }
+
+    json_array_append_new(radio_list, radio_2g);
+
+    // 5GHz radio (wifi0)
+    json_t *radio_5g = json_object();
+    json_object_set_new(radio_5g, "band", json_string("5GHz"));
+
+    memset(uci_value, 0, sizeof(uci_value));
+    if (cmd_buf("uci get wireless.wifi0.channel", uci_value, sizeof(uci_value)) == 0) {
+        json_object_set_new(radio_5g, "channel", json_string(uci_value));
+    } else {
+        json_object_set_new(radio_5g, "channel", json_string("0"));
+    }
+
+    memset(uci_value, 0, sizeof(uci_value));
+    if (cmd_buf("uci get wireless.wifi0.txpower", uci_value, sizeof(uci_value)) == 0) {
+        json_object_set_new(radio_5g, "txpower", json_string(uci_value));
+    } else {
+        json_object_set_new(radio_5g, "txpower", json_string("0"));
+    }
+
+    json_array_append_new(radio_list, radio_5g);
+
+    json_object_set_new(radio_obj, "radio_list", radio_list);
+    json_object_set_new(json, "radio", radio_obj);
+
+    json_t *location_array = json_array();
+    memset(location, 0, sizeof(location));
+
+    if (cmd_buf("curl -s https://ipinfo.io/loc", location, sizeof(location)) == 0) {
+        // Parse latitude and longitude
+        char *comma = strchr(location, ',');
+        if (comma) {
+            *comma = '\0';
+            // Keep as strings to preserve exact precision from ipinfo.io
+            json_array_append_new(location_array, json_string(location));
+            json_array_append_new(location_array, json_string(comma + 1));
+        } else {
+            json_array_append_new(location_array, json_string("0.0"));
+            json_array_append_new(location_array, json_string("0.0"));
+        }
+    } else {
+        LOG(ERR, "Failed to get location from ipinfo.io");
+        json_array_append_new(location_array, json_string("0.0"));
+        json_array_append_new(location_array, json_string("0.0"));
+    }
+
+    json_object_set_new(json, "location", location_array);
+
+    // Get timezone from ipinfo.io
+    memset(timezone, 0, sizeof(timezone));
+    if (cmd_buf("curl -s https://ipinfo.io/timezone", timezone, sizeof(timezone)) == 0) {
+        json_object_set_new(json, "timezone", json_string(timezone));
+    } else {
+        LOG(ERR, "Failed to get timezone from ipinfo.io");
+        json_object_set_new(json, "timezone", json_string("UTC"));
+    }
+
+    // Convert JSON to string
     char *json_str = json_dumps(json, JSON_INDENT(4));
     if (!json_str) {
         LOG(ERR, "Error converting JSON to string");
@@ -328,10 +415,8 @@ char *parse_device_info_to_json_string(struct DeviceInfo device)
     }
 
     json_decref(json);
-
     return json_str;
 }
-
 
 void get_device_details(struct DeviceInfo *device) 
 {
