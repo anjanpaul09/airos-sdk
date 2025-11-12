@@ -71,8 +71,8 @@ static bool is_valid_port(const char *port_str)
 static bool is_valid_encryption(const char *enc)
 {
     const char *valid_encs[] = {
-        "none", "wep", "psk2", "psk-mixed", "sae", 
-        "wpa2-enterprise", "wpa3-enterprise", NULL
+        "none", "wep", "psk", "psk2", "psk-mixed", "sae", 
+        "sae-mixed", "wpa2", "wpa3", NULL
     };
     for (int i = 0; valid_encs[i]; i++) {
         if (strcmp(enc, valid_encs[i]) == 0)
@@ -269,21 +269,6 @@ bool sanitize_and_validate_primary_radio_settings(const char *band,
         if (cw != 20 && cw != 40 && cw != 80 && cw != 160) {
             printf("Invalid width %d for 5GHz → default 80\n", cw);
             strcpy(params->channel_width, "80");
-        }
-    }
-
-    /* --- sanitize hwmode --- */
-    if (strcmp(band, "2.4GHz") == 0) {
-        if (strcmp(params->hwmode, "b") && strcmp(params->hwmode, "g") &&
-            strcmp(params->hwmode, "n") && strcmp(params->hwmode, "ax")) {
-            printf("Invalid hwmode=%s for 2.4GHz → default 'n'\n", params->hwmode);
-            strcpy(params->hwmode, "n");
-        }
-    } else if (strcmp(band, "5GHz") == 0) {
-        if (strcmp(params->hwmode, "a") && strcmp(params->hwmode, "ac") &&
-            strcmp(params->hwmode, "ax") && strcmp(params->hwmode, "n")) {
-            printf("Invalid hwmode=%s for 5GHz → default 'ac'\n", params->hwmode);
-            strcpy(params->hwmode, "ac");
         }
     }
 
