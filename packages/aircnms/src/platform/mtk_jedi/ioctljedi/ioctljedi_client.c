@@ -290,28 +290,28 @@ ioctl_status_t ioctl80211_jedi_clients_list_fetch(client_report_data_t *report)
             continue;
         }
 
-        /* Fill client record */
+        /* Fill client record - only stats */
         parse_mac(mac_str, client->macaddr);
-        strncpy(client->ipaddr, ipaddr, IPADDR_MAX_LEN - 1);
-        strncpy(client->hostname, hostname, HOSTNAME_MAX_LEN - 1);
-        get_interface_essid(ifname, client->ssid);
-        client->rx_bytes = parse_number(rx_str);
-        client->tx_bytes = parse_number(tx_str);
-        client->rssi = get_rssi(client->macaddr);
-        client->is_connected = 1; // connected if present in /proc
-
-        tms = parse_number(tms_str);
-        client->duration_ms = calculate_duration_ms(tms);
         
-        /* Determine radio type */
-        if (strstr(ifname, "rax")) {
-            client->radio_type = RADIO_TYPE_5G;
-        } else if (strstr(ifname, "ra")) {
-            client->radio_type = RADIO_TYPE_2G;
-        } else {
-            client->radio_type = RADIO_TYPE_NONE;
-        }
-        client->channel = get_channel(client->radio_type);
+        // Fill stats only
+        client->stats.rx_bytes = parse_number(rx_str);
+        client->stats.tx_bytes = parse_number(tx_str);
+        client->stats.rssi = get_rssi(client->macaddr);
+        
+        tms = parse_number(tms_str);
+        client->stats.duration_ms = calculate_duration_ms(tms);
+        
+        // Fill other stats fields with dummy/default values for now
+        client->stats.snr = 28;
+        client->stats.tx_rate_mbps = 173;
+        client->stats.rx_rate_mbps = 72;
+        client->stats.tx_packets = 928133;
+        client->stats.rx_packets = 421023;
+        client->stats.tx_retries = 12011;
+        client->stats.tx_failures = 42;
+        client->stats.tx_phy_rate = 433;
+        client->stats.rx_phy_rate = 200;
+        client->stats.signal_avg = -70;
 
         client_count++;
     }

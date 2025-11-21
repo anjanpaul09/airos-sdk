@@ -304,10 +304,10 @@ bool linux_device_wifi_util_get(device_wifiutil_t *w_util)
 
 #ifdef CONFIG_PLATFORM_MTK_JEDI
     if (ioctl80211_jedi_stats_vap_get(&vif_record)) {
-        for (int i = 0; i < vif_record.n_vif; i++) {
-            w_util->num_sta += vif_record.vif[i].num_sta;
-            w_util->uplink_mb += vif_record.vif[i].uplink_mb;
-            w_util->downlink_mb += vif_record.vif[i].downlink_mb;
+        for (int i = 0; i < vif_record.stats.n_vif; i++) {
+            w_util->num_sta += vif_record.stats.vif[i].statNumSta;
+            w_util->uplink_mb += vif_record.stats.vif[i].statUplinkMb;
+            w_util->downlink_mb += vif_record.stats.vif[i].statDownlinkMb;
         }
     }
 #endif
@@ -316,10 +316,10 @@ bool linux_device_wifi_util_get(device_wifiutil_t *w_util)
     // Forward declaration - nl80211_stats_vap_get is platform-specific
     extern bool nl80211_stats_vap_get(vif_record_t *record);
     if (nl80211_stats_vap_get(&vif_record)) {
-        for (int i = 0; i < vif_record.n_vif; i++) {
-            w_util->num_sta += vif_record.vif[i].num_sta;
-            w_util->uplink_mb += vif_record.vif[i].uplink_mb;
-            w_util->downlink_mb += vif_record.vif[i].downlink_mb;
+        for (int i = 0; i < vif_record.stats.n_vif; i++) {
+            w_util->num_sta += vif_record.stats.vif[i].statNumSta;
+            w_util->uplink_mb += vif_record.stats.vif[i].statUplinkMb;
+            w_util->downlink_mb += vif_record.stats.vif[i].statDownlinkMb;
         }
     }
 #endif

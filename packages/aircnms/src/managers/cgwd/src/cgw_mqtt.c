@@ -13,7 +13,21 @@
 #include "stats_report.h"
 #include "cgw.h"
 #include "device_config.h"
+#include "info_events.h"
 #include <pthread.h>
+
+// --- Globals ---
+static ev_timer g_reconnect_timer;
+static ev_async g_queue_async;
+
+static bool g_mqtt_worker_running = false;
+static bool g_mqtt_connected = false;
+
+// Forward declarations for info event JSON parsing functions
+bool cgw_parse_client_info_json(client_info_event_t *client_info, char *data, uint64_t timestamp_ms);
+bool cgw_parse_vif_info_json(vif_info_event_t *vif_info, char *data, uint64_t timestamp_ms);
+bool cgw_parse_device_info_json(device_info_event_t *device_info, char *data, uint64_t timestamp_ms);
+void cgw_restart_mqtt_worker(void);
 
 #define MODULE_ID LOG_MODULE_ID_MAIN
 #define MQTT_BROKER_TOPIC       "test"
@@ -149,12 +163,12 @@ uint64_t get_current_timestamp_ms() {
     return (uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);  // Convert to milliseconds
 }
 
-bool cgw_publish_json(char *data, char *topic)
+bool cgw_publish_json_qos(char *data, char *topic, int qos)
 {
     mosqev_t *mqtt = &cgw_mqtt;
     void *mbuf;
     size_t mlen;
-    int ret;
+    bool ret;
 
     mbuf = data;
     mlen = strlen(data);
@@ -163,11 +177,22 @@ bool cgw_publish_json(char *data, char *topic)
     uint64_t time_diff = (prev_timestamp > 0) ? (current_timestamp - prev_timestamp) : 0;
     prev_timestamp = current_timestamp;  // Update previous timestamp
 
-    LOG(DEBUG, "MQTT: Publishing %zu bytes to topic-%s | Time since last publish: %" PRIu64 " ms", mlen, topic, time_diff);
+    LOG(DEBUG, "MQTT: Publishing %zu bytes to topic-%s qos=%d | Time since last publish: %" PRIu64 " ms", mlen, topic, qos, time_diff);
 
-    ret = mosqev_publish(mqtt, NULL, topic, mlen, mbuf, 1, false);
+    ret = mosqev_publish(mqtt, NULL, topic, mlen, mbuf, qos, false);
 
+    if(ret == false) {
+        //cgw_mqtt_reconnect();
+        g_mqtt_connected = false;
+        cgw_restart_mqtt_worker();
+    }
+ 
     return ret;
+}
+
+bool cgw_publish_json(char *data, char *topic)
+{
+    return cgw_publish_json_qos(data, topic, 1);
 }
 
 
@@ -389,17 +414,106 @@ bool cgw_send_stats_json(cgw_item_t *qi)
 
 bool cgw_send_event_cloud(cgw_item_t *qi)
 {
-    event_msg_t event;
     bool ret;
     char data[MAX_MQTT_SEND_DATA_SIZE] = {0};
     char topic[100] = {0};
 
+    if (!qi || !qi->buf || qi->size == 0) {
+        LOG(ERR, "cgw_send_event_cloud: Invalid parameters");
+        return false;
+    }
+
+    // Check if this is an info event (from netevd) or regular event (from cmdexecd/alrmd)
+    if (qi->size >= sizeof(info_event_type_t)) {
+        info_event_type_t info_type = *(info_event_type_t *)qi->buf;
+
+        LOG(DEBUG, "ANJAN-DEBUG cgw_send_event_cloud: Checking info event type=%d size=%zu", info_type, qi->size);
+
+        // Check if it's an info event (1-3 are valid info event types)
+        if (info_type >= INFO_EVENT_CLIENT && info_type <= INFO_EVENT_DEVICE) {
+            // This is an info event from netevd
+            uint8_t *ptr = (uint8_t *)qi->buf;
+
+            // Extract type
+            info_event_type_t type;
+            memcpy(&type, ptr, sizeof(type));
+            ptr += sizeof(type);
+
+            // Extract timestamp
+            uint64_t timestamp_ms;
+            memcpy(&timestamp_ms, ptr, sizeof(timestamp_ms));
+            ptr += sizeof(timestamp_ms);
+
+            LOG(DEBUG, "ANJAN-DEBUG cgw_send_event_cloud: Processing info event type=%d timestamp=%" PRIu64,
+                type, timestamp_ms);
+
+            if (qi->size < sizeof(info_event_type_t) + sizeof(uint64_t)) {
+                LOG(ERR, "ANJAN-DEBUG Info event too small: size=%zu expected>=%zu",
+                    qi->size, sizeof(info_event_type_t) + sizeof(uint64_t));
+                return false;
+            }
+
+            // Parse based on type
+            int qos = 1; // Default QoS for info events
+            switch (type) {
+                case INFO_EVENT_CLIENT:
+                {
+                    client_info_event_t client;
+                    memcpy(&client, ptr, sizeof(client));
+
+                    ret = cgw_parse_client_info_json(&client, data, timestamp_ms);
+                    strncpy(topic, stats_topic.client, sizeof(topic) - 1);
+                    topic[sizeof(topic) - 1] = '\0';
+                    qos = 1; // Client info events use QoS 1
+                    break;
+                }
+                case INFO_EVENT_VIF:
+                {
+                    vif_info_event_t vif;
+                    memcpy(&vif, ptr, sizeof(vif));
+
+                    ret = cgw_parse_vif_info_json(&vif, data, timestamp_ms);
+                    strncpy(topic, stats_topic.vif, sizeof(topic) - 1);
+                    topic[sizeof(topic) - 1] = '\0';
+                    qos = 1; // VIF info events use QoS 1
+                    break;
+                }
+                case INFO_EVENT_DEVICE:
+                {
+                    device_info_event_t device;
+                    memcpy(&device, ptr, sizeof(device));
+
+                    ret = cgw_parse_device_info_json(&device, data, timestamp_ms);
+                    strncpy(topic, stats_topic.device, sizeof(topic) - 1);
+                    topic[sizeof(topic) - 1] = '\0';
+                    break;
+                }
+                default:
+                    LOG(ERR, "Unknown info event type: %d", type);
+                    return false;
+            }
+
+            if (ret) {
+                size_t msglen = strlen(data);
+                LOG(INFO, "ANJAN-DEBUG NETINFO->CLOUD: msgtype=info_event type=%d msglen=%zu qos=%d topic=%s",
+                    type, msglen, qos, topic);
+                ret = cgw_publish_json_qos(data, topic, qos);
+            } else {
+                LOG(ERR, "ANJAN-DEBUG Failed to parse info event JSON for type=%d", type);
+            }
+
+            return ret;
+        }
+    }
+
+    // Regular event (from cmdexecd/alrmd) - original handling
     if (qi->size < sizeof(event_msg_t)) {
         return false;
     }
 
+    event_msg_t event;
     memcpy(&event, qi->buf, qi->size);
-    
+
     ret = cgw_parse_event_newjson(&event, data);
 
     if (event.type == EVENT_TYPE_UPGRADE) {
@@ -416,7 +530,6 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
 
     return ret;
 }
-
 
 bool cgw_send_config_cloud(cgw_item_t *qi)
 {
@@ -517,15 +630,23 @@ void cgw_mqtt_reconnect()
     }
 }
 
+int cgw_send_status_online(void)
+{
+    int ret;
+    char online_payload[512];
+    
+    build_status_payload_to_buf("Online", online_payload, sizeof(online_payload));
+    ret = cgw_publish_json(online_payload, stats_topic.status);
+    return ret;
+}
 
-// --- Globals ---
-static ev_timer g_reconnect_timer;
-static ev_async g_queue_async;
-
-static bool g_mqtt_worker_running = false;
-static bool g_mqtt_connected = false;
 
 // --- Callbacks ---
+
+void cgw_restart_mqtt_worker(void)
+{
+    ev_timer_start(EV_DEFAULT, &g_reconnect_timer);
+}
 
 // Timer: try reconnect every 2s until connected
 static void reconnect_cb(EV_P_ ev_timer *w, int revents) {
@@ -538,6 +659,7 @@ static void reconnect_cb(EV_P_ ev_timer *w, int revents) {
 
     if (g_mqtt_connected) {
         LOG(INFO, "[MQTT] Connected");
+        cgw_send_status_online();
         ev_timer_stop(EV_A_ w); // stop reconnect timer once connected
     } else {
         LOG(DEBUG, "[MQTT] Not connected, will retry...");
@@ -673,6 +795,26 @@ void uci_get_mqtt_params()
         return;
     }
     sscanf(buf, "%s", air_dev.macaddr);
+    
+    memset(buf, 0, sizeof(buf));
+    cmd_buf("uci get aircnms.@aircnms[0].org_id", buf, (size_t)UCI_BUF_LEN);
+    len = strlen(buf);
+    if (len == 0)
+    {
+        LOGI("%s: No uci org_id found", __func__);
+        return;
+    }
+    sscanf(buf, "%s", air_dev.org_id);
+    
+    memset(buf, 0, sizeof(buf));
+    cmd_buf("uci get aircnms.@aircnms[0].network_id", buf, (size_t)UCI_BUF_LEN);
+    len = strlen(buf);
+    if (len == 0)
+    {
+        LOGI("%s: No uci netwrk_id found", __func__);
+        return;
+    }
+    sscanf(buf, "%s", air_dev.netwrk_id);
 
     memset(buf, 0, sizeof(buf));
     cmd_buf("uci get aircnms.@aircnms[0].username", buf, (size_t)UCI_BUF_LEN);
@@ -700,6 +842,7 @@ void uci_get_mqtt_params()
 bool cgw_mqtt_init(void)
 {
     char cID[64];
+    char offline_payload[512];
     mosquitto_lib_init();
     cgw_mosquitto_init = true;
 
@@ -711,10 +854,18 @@ bool cgw_mqtt_init(void)
     }
     
     uci_get_mqtt_params();
+    strncpy(cID, air_dev.macaddr, sizeof(cID));
     if (!mosqev_init(&cgw_mqtt, cID, EV_DEFAULT, NULL))
     {
         LOGE("initializing MQTT library.\n");
         goto error;
+    }
+
+    build_status_payload_to_buf("Offline", offline_payload, sizeof(offline_payload));
+    
+    if (!mosqev_set_will(&cgw_mqtt, stats_topic.status, offline_payload, 1, true))
+    {
+        LOG(ERR, "Failed to set MQTT Will");
     }
     mosqev_message_cbk_set(&cgw_mqtt, cgw_mqtt_subscriber_set);
 

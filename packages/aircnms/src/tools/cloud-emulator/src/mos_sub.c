@@ -213,11 +213,13 @@ static void on_message(struct mosquitto *mosq, void *userdata, const struct mosq
   }
 
   /* Common header fields */
-  char serial[128] = {0}, devid[128] = {0}, mac[128] = {0};
+  char serial[128] = {0}, devid[128] = {0}, mac[128] = {0}, networkId[128] = {0}, orgId[128] = {0};
   long long tms = 0;
   json_extract_str(payload, len, "serialNum", NULL, NULL, serial, sizeof(serial));
   json_extract_str(payload, len, "deviceId", NULL, NULL, devid, sizeof(devid));
   json_extract_str(payload, len, "macAddr", NULL, NULL, mac, sizeof(mac));
+  json_extract_str(payload, len, "networkId", NULL, NULL, networkId, sizeof(networkId));
+  json_extract_str(payload, len, "OrgId", NULL, NULL, orgId, sizeof(orgId));
   json_extract_int(payload, len, "tms", NULL, NULL, &tms);
 
   char timestr[64] = {0};
@@ -228,107 +230,68 @@ static void on_message(struct mosquitto *mosq, void *userdata, const struct mosq
   }
 
   if (strcmp(which, "client") == 0) {
-    char header[256];
-    snprintf(header, sizeof(header), "Topic=Clients (%s) deviceId=%s serialNum=%s macAddr=%s", timestr[0] ? timestr : "", devid, serial, mac);
+    /* First, print the raw JSON payload for debugging */
+    fprintf(stdout, "\n[CLIENT DEBUG] Raw JSON payload received (length: %zu):\n", len);
+    fprintf(stdout, "%.*s\n", (int)len, payload);
+    fprintf(stdout, "[CLIENT DEBUG] End of payload\n\n");
+    fflush(stdout);
+    
+    /* Table formatting hidden for now */
+    /*
+    char header[512];
+    snprintf(header, sizeof(header), "Topic=Clients (%s) networkId=%s deviceId=%s OrgId=%s serialNum=%s macAddr=%s", 
+             timestr[0] ? timestr : "", networkId, devid, orgId, serial, mac);
     fprintf(stdout, "%s\n", header);
     for (size_t i = 0; header[i] != '\0'; ++i) fputc('=', stdout);
     fputc('\n', stdout);
-    fprintf(stdout, "%-17s %-16s %-15s %-16s %11s %12s %-11s %-10s %8s %-7s %13s %13s %6s\n",
-      "macAddress", "hostname", "ipAddress", "ssid", "isConnected", "duration", "clientType", "osInfo", "channel", "band", "rxBytes", "txBytes", "rssi");
-    fprintf(stdout, "%-17s %-16s %-15s %-16s %11s %12s %-11s %-10s %8s %-7s %13s %13s %6s\n",
-      "-----------------", "----------------", "---------------", "----------------", "-----------", "----------", "-----------", "----------", "--------", "-------", "-------------", "-------------", "------");
-    /* Iterate by occurrences of "macAddress" and extract fields within object scope */
-    const char *p = payload;
-    while ((p = strstr(p, "\"macAddress\"")) != NULL) {
-      const char *obj_start = p; while (obj_start > payload && *obj_start != '{') obj_start--;
-      const char *obj_end = strchr(p, '}'); if (!obj_end) break;
-      char macAddress[64]={0}, hostname[128]={0}, ipAddress[64]={0}, ssid[128]={0}, clientType[64]={0}, osInfo[64]={0}, band[64]={0};
-      long long isConnected=0, durationMs=0, channel=0, rxBytes=0, txBytes=0, rssi=0;
-      json_extract_str(payload, len, "macAddress", obj_start, obj_end, macAddress, sizeof(macAddress));
-      json_extract_str(payload, len, "hostname", obj_start, obj_end, hostname, sizeof(hostname));
-      json_extract_str(payload, len, "ipAddress", obj_start, obj_end, ipAddress, sizeof(ipAddress));
-      json_extract_str(payload, len, "ssid", obj_start, obj_end, ssid, sizeof(ssid));
-      json_extract_int(payload, len, "isConnected", obj_start, obj_end, &isConnected);
-      json_extract_int(payload, len, "durationMs", obj_start, obj_end, &durationMs);
-      json_extract_str(payload, len, "clientType", obj_start, obj_end, clientType, sizeof(clientType));
-      json_extract_str(payload, len, "osInfo", obj_start, obj_end, osInfo, sizeof(osInfo));
-      json_extract_int(payload, len, "channel", obj_start, obj_end, &channel);
-      json_extract_str(payload, len, "band", obj_start, obj_end, band, sizeof(band));
-      /* stats nested */
-      json_extract_int(payload, len, "rxBytes", obj_start, obj_end, &rxBytes);
-      json_extract_int(payload, len, "txBytes", obj_start, obj_end, &txBytes);
-      json_extract_int(payload, len, "rssi", obj_start, obj_end, &rssi);
-      char durationHMS[32];
-      format_duration_hms(durationMs, durationHMS, sizeof(durationHMS));
-      fprintf(stdout, "%-17s %-16s %-15s %-16s %11lld %12s %-11s %-10s %8lld %-7s %13lld %13lld %6lld\n",
-        macAddress, hostname, ipAddress, ssid, isConnected, durationHMS, clientType, osInfo, channel, band, rxBytes, txBytes, rssi);
-      p = obj_end + 1;
-    }
-    fflush(stdout);
+    fprintf(stdout, "%-17s %-16s %-15s %-16s %11s %12s %-11s %-10s %8s %-7s %13s %13s %6s %6s %10s %10s\n",
+      "macAddress", "hostname", "ipAddress", "ssid", "isConnected", "duration", "clientType", "osInfo", "channel", "band", "rxBytes", "txBytes", "rssi", "snr", "txRateMbps", "rxRateMbps");
+    fprintf(stdout, "%-17s %-16s %-15s %-16s %11s %12s %-11s %-10s %8s %-7s %13s %13s %6s %6s %10s %10s\n",
+      "-----------------", "----------------", "---------------", "----------------", "-----------", "----------", "-----------", "----------", "--------", "-------", "-------------", "-------------", "------", "------", "----------", "----------");
+    
+    // ... rest of table parsing code ...
+    */
+    
     return;
   }
 
   if (strcmp(which, "vif") == 0) {
+    /* First, print the raw JSON payload for debugging */
+    fprintf(stdout, "\n[VIF DEBUG] Raw JSON payload received (length: %zu):\n", len);
+    fprintf(stdout, "%.*s\n", (int)len, payload);
+    fprintf(stdout, "[VIF DEBUG] End of payload\n\n");
+    fflush(stdout);
+    
+    /* Table formatting hidden for now */
+    /*
     char header[256];
     snprintf(header, sizeof(header), "Topic=VIFs (%s) deviceId=%s serialNum=%s macAddr=%s", timestr[0] ? timestr : "", devid, serial, mac);
     fprintf(stdout, "%s\n", header);
     for (size_t i = 0; header[i] != '\0'; ++i) fputc('=', stdout);
     fputc('\n', stdout);
-    fprintf(stdout, "%-8s %8s %8s %21s\n", "band", "channel", "txpower", "channel_utilization");
-    fprintf(stdout, "%-8s %8s %8s %21s\n", "--------", "--------", "--------", "---------------------");
-    const char *p = payload;
-    while ((p = strstr(p, "\"channel_utilization\"")) != NULL) {
-      const char *obj_start = p; while (obj_start > payload && *obj_start != '{') obj_start--;
-      const char *obj_end = strchr(p, '}'); if (!obj_end) break;
-      char band[64]={0}; long long channel=0, txpower=0, util=0;
-      json_extract_str(payload, len, "band", obj_start, obj_end, band, sizeof(band));
-      json_extract_int(payload, len, "channel", obj_start, obj_end, &channel);
-      json_extract_int(payload, len, "txpower", obj_start, obj_end, &txpower);
-      json_extract_int(payload, len, "channel_utilization", obj_start, obj_end, &util);
-      fprintf(stdout, "%-8s %8lld %8lld %21lld\n", band, channel, txpower, util);
-      p = obj_end + 1;
-    }
-
-    fprintf(stdout, "\n");
-    fprintf(stdout, "%-8s %-24s %12s %13s %16s\n", "radio", "ssid", "statNumSta", "statUplinkMb", "statDownlinkMb");
-    fprintf(stdout, "%-8s %-24s %12s %13s %16s\n", "--------", "------------------------", "------------", "-------------", "----------------");
-    p = payload;
-    while ((p = strstr(p, "\"statDownlinkMb\"")) != NULL) {
-      const char *obj_start = p; while (obj_start > payload && *obj_start != '{') obj_start--;
-      const char *obj_end = strchr(p, '}'); if (!obj_end) break;
-      char radio[64]={0}, ssid[128]={0}; long long num=0, up=0, down=0;
-      json_extract_str(payload, len, "radio", obj_start, obj_end, radio, sizeof(radio));
-      json_extract_str(payload, len, "ssid", obj_start, obj_end, ssid, sizeof(ssid));
-      json_extract_int(payload, len, "statNumSta", obj_start, obj_end, &num);
-      json_extract_int(payload, len, "statUplinkMb", obj_start, obj_end, &up);
-      json_extract_int(payload, len, "statDownlinkMb", obj_start, obj_end, &down);
-      fprintf(stdout, "%-8s %-24s %12lld %13lld %16lld\n", radio, ssid, num, up, down);
-      p = obj_end + 1;
-    }
-    fflush(stdout);
+    // ... rest of table parsing code ...
+    */
+    
     return;
   }
 
   if (strcmp(which, "device") == 0) {
+    /* First, print the raw JSON payload for debugging */
+    fprintf(stdout, "\n[DEVICE DEBUG] Raw JSON payload received (length: %zu):\n", len);
+    fprintf(stdout, "%.*s\n", (int)len, payload);
+    fprintf(stdout, "[DEVICE DEBUG] End of payload\n\n");
+    fflush(stdout);
+    
+    /* Table formatting hidden for now */
+    /*
     char header[256];
     snprintf(header, sizeof(header), "Topic=Device (%s) deviceId=%s serialNum=%s macAddr=%s", timestr[0] ? timestr : "", devid, serial, mac);
     fprintf(stdout, "%s\n", header);
     for (size_t i = 0; header[i] != '\0'; ++i) fputc('=', stdout);
     fputc('\n', stdout);
-    fprintf(stdout, "System\n");
-    fprintf(stdout, "%8s %9s %12s %9s %12s %16s\n", "uptime", "downtime", "totalClient", "uplinkMb", "downlinkMb", "totalTrafficMb");
-    fprintf(stdout, "%8s %9s %12s %9s %12s %16s\n", "--------", "---------", "------------", "---------", "------------", "----------------");
-    long long uptime=0, downtime=0, totalClient=0, uplinkMb=0, downlinkMb=0, totalTrafficMb=0;
-    json_extract_int(payload, len, "uptime", NULL, NULL, &uptime);
-    json_extract_int(payload, len, "downtime", NULL, NULL, &downtime);
-    json_extract_int(payload, len, "totalClient", NULL, NULL, &totalClient);
-    json_extract_int(payload, len, "uplinkMb", NULL, NULL, &uplinkMb);
-    json_extract_int(payload, len, "downlinkMb", NULL, NULL, &downlinkMb);
-    json_extract_int(payload, len, "totalTrafficMb", NULL, NULL, &totalTrafficMb);
-    fprintf(stdout, "%8lld %9lld %12lld %9lld %12lld %16lld\n", uptime, downtime, totalClient, uplinkMb, downlinkMb, totalTrafficMb);
-
-    /* Memory and CPU sections intentionally not printed */
-    fflush(stdout);
+    // ... rest of table parsing code ...
+    */
+    
     return;
   }
 

@@ -5,7 +5,6 @@
 #include <ev.h>
 #include "zlib.h"
 #include "cgw.h"
-#include "unixcomm.h"
 #include "log.h"
 #include "mosqev.h"
 

@@ -90,6 +90,7 @@ extern bool mosqev_connect(mosqev_t *self, char *host, int port);
 extern bool mosqev_disconnect(mosqev_t *self);
 extern bool mosqev_reconnect(mosqev_t *self);
 extern bool mosqev_is_connected(mosqev_t *self);
+extern bool mosqev_set_will(mosqev_t *self, const char *topic, const char *payload, int qos, bool retain);
 
 extern bool mosqev_tls_set(mosqev_t *self, const char *cafile,
         const char *capath, const char *certfile, const char *keyfile,

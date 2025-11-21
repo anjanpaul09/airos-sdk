@@ -9,6 +9,7 @@ UNIT_SRC += src/cgw_cloud_reg.c
 UNIT_SRC += src/cgw_decrypt.c
 UNIT_SRC += src/cgw_msgrx.c
 UNIT_SRC += src/cgw_json.c
+UNIT_SRC += src/cgw_json_info.c
 UNIT_SRC += src/cgw_ubus_tx.c
 
 

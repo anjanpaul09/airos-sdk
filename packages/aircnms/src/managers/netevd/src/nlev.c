@@ -6,6 +6,7 @@
 #include <netlink/attr.h>
 #include <linux/nl80211.h>
 #include <errno.h>
+#include "netev_client_events.h"
 
 int iw_debug = 0;
 static int (*registered_handler)(struct nl_msg *, void *);
@@ -207,12 +208,34 @@ int nl_rx_event(struct nl_msg *msg, void *arg)
         case NL80211_CMD_REG_CHANGE:
                 printf("EVENT: NL80211_CMD_REG_CHANGE\n");
                 break;
-	case NL80211_CMD_NEW_STATION:
+	case NL80211_CMD_NEW_STATION: {
                 printf("EVENT: NL80211_CMD_NEW_STATION\n");
+                // Extract MAC address and interface name
+                if (tb[NL80211_ATTR_MAC] && tb[NL80211_ATTR_IFINDEX]) {
+                    const uint8_t *mac = (const uint8_t *)nla_data(tb[NL80211_ATTR_MAC]);
+                    char ifname_str[IF_NAMESIZE] = {0};
+                    if (if_indextoname(nla_get_u32(tb[NL80211_ATTR_IFINDEX]), ifname_str)) {
+                        printf("ANJAN-DEBUG nl80211: NEW_STATION MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s\n",
+                               mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], ifname_str);
+                        netev_handle_client_connect(mac, ifname_str);
+                    }
+                }
                 break;
-        case NL80211_CMD_DEL_STATION:
+	}
+        case NL80211_CMD_DEL_STATION: {
                 printf("EVENT: NL80211_CMD_DEL_STATION\n");
+                // Extract MAC address and interface name
+                if (tb[NL80211_ATTR_MAC] && tb[NL80211_ATTR_IFINDEX]) {
+                    const uint8_t *mac = (const uint8_t *)nla_data(tb[NL80211_ATTR_MAC]);
+                    char ifname_str[IF_NAMESIZE] = {0};
+                    if (if_indextoname(nla_get_u32(tb[NL80211_ATTR_IFINDEX]), ifname_str)) {
+                        printf("ANJAN-DEBUG nl80211: DEL_STATION MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s\n",
+                               mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], ifname_str);
+                        netev_handle_client_disconnect(mac, ifname_str);
+                    }
+                }
                 break;
+	}
         case NL80211_CMD_JOIN_IBSS:
                 printf("EVENT: NL80211_CMD_JOIN_IBSS\n");
                 break;

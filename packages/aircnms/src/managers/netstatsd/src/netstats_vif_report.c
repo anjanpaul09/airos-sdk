@@ -110,10 +110,10 @@ void netstats_vif_report(EV_P_ ev_timer *w, int revents)
         return;
     }
 
-    /* Get vif stats */
+    /* Fill stats only (info moved to netevd) */
     rc = target_stats_vif_get(&report_ctx->record);
-    //rc = dummy_get_vif_report_data(&report_ctx->record);
     if (true != rc) {
+        LOG(ERR, "Failed to fetch vif stats");
         free(report_ctx);
         return;
     }
@@ -134,9 +134,10 @@ void netstats_vif_report(EV_P_ ev_timer *w, int revents)
     size_t msglen = netstats_put_vif(report_ctx);
     
     LOG(INFO,
-        "msgtype=vif vaps=%d radios=%d msglen=%zu",
-        report_ctx->record.n_vif, 
-        report_ctx->record.n_radio,
+        "msgtype=vif vaps=%d radios=%d ethernet=%d msglen=%zu",
+        report_ctx->record.stats.n_vif, 
+        report_ctx->record.stats.n_radio,
+        report_ctx->record.stats.n_ethernet,
         msglen);
     
     NETSTATS_SANITY_CHECK_TIME(report_ctx->timestamp_ms,

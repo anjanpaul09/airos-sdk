@@ -64,6 +64,7 @@ endef
 
 ifneq ($(DEVELOPER)$(CONFIG_PACKAGE_aircnms),)
 	BUILD_LIBCOMMON:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/common $(MAKE_PACKAGE_ARGS)
+	BUILD_LIBDHCPFP:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/dhcpfp $(MAKE_PACKAGE_ARGS)
 	BUILD_LIBDS:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/ds $(MAKE_PACKAGE_ARGS)
 	BUILD_LIBLOG:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/log $(MAKE_PACKAGE_ARGS)
 	BUILD_LIBMOSQEV:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/mosqev $(MAKE_PACKAGE_ARGS)
@@ -83,6 +84,11 @@ endif
 endif
 
 define Build/Compile
+	$(BUILD_LIBDHCPFP)
+	$(CP) $(PKG_BUILD_DIR)/libs/dhcpfp/libdhcpfp.so.1.0.0 $(STAGING_DIR)/usr/lib
+	rm -rf $(STAGING_DIR)/usr/lib/libdhcpfp.so
+	( cd $(STAGING_DIR)/usr/lib/ ; ln -s libdhcpfp.so.1.0.0 libdhcpfp.so )
+	
 	$(BUILD_LIBCOMMON)
 	$(CP) $(PKG_BUILD_DIR)/libs/common/libcommon.so.1.0.0 $(STAGING_DIR)/usr/lib
 	rm -rf $(STAGING_DIR)/usr/lib/libcommon.so
@@ -164,6 +170,10 @@ endif
 ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK_JEDI)
 	$(INSTALL_BIN) ./files/airinit_jedi $(1)/etc/init.d/airinit
 endif
+	$(CP) $(PKG_BUILD_DIR)/libs/dhcpfp/libdhcpfp.so.1.0.0 $(1)/usr/lib
+	rm -rf $(1)/usr/lib/libdhcpfp.so
+	( cd $(1)/usr/lib/ ; ln -s libdhcpfp.so.1.0.0 libdhcpfp.so )
+	
 	$(CP) $(PKG_BUILD_DIR)/libs/common/libcommon.so.1.0.0 $(1)/usr/lib
 	rm -rf $(1)/usr/lib/libcommon.so
 	( cd $(1)/usr/lib/ ; ln -s libcommon.so.1.0.0 libcommon.so )
