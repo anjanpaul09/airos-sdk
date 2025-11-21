@@ -157,13 +157,8 @@ static bool update_client_cache(client_report_data_t *cache_ctx,
         LOG(ERR, "Failed to ensure cache capacity");
         return false;
     }
-    
-    // Mark all cached clients as disconnected initially
-    for (int i = 0; i < cache_ctx->n_client; i++) {
-        cache_ctx->record[i].is_connected = 0;
-    }
 
-    // Update cache with new report data
+    // Update cache with new report data (stats only, info handled by netevd)
     for (int i = 0; i < report_ctx->n_client; i++) {
         client_record_t *new_client = &report_ctx->record[i];
 
@@ -172,24 +167,22 @@ static bool update_client_cache(client_report_data_t *cache_ctx,
             client_record_t *cached_client = &cache_ctx->record[j];
 
             if (memcmp(cached_client->macaddr, new_client->macaddr, 6) == 0) {
-                // Client found in cache, update details using memcpy
-                memcpy(cached_client, new_client, sizeof(client_record_t));
-                cached_client->is_connected = 1;
+                // Client found in cache, update stats only
+                memcpy(&cached_client->stats, &new_client->stats, sizeof(sta_stats_t));
                 found = true;
                 break;
             }
         }
 
         if (!found) {
-            
             // Verify we're not writing out of bounds
             if (cache_ctx->n_client >= cache_ctx->capacity) {
                 return false;
             }
             
-            // Add new client to cache using memcpy
-            memcpy(&cache_ctx->record[cache_ctx->n_client], new_client, sizeof(client_record_t));
-            cache_ctx->record[cache_ctx->n_client].is_connected = 1;
+            // Add new client to cache (stats only)
+            memcpy(&cache_ctx->record[cache_ctx->n_client].macaddr, new_client->macaddr, 6);
+            memcpy(&cache_ctx->record[cache_ctx->n_client].stats, &new_client->stats, sizeof(sta_stats_t));
             cache_ctx->n_client++;
         }
     }
@@ -212,31 +205,19 @@ static client_report_data_t* prepare_client_result(netstats_client_ctx_t *client
 
     result_ctx->timestamp_ms = request_ctx->reporting_timestamp - 
                                client_ctx->report_ts + get_timestamp();
-
-    // Temporary storage for connected clients count
-    int connected_count = 0;
     
-    // First pass: add all clients to result and count connected ones
+    // Add all clients to result (stats only, connection status handled by netevd)
     for (int i = 0; i < cache_ctx->n_client; i++) {
-        // Add to result (both connected and disconnected)
-        result_ctx->record[result_ctx->n_client++] = cache_ctx->record[i];
-        
-        if (cache_ctx->record[i].is_connected) {
-            connected_count++;
-        }
+        // Copy MAC and stats only
+        memcpy(&result_ctx->record[result_ctx->n_client].macaddr, 
+               &cache_ctx->record[i].macaddr, 6);
+        memcpy(&result_ctx->record[result_ctx->n_client].stats, 
+               &cache_ctx->record[i].stats, sizeof(sta_stats_t));
+        result_ctx->n_client++;
     }
-
-    // Second pass: compact cache to keep only connected clients
-    int write_idx = 0;
-    for (int i = 0; i < cache_ctx->n_client; i++) {
-        if (cache_ctx->record[i].is_connected) {
-            if (write_idx != i) {
-                cache_ctx->record[write_idx] = cache_ctx->record[i];
-            }
-            write_idx++;
-        }
-    }
-    cache_ctx->n_client = connected_count;
+    
+    // Clear cache after reporting (stats are time-based, no need to persist)
+    cache_ctx->n_client = 0;
     
     NETSTATS_SANITY_CHECK_TIME(result_ctx->timestamp_ms,
                          &request_ctx->reporting_timestamp,
@@ -252,25 +233,25 @@ static void netstats_client_report_stats(netstats_client_ctx_t *client_ctx)
     netstats_request_t *request_ctx = &client_ctx->request;
     client_report_data_t *cache_ctx = &client_ctx->cache;
    
-    // Allocate report on the fly
-    client_report_data_t *report_ctx = alloc_report_data(0); // will allocate on demand
+    // Allocate report on the fly with initial capacity
+    client_report_data_t *report_ctx = alloc_report_data(MAX_CLIENTS); // allocate with max capacity
     
     if (!report_ctx) {
         LOG(ERR, "Failed to allocate report");
         return;
     }
     
+    // Get stats only (info moved to netevd)
     status = target_stats_clients_get(report_ctx);
-    
-    // Update timestamp
-    report_ctx->timestamp_ms = request_ctx->reporting_timestamp - 
-                               client_ctx->report_ts + get_timestamp();
-
     if (!status) {
         LOG(ERR, "Failed to fetch client stats");
         free_report_data(report_ctx);
         return;
     }
+    
+    // Update timestamp
+    report_ctx->timestamp_ms = request_ctx->reporting_timestamp - 
+                               client_ctx->report_ts + get_timestamp();
 
     LOG(DEBUG, "Updating cache with %d clients", report_ctx->n_client);
 

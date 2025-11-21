@@ -12,7 +12,6 @@
 #include "cgw.h"
 #include "log.h"
 #include "memutil.h"
-#include "unixcomm.h"
 #include "os_nif.h"
 
 #define MAX_RESPONSE_SIZE 8192  // Increase buffer size for larger responses
@@ -111,6 +110,7 @@ bool cgw_process_initial_data(char *data)
         LOG(ERR, "Missing network in configData");
         goto cleanup;
     }
+    SAFE_STRCPY(air_dev.netwrk_id, network_id, sizeof(air_dev.netwrk_id));
     SAFE_UCI_SET("network_id", network_id);
 
     const char *org_id = json_string_value(json_object_get(root, "orgId"));
@@ -255,6 +255,14 @@ bool cgw_process_initial_data(char *data)
         topic_str = json_string_value(json_object_get(statsTopic, "cmdr"));
         if (topic_str) {
             SAFE_STRCPY(stats_topic.cmdr, topic_str, sizeof(stats_topic.cmdr));
+        }
+        topic_str = json_string_value(json_object_get(statsTopic, "status"));
+        if (topic_str) {
+            SAFE_STRCPY(stats_topic.status, topic_str, sizeof(stats_topic.status));
+        }
+        topic_str = json_string_value(json_object_get(statsTopic, "websiteUsage"));
+        if (topic_str) {
+            SAFE_STRCPY(stats_topic.website_usage, topic_str, sizeof(stats_topic.website_usage));
         }
         cgw_add_stats_topic_aircnms(&stats_topic);
     }

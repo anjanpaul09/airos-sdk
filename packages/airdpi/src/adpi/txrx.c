@@ -183,6 +183,7 @@ struct client_node *client_reg_table_alloc(char *macaddr)
     memset(cn, 0, sizeof(struct client_node));
     IEEE80211_ADDR_COPY(cn->macaddr, macaddr);
     cn->connected_tms = ktime_get_real_seconds(); // Store connection timestamp
+    cn->is_wireless = 0;  // Default to wired (will be set to 1 if from mac80211)
     hash = CLIENT_HASH(macaddr);
     
     OS_SPIN_LOCK(&coplane->reg.lock);
@@ -265,13 +266,25 @@ static int air_parse_dhcp(struct sk_buff *skb, unsigned int ofs, struct iphdr *i
                 memcpy(cn->hostname, ptr, hlen);
             }
         } else if ((option == DHCP_OPTION_REQ_PARAM) && oplen) {
-            int i;
-            if (cn) {
+            if (cn && oplen > 0) {
+
+                int pos = 0;
                 memset(cn->fingerprint, 0, sizeof(cn->fingerprint));
-                for (i = 0; (i < oplen && i < 100); i++) { // #params has to be well under 100, saves us from overruns of the strcat too
-                    char s[5];
-                    snprintf(s, sizeof(s), "%d,", ptr[i]);
-                    strcat(cn->fingerprint, s);
+
+                for (int i = 0; i < oplen && i < 100; i++) {
+
+                    /* last element → no trailing comma */
+                    if (i == oplen - 1)
+                        pos += snprintf(cn->fingerprint + pos,
+                                        sizeof(cn->fingerprint) - pos,
+                                        "%d", ptr[i]);
+                    else
+                        pos += snprintf(cn->fingerprint + pos,
+                                        sizeof(cn->fingerprint) - pos,
+                                        "%d,", ptr[i]);
+
+                    if (pos >= sizeof(cn->fingerprint))
+                        break;   // avoid overflow
                 }
             }
         } else if (option == DHCP_OPTION_REQUESTED_IP && oplen == 4) {

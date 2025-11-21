@@ -353,6 +353,28 @@ void cgw_add_stats_topic_aircnms(stats_topic_t *stats_topic)
         }
     }
 
+    memset(command, 0, sizeof(command));
+    ret = snprintf(command, sizeof(command), "uci set aircnms.@stats-topic[0].status='%s'", stats_topic->status);
+    if (ret < 0 || ret >= (int)sizeof(command)) {
+        LOG(ERR, "Command buffer overflow for status topic (ret=%d)", ret);
+    } else {
+        rc = system(command);
+        if (rc != 0) {
+            LOG(ERR, "Failed to set status topic (exit code: %d)", rc);
+        }
+    }
+
+    memset(command, 0, sizeof(command));
+    ret = snprintf(command, sizeof(command), "uci set aircnms.@stats-topic[0].website_usage='%s'", stats_topic->website_usage);
+    if (ret < 0 || ret >= (int)sizeof(command)) {
+        LOG(ERR, "Command buffer overflow for website_usage topic (ret=%d)", ret);
+    } else {
+        rc = system(command);
+        if (rc != 0) {
+            LOG(ERR, "Failed to set website_usage topic (exit code: %d)", rc);
+        }
+    }
+
     rc = system("uci commit aircnms");
     if (rc != 0) {
         LOG(ERR, "Failed to commit changes to /etc/config/aircnms (exit code: %d)", rc);
@@ -468,12 +490,14 @@ int cgw_update_topic_lst(cgw_mqtt_topic_list *topic_list)
 
 void cgw_get_stats_topic_aircnms(stats_topic_t *stats_topic)
 {
-    const char *fields[] = {"device", "vif", "client", "neighbor", "config", "cmdr"};
+    const char *fields[] = {"device", "vif", "client", "neighbor", "config", "cmdr", "status", "website_usage"};
     char *targets[] = {stats_topic->device, stats_topic->vif, stats_topic->client, 
-                       stats_topic->neighbor, stats_topic->config, stats_topic->cmdr};
+                       stats_topic->neighbor, stats_topic->config, stats_topic->cmdr,
+                       stats_topic->status, stats_topic->website_usage};
     size_t sizes[] = {sizeof(stats_topic->device), sizeof(stats_topic->vif), 
                      sizeof(stats_topic->client), sizeof(stats_topic->neighbor),
-                     sizeof(stats_topic->config), sizeof(stats_topic->cmdr)};
+                     sizeof(stats_topic->config), sizeof(stats_topic->cmdr),
+                     sizeof(stats_topic->status), sizeof(stats_topic->website_usage)};
 
     char command[128];
     char buffer[256];

@@ -55,6 +55,22 @@ struct adpi_client_info {
     struct adpi_client_entry entry[32];
 };
 
+struct sta_info {
+    uint32_t ip;
+    uint8_t macaddr[6];
+    char hostname[32];
+    char ifname[12];
+    char os_name[256];
+    uint8_t is_wireless;
+};
+
+struct adpi_sta_data {
+    uint8_t macaddr[6];
+    uint8_t result_valid;
+    uint8_t reserved;
+    struct sta_info info;
+};
+
 
 #define IOCTL_ADPI_TYPE_STA_ADD_ENTRY                  1
 #define IOCTL_ADPI_TYPE_STA_DEL_ENTRY                  2
@@ -65,6 +81,7 @@ struct adpi_client_info {
 #define IOCTL_ADPI_TYPE_GET_ALL_CLIENTS                7
 #define IOCTL_ADPI_TYPE_GET_RATELIMIT_WLAN_USER        8
 #define IOCTL_ADPI_TYPE_GET_RATELIMIT_WLAN             9
+#define IOCTL_ADPI_TYPE_GET_STA_DATA                   10
 
 #define IOCTL_ADPI_STA_ADD_ENTRY             _IOW(IOCTL_ADPI_TYPE_STA_ADD_ENTRY, 1, struct adpi_add_sta_entry)
 #define IOCTL_ADPI_STA_DEL_ENTRY             _IOW(IOCTL_ADPI_TYPE_STA_DEL_ENTRY, 1, struct adpi_del_sta_entry)
@@ -75,5 +92,6 @@ struct adpi_client_info {
 #define IOCTL_ADPI_GET_ALL_CLIENTS           _IOW(IOCTL_ADPI_TYPE_GET_ALL_CLIENTS, 1, struct adpi_client_info)
 #define IOCTL_ADPI_GET_RATELIMIT_WLAN_USER   _IOW(IOCTL_ADPI_TYPE_GET_RATELIMIT_WLAN_USER, 1, struct adpi_ratelimit_bucket)
 #define IOCTL_ADPI_GET_RATELIMIT_WLAN        _IOW(IOCTL_ADPI_TYPE_GET_RATELIMIT_WLAN, 1, struct adpi_ratelimit_bucket)
+#define IOCTL_ADPI_GET_STA_DATA              _IOW(IOCTL_ADPI_TYPE_GET_STA_DATA, 1, struct adpi_sta_data)
 #define IOCTL_ADPI_BLOCK_DOMAIN              _IOW('A', 0x20, char[MAX_DOMAIN_NAME_LEN])
 #define IOCTL_ADPI_UNBLOCK_DOMAIN            _IOW('A', 0x21, char[MAX_DOMAIN_NAME_LEN])

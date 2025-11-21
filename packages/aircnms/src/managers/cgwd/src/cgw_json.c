@@ -5,12 +5,66 @@
 #include "cgw.h"
 #include "stats_report.h"
 #include "device_config.h"
+#include "info_events.h"
 #include "log.h"
+
+// Forward declarations for info event JSON parsing
+bool cgw_parse_client_info_json(client_info_event_t *client_info, char *data, uint64_t timestamp_ms);
+bool cgw_parse_vif_info_json(vif_info_event_t *vif_info, char *data, uint64_t timestamp_ms);
+bool cgw_parse_device_info_json(device_info_event_t *device_info, char *data, uint64_t timestamp_ms);
 
 #include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+// Get epoch time in milliseconds
+static long long current_time_ms()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (long long)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+// Callback used by jansson to write JSON into buffer
+static int json_buf_writer(const char *buffer, size_t size, void *data)
+{
+    char *out = (char *)data;
+    strncat(out, buffer, size);  // append safely
+    return 0;
+}
+
+// Build JSON → fill buffer
+int build_status_payload_to_buf(const char *status,
+                                char *outbuf,
+                                size_t outlen)
+{
+    outbuf[0] = '\0';   // clear buffer
+
+    json_t *root = json_object();
+    json_t *data_obj = json_object();
+
+    if (!root || !data_obj)
+        return -1;
+
+    json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
+    json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
+    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
+    json_object_set_new(root, "tms", json_integer(current_time_ms()));
+
+    json_object_set_new(data_obj, "status", json_string(status));
+    json_object_set_new(data_obj, "serialNum", json_string(air_dev.serial_num));
+    json_object_set_new(root, "data", data_obj);
+
+    json_dump_callback(root, json_buf_writer, outbuf, JSON_COMPACT);
+
+    json_decref(root);
+
+    // Ensure null termination
+    outbuf[outlen - 1] = '\0';
+
+    return 0;
+}
 
 bool cgw_parse_device_newjson(device_report_data_t *device, char *data)
 {
@@ -29,9 +83,9 @@ bool cgw_parse_device_newjson(device_report_data_t *device, char *data)
     }
 
     // Adding main metadata
-    json_object_set_new(root, "serialNum", json_string(air_dev.serial_num));
+    json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "macAddr", json_string(air_dev.macaddr));
+    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(device->timestamp_ms));
 
     // System info
@@ -118,65 +172,72 @@ bool cgw_parse_vif_newjson(vif_report_data_t *vif, char *data)
 {
     json_t *vif_root = json_object();
     json_t *data_obj = json_object();
-    json_t *radio_array = json_array();
-    json_t *vif_array = json_array();
+    json_t *stats_obj = json_object();
 
     if (!vif || !data) {
         LOG(ERR, "Invalid parameters for cgw_parse_vif_newjson");
         return false;
     }
 
-    if (!vif_root || !data_obj || !radio_array || !vif_array)
+    if (!vif_root || !data_obj || !stats_obj)
     {
         LOG(ERR, "Failed to allocate JSON objects");
         goto cleanup;
     }
 
-    json_object_set_new(vif_root, "serialNum", json_string(air_dev.serial_num));
+    // Add root level fields
+    json_object_set_new(vif_root, "networkId", json_string(air_dev.netwrk_id));
     json_object_set_new(vif_root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(vif_root, "macAddr", json_string(air_dev.macaddr));
+    json_object_set_new(vif_root, "OrgId", json_string(air_dev.org_id));
     json_object_set_new(vif_root, "tms", json_integer(vif->timestamp_ms));
 
-    /* Parse radio data */
-    for (int i = 0; i < vif->record.n_radio; i++)
-    {
-        json_t *radio = json_object();
-        if (!radio)
-        {
-            LOG(ERR, "Failed to allocate JSON radio object");
-            goto cleanup;
-        }
-
-        json_object_set_new(radio, "band", json_string(vif->record.radio[i].band));
-        json_object_set_new(radio, "channel", json_integer(vif->record.radio[i].channel));
-        json_object_set_new(radio, "txpower", json_integer(vif->record.radio[i].txpower));
-        json_object_set_new(radio, "channel_utilization", json_integer(vif->record.radio[i].channel_utilization));
-
-        json_array_append_new(radio_array, radio); // Takes ownership of `radio`
+    // Info moved to netevd - only stats here
+    // Fill stats object
+    // Radio stats array
+    json_t *radio_stats_array = json_array();
+    for (int i = 0; i < vif->record.stats.n_radio; i++) {
+        json_t *radio_stats = json_object();
+        json_object_set_new(radio_stats, "band", json_string(vif->record.stats.radio[i].band));
+        json_object_set_new(radio_stats, "channel_utilization", json_integer(vif->record.stats.radio[i].channel_utilization));
+        json_array_append_new(radio_stats_array, radio_stats);
     }
-
-    /* Parse VIF data */
-    for (int i = 0; i < vif->record.n_vif; i++)
-    {
-        json_t *vif_obj = json_object();
-        if (!vif_obj)
-        {
-            LOG(ERR, "Failed to allocate JSON vif object");
-            goto cleanup;
-        }
-
-        json_object_set_new(vif_obj, "radio", json_string(vif->record.vif[i].radio));  // Fixed
-        json_object_set_new(vif_obj, "ssid", json_string(vif->record.vif[i].ssid));
-        json_object_set_new(vif_obj, "statNumSta", json_integer(vif->record.vif[i].num_sta));
-        json_object_set_new(vif_obj, "statUplinkMb", json_integer(vif->record.vif[i].uplink_mb));
-        json_object_set_new(vif_obj, "statDownlinkMb", json_integer(vif->record.vif[i].downlink_mb));
-
-        json_array_append_new(vif_array, vif_obj); // Takes ownership of `vif_obj`
+    json_object_set_new(stats_obj, "radio", radio_stats_array);
+    
+    // VIF stats array
+    json_t *vif_stats_array = json_array();
+    for (int i = 0; i < vif->record.stats.n_vif; i++) {
+        json_t *vif_stats = json_object();
+        json_object_set_new(vif_stats, "radio", json_string(vif->record.stats.vif[i].radio));
+        json_object_set_new(vif_stats, "ssid", json_string(vif->record.stats.vif[i].ssid));
+        json_object_set_new(vif_stats, "statNumSta", json_integer(vif->record.stats.vif[i].statNumSta));
+        json_object_set_new(vif_stats, "statUplinkMb", json_integer(vif->record.stats.vif[i].statUplinkMb));
+        json_object_set_new(vif_stats, "statDownlinkMb", json_integer(vif->record.stats.vif[i].statDownlinkMb));
+        json_array_append_new(vif_stats_array, vif_stats);
     }
+    json_object_set_new(stats_obj, "vif", vif_stats_array);
+    
+    // Ethernet stats array
+    json_t *ethernet_stats_array = json_array();
+    for (int i = 0; i < vif->record.stats.n_ethernet; i++) {
+        json_t *eth_stats = json_object();
+        json_object_set_new(eth_stats, "interface", json_string(vif->record.stats.ethernet[i].interface));
+        json_object_set_new(eth_stats, "rxBytes", json_integer(vif->record.stats.ethernet[i].rxBytes));
+        json_object_set_new(eth_stats, "txBytes", json_integer(vif->record.stats.ethernet[i].txBytes));
+        json_object_set_new(eth_stats, "rxPackets", json_integer(vif->record.stats.ethernet[i].rxPackets));
+        json_object_set_new(eth_stats, "txPackets", json_integer(vif->record.stats.ethernet[i].txPackets));
+        json_object_set_new(eth_stats, "rxErrors", json_integer(vif->record.stats.ethernet[i].rxErrors));
+        json_object_set_new(eth_stats, "txErrors", json_integer(vif->record.stats.ethernet[i].txErrors));
+        json_object_set_new(eth_stats, "rxDropped", json_integer(vif->record.stats.ethernet[i].rxDropped));
+        json_object_set_new(eth_stats, "txDropped", json_integer(vif->record.stats.ethernet[i].txDropped));
+        json_object_set_new(eth_stats, "speed", json_integer(vif->record.stats.ethernet[i].speed));
+        json_object_set_new(eth_stats, "duplex", json_string(vif->record.stats.ethernet[i].duplex));
+        json_object_set_new(eth_stats, "link", json_integer(vif->record.stats.ethernet[i].link));
+        json_array_append_new(ethernet_stats_array, eth_stats);
+    }
+    json_object_set_new(stats_obj, "ethernet", ethernet_stats_array);
 
-    /* Store radio and vif data inside `data` */
-    json_object_set_new(data_obj, "radio", radio_array);
-    json_object_set_new(data_obj, "vif", vif_array);
+    /* Store stats only inside `data` (info moved to netevd) */
+    json_object_set_new(data_obj, "stats", stats_obj);
 
     /* Attach `data` to `vif_root` */
     json_object_set_new(vif_root, "data", data_obj);
@@ -209,8 +270,7 @@ bool cgw_parse_vif_newjson(vif_report_data_t *vif, char *data)
 cleanup:
     if (vif_root) json_decref(vif_root);
     if (data_obj) json_decref(data_obj);
-    if (radio_array) json_decref(radio_array);
-    if (vif_array) json_decref(vif_array);
+    if (stats_obj) json_decref(stats_obj);
     return false;
 }
 
@@ -255,53 +315,45 @@ bool cgw_parse_client_newjson(client_report_data_t *client, char *data)
     int n_client = client->n_client;
     char mac_str[18];
 
-    // Add device information
-    json_object_set_new(root, "serialNum", json_string(air_dev.serial_num));
+    // Add device information - new format
+    json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "macAddr", json_string(air_dev.macaddr));
+    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(client->timestamp_ms));
 
     LOG(DEBUG, "Processing %d clients for JSON", n_client);
 
-    // Process each client using pointer to record
+    // Process each client using pointer to record - STATS ONLY
     for (int i = 0; i < n_client; i++) {
         client_record_t *rec = &client->record[i];
 
-        char band[8] = "UNKNOWN";
-        if (rec->radio_type == RADIO_TYPE_2G) {
-            strncpy(band, "BAND2G", sizeof(band) - 1);
-            band[sizeof(band) - 1] = '\0';
-        } else if (rec->radio_type == RADIO_TYPE_5G) {
-            strncpy(band, "BAND5G", sizeof(band) - 1);
-            band[sizeof(band) - 1] = '\0';
-        }
-
-        json_t *client_node = json_object();
+        //json_t *client_node = json_object();
 
         // Convert MAC address to string
         mac_addr_to_str(rec->macaddr, mac_str, sizeof(mac_str));
 
-        // Add client fields using rec pointer
-        json_object_set_new(client_node, "macAddress", json_string(mac_str));
-        json_object_set_new(client_node, "hostname", json_string(rec->hostname));
-        json_object_set_new(client_node, "ipAddress", json_string(rec->ipaddr));
-        json_object_set_new(client_node, "ssid", json_string(rec->ssid));
-        json_object_set_new(client_node, "isConnected", json_integer(rec->is_connected));
-        json_object_set_new(client_node, "durationMs", json_integer(rec->duration_ms));
-        json_object_set_new(client_node, "clientType", json_string(rec->client_type));
-        json_object_set_new(client_node, "osInfo", json_string(rec->osinfo));
-        json_object_set_new(client_node, "channel", json_integer(rec->channel));
-        json_object_set_new(client_node, "band", json_string(band));
-
-        // Add stats sub-object
+        // Add stats object only (info moved to netevd)
         json_t *stats_obj = json_object();
-        json_object_set_new(stats_obj, "rxBytes", json_integer(rec->rx_bytes));
-        json_object_set_new(stats_obj, "txBytes", json_integer(rec->tx_bytes));
-        json_object_set_new(stats_obj, "rssi", json_integer(rec->rssi));
-        json_object_set_new(client_node, "stats", stats_obj);
+        json_object_set_new(stats_obj, "macAddress", json_string(mac_str));
+        json_object_set_new(stats_obj, "durationMs", json_integer(rec->stats.duration_ms));
+        json_object_set_new(stats_obj, "rssi", json_integer(rec->stats.rssi));
+        json_object_set_new(stats_obj, "snr", json_integer(rec->stats.snr));
+        json_object_set_new(stats_obj, "txRateMbps", json_integer(rec->stats.tx_rate_mbps));
+        json_object_set_new(stats_obj, "rxRateMbps", json_integer(rec->stats.rx_rate_mbps));
+        json_object_set_new(stats_obj, "txBytes", json_integer(rec->stats.tx_bytes));
+        json_object_set_new(stats_obj, "rxBytes", json_integer(rec->stats.rx_bytes));
+        json_object_set_new(stats_obj, "txPackets", json_integer(rec->stats.tx_packets));
+        json_object_set_new(stats_obj, "rxPackets", json_integer(rec->stats.rx_packets));
+        json_object_set_new(stats_obj, "txRetries", json_integer(rec->stats.tx_retries));
+        json_object_set_new(stats_obj, "txFailures", json_integer(rec->stats.tx_failures));
+        json_object_set_new(stats_obj, "txPhyRate", json_integer(rec->stats.tx_phy_rate));
+        json_object_set_new(stats_obj, "rxPhyRate", json_integer(rec->stats.rx_phy_rate));
+        json_object_set_new(stats_obj, "signalAvg", json_integer(rec->stats.signal_avg));
+        //json_object_set_new(client_node, "stats", stats_obj);
 
         // Append client to array
-        json_array_append_new(client_arr, client_node);
+        json_array_append_new(client_arr, stats_obj);
+        //json_array_append_new(client_arr, client_node);
 
     }
 
@@ -332,92 +384,6 @@ bool cgw_parse_client_newjson(client_report_data_t *client, char *data)
 
     return true;
 }
-
-#if 0
-bool cgw_parse_client_newjson(client_report_data_t *client, char *data)
-{
-    json_t *root = json_object();
-    //json_t *client_root = json_object();
-    json_t *client_arr = json_array();
-    int n_client = client->n_client;
-    char mac_str[18];
-
-
-    json_object_set_new(root, "serialNum", json_string(air_dev.serial_num));
-    json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "macAddr", json_string(air_dev.macaddr));
-        
-    json_object_set_new(root, "tms", json_integer(client->timestamp_ms));
-    for (int i = 0; i < n_client; i++){
-    
-        char band[8];
-        if(client->record[i].radio_type == RADIO_TYPE_2G) {
-            strcpy(band, "BAND2G");
-        } else if(client->record[i].radio_type == RADIO_TYPE_5G) {
-            strcpy(band, "BAND5G");
-        } 
-
-        int channel = client->record[i].channel;
-        
-        json_t *client_node = json_object();
-        
-        mac_addr_to_str(client->record[i].macaddr, mac_str, sizeof(mac_str));
-        json_object_set_new(client_node, "macAddress", json_string(mac_str));
-        json_object_set_new(client_node, "hostname", json_string(client->record[i].hostname));
-        json_object_set_new(client_node, "ipAddress", json_string(client->record[i].ipaddr));
-        json_object_set_new(client_node, "ssid", json_string(client->record[i].ssid));
-        
-        json_object_set_new(client_node, "isConnected", json_integer(client->record[i].is_connected));
-        json_object_set_new(client_node, "durationMs", json_integer(client->record[i].duration_ms));
-        json_object_set_new(client_node, "clientType", json_string(client->record[i].client_type));
-        json_object_set_new(client_node, "osInfo", json_string(client->record[i].osinfo));
-        json_object_set_new(client_node, "channel", json_integer(channel));
-        json_object_set_new(client_node, "band", json_string(band));
-
-        /* stats */
-        json_t *stats_obj = json_object();
-        
-        json_object_set_new(stats_obj, "rxBytes", json_integer(client->record[i].rx_bytes));
-        json_object_set_new(stats_obj, "txBytes", json_integer(client->record[i].tx_bytes));
-        json_object_set_new(stats_obj, "rssi", json_integer(client->record[i].rssi));
-        json_object_set_new(client_node, "stats", stats_obj);
-        
-        json_array_append_new(client_arr, client_node);
-        
-    }
-    json_object_set_new(root, "data", client_arr);
-
-    // Convert JSON object to JSON string
-    char *json_str = NULL;
-    json_str = json_dumps(root, 0);
-    if (!json_str) {
-        LOG(ERR, "Error converting JSON object to string");
-        json_decref(root);
-        return 1;
-    }
-    
-    // Copy to output buffer safely
-    size_t json_len = strlen(json_str);
-    size_t max_size = 90000;  // Based on MAX_MQTT_SEND_DATA_SIZE
-    size_t copy_len = json_len < max_size - 1 ? json_len : max_size - 1;
-    memcpy(data, json_str, copy_len);
-    data[copy_len] = '\0';
-    
-    if (copy_len < json_len) {
-        LOG(ERR, "JSON data truncated: %zu bytes copied of %zu", copy_len, json_len);
-    }
-    
-    // Print serialized JSON string
-    //LOG(INFO, "CLIENT JSON:\n %s\n", json_str);
-
-    // Cleanup
-    free(json_str);
-    json_decref(root);
-    
-    return true;
-
-}
-#endif
 
 int cgw_parse_config_newjson(device_conf_t *conf, char *data)
 {

@@ -2,12 +2,16 @@
 #include <linux/uaccess.h>
 #include <linux/netfilter_bridge.h>
 #include <linux/etherdevice.h>
+#include <linux/string.h>
+#include <linux/inet.h>
 #include "air_coplane.h"
 #include "air_ioctl.h"
 
 extern struct airpro_coplane *coplane;
 extern struct ratelimit_bucket *wlan_rl[MAX_WLANS][AIR_RL_DIR_MAX];
 extern struct ratelimit_bucket *user_wlan_rl[MAX_WLANS][AIR_RL_DIR_MAX];
+
+struct client_node *client_reg_table_lookup(uint8_t *macaddr);
 
 /* Helpers from other units */
 int is_blocked_ip(struct airpro_coplane *cp, __be32 ip);
@@ -408,6 +412,51 @@ long air_device_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
             return 0;
             }
             break;
+        case IOCTL_ADPI_GET_STA_DATA: {
+            struct adpi_sta_data sta;
+            struct client_node *cn;
+            int ret = 0;
+
+            if (copy_from_user(&sta, (void __user *)arg, sizeof(sta)))
+                return -EFAULT;
+
+            memset(&sta.info, 0, sizeof(sta.info));
+            sta.result_valid = 0;
+
+            if (!is_valid_ether_addr(sta.macaddr)) {
+                pr_err("AIRDPI STA_CAP: invalid mac address requested\n");
+                return -EINVAL;
+            }
+
+            cn = client_reg_table_lookup(sta.macaddr);
+            if (!cn) {
+                pr_info("AIRDPI STA_CAP: MAC=%pM not found\n", sta.macaddr);
+                ret = -ENOENT;
+            } else {
+                struct sta_info *info = &sta.info;
+
+                info->ip = cn->ip;
+                memcpy(info->macaddr, cn->macaddr, ETH_ALEN);
+                strlcpy(info->hostname, cn->hostname, sizeof(info->hostname));
+                strlcpy(info->ifname, cn->ifname, sizeof(info->ifname));
+                strlcpy(info->os_name, cn->fingerprint, sizeof(info->os_name));
+                info->is_wireless = cn->is_wireless;
+
+                sta.result_valid = 1;
+
+                pr_info("AIRDPI STA_CAP: MAC=%pM ip=%pI4 host=%s if=%s type=%s os=%s ",
+                        info->macaddr, &info->ip,
+                        info->hostname[0] ? info->hostname : "Unknown",
+                        info->ifname[0] ? info->ifname : "Unknown",
+                        info->is_wireless ? "wireless" : "wired",
+                        info->os_name[0] ? info->os_name : "Unknown");
+            }
+
+            if (copy_to_user((void __user *)arg, &sta, sizeof(sta)))
+                return -EFAULT;
+
+            return ret;
+        }
 #if 0
         case IOCTL_ADPI_GET_RATELIMIT_WLAN_USER: {
             struct adpi_ratelimit_bucket crb;

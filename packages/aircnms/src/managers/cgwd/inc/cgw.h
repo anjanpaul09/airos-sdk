@@ -57,6 +57,35 @@ enum cgw_res_error
     CGW_ERROR_SEND        = 104, // error sending to mqtt (for immediate flag)
 };
 
+// Data type constants for cgwd (UBus communication)
+// These match the values from unixcomm.h for compatibility but are defined here
+// to avoid dependency on unixcomm.h for UBus-based communication
+enum cgw_data_type
+{
+    CGW_DATA_RAW = 0,
+    CGW_DATA_TEXT,
+    CGW_DATA_STATS = 2,
+    CGW_DATA_LOG = 3,
+    CGW_DATA_INI = 4,
+    CGW_DATA_CONF = 5,
+    CGW_DATA_CMD = 6,
+    CGW_DATA_ACL = 7,
+    CGW_DATA_RL = 8,
+    CGW_DATA_ALARM = 9,
+    CGW_DATA_EVENT = 10,
+    CGW_DATA_INFO_EVENT = 11
+};
+
+// Compatibility macros for existing code (only if unixcomm.h is not included)
+// Check for unixcomm.h guard to avoid conflicts
+#ifndef UNIXCOMM_H_INCLUDED
+#define DATA_STATS        CGW_DATA_STATS
+#define DATA_LOG          CGW_DATA_LOG
+#define DATA_CONF         CGW_DATA_CONF
+#define DATA_EVENT        CGW_DATA_EVENT
+#define DATA_INFO_EVENT   CGW_DATA_INFO_EVENT
+#endif
+
 typedef struct cgw_response
 {
     char tag[8];
@@ -132,6 +161,8 @@ typedef struct {
     char neighbor[CGW_MAX_TOPIC_LEN];
     char config[CGW_MAX_TOPIC_LEN];
     char cmdr[CGW_MAX_TOPIC_LEN];
+    char status[CGW_MAX_TOPIC_LEN];
+    char website_usage[CGW_MAX_TOPIC_LEN];
 } stats_topic_t;
 
 extern stats_topic_t stats_topic;
@@ -144,6 +175,7 @@ typedef struct air_device{
     char air_get_topic[64];
     char air_set_topic[64];
     char org_id[128];
+    char netwrk_id[128];
     char username[128];
     char password[128];
 } air_device_t;
@@ -196,6 +228,7 @@ int cgw_parse_config_newjson(device_conf_t *conf, char *data);
 bool cgw_parse_alarm_newjson(alarm_msg_t *alarm, char *data);
 bool cgw_parse_event_newjson(event_msg_t *event, char *data);
 bool cgw_parse_neighbor_newjson(neighbor_report_data_t *rpt, char *data); 
+int build_status_payload_to_buf(const char *status, char *outbuf, size_t outlen);
 
 bool cgw_send_event_cloud(cgw_item_t *qi);
 bool cgw_send_config_cloud(cgw_item_t *qi);

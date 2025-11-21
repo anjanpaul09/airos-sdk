@@ -13,7 +13,7 @@
  * ===========================================================================
  */
 #define MOSQEV_TIMER_POLL  0.2  /**< Timer poll in seconds -- float */
-#define MOSQEV_KEEPALIVE   180  /**< Keep alive timer, see the keep-alive parameter to mosquitto_connect() */
+#define MOSQEV_KEEPALIVE   5  /**< Keep alive timer, see the keep-alive parameter to mosquitto_connect() */
 
 #define MODULE_ID LOG_MODULE_ID_MQTT
 
@@ -179,6 +179,42 @@ bool mosqev_init(mosqev_t *self, const char *cid, struct ev_loop *ev, void *data
 	return true;
 }
 
+bool mosqev_set_will(
+        mosqev_t *self,
+        const char *topic,
+        const char *payload,
+        int qos,
+        bool retain)
+{
+    if (!self || !self->me_mosq || !topic || !payload)
+    {
+        LOG(ERR, "mosqev_set_will: invalid arguments");
+        return false;
+    }
+
+    int rc = mosquitto_will_set(
+        self->me_mosq,
+        topic,
+        strlen(payload),
+        payload,
+        qos,
+        retain
+    );
+
+    if (rc != MOSQ_ERR_SUCCESS)
+    {
+        LOG(ERR, "mosqev_set_will: will_set failed: %s",
+            mosquitto_strerror(rc));
+        return false;
+    }
+
+    LOG(INFO, "mosqev_set_will: set will on topic '%s' qos=%d retain=%d data=%s",
+        topic, qos, retain, payload);
+
+    return true;
+}
+
+
 /*
  * Delete a mosqev instance
  */
@@ -281,26 +317,19 @@ bool mosqev_connect(mosqev_t *self, char *host, int port)
 	if (self->me_connected)
 		LOG(WARNING, "Previous session was still connected");
 
-	rc = mosqev_reinit(self);
-	if (rc) {
-		LOG(ERR, "Connection failed due to reinit: %s", mosquitto_strerror(rc));
-		return rc;
-	}
 	self->me_connecting = false;
 	self->me_connected = false;
 
 	mosqev_watcher_stop(self);
         //Ankit
         rc = mosquitto_username_pw_set(self->me_mosq, self->username, self->password);
-        //rc = mosquitto_username_pw_set(self->me_mosq, "Airpro", "Airpro#123");
-        //rc = mosquitto_username_pw_set(self->me_mosq, "bluesyobsignates", "PNJxhzMX2jkRVBG3");
         if (rc != MOSQ_ERR_SUCCESS) {
             fprintf(stderr, "Failed to set username/password: %s\n", mosquitto_strerror(rc));
         
            return false;
        }
-
-	rc = mosquitto_connect(self->me_mosq, self->me_host, self->me_port, MOSQEV_KEEPALIVE);
+        
+	rc = mosquitto_connect_async(self->me_mosq, self->me_host, self->me_port, MOSQEV_KEEPALIVE);
 	if (rc != MOSQ_ERR_SUCCESS)
 	{
 		LOG(ERR, "Connection failed: %s:%d:%s: Error %s",

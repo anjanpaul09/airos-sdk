@@ -21,7 +21,14 @@
 #include "nl80211_client.h"
 #include "nl80211_survey.h"
 #include "stats_report.h"
+#include <ctype.h>
 //Anjan
+
+// Forward declaration
+bool nl80211_stats_survey_get(radio_entry_t *radio_cfg,
+                              uint32_t channel,
+                              uint32_t *chan_busy,
+                              uint32_t *chan_active);
 
 #define MODULE_ID LOG_MODULE_ID_TARGET
 #define MAX_LINE_LENGTH 100
@@ -187,97 +194,94 @@ bool get_essid(const char *ifname, char *essid)
 
 bool nl80211_stats_vap_get(vif_record_t *record)
 {
-    int ret;
     char essid[IW_ESSID_MAX_SIZE + 1];
     char buf[16];
     char sys_path[128];
     long long tx_bytes = 0, rx_bytes = 0;
     long tx_mb, rx_mb;
     char wlan_ifname[MAX_IFACES][IFACE_NAME_LEN];
-    radio_type_t rtype;
     iface_count = 0;
 
     if( nl80211_get_wiface(wlan_ifname) < 0) {
         return false;
     }
 
-    record->n_vif = iface_count;
-    for (int i = 0; i < record->n_vif; i++) {
-        util_get_vif_radio(wlan_ifname[i], &buf, 4);
+    record->stats.n_vif = iface_count;
+    /* Info fields (radio, SSID) are now handled by netevd */
+    for (int i = 0; i < record->stats.n_vif; i++) {
+        util_get_vif_radio(wlan_ifname[i], buf, sizeof(buf));
         if (strcmp(buf, "phy0") == 0) {
-            strcpy(record->vif[i].radio, "BAND2G");
-        rtype = RADIO_TYPE_2G;
+            strcpy(record->stats.vif[i].radio, "BAND2G");
         } else if ( strcmp(buf, "phy1") == 0) {
-            strcpy(record->vif[i].radio, "BAND5G");
-        rtype = RADIO_TYPE_5G;
+            strcpy(record->stats.vif[i].radio, "BAND5G");
         }
 
         if (get_essid(wlan_ifname[i], essid)) {
-            strcpy(record->vif[i].ssid, essid);
+            strcpy(record->stats.vif[i].ssid, essid);
         }
 
-        record->vif[i].num_sta = get_num_sta(wlan_ifname[i]);
+        record->stats.vif[i].statNumSta = get_num_sta(wlan_ifname[i]);
 
-        memset(&buf, 0, sizeof(buf));
-        memset(&sys_path, 0, sizeof(sys_path));
+        memset(buf, 0, sizeof(buf));
+        memset(sys_path, 0, sizeof(sys_path));
 
         sprintf(sys_path, "/sys/class/net/%s/statistics/tx_bytes", wlan_ifname[i]);
-        if (util_file_read_str(sys_path, &buf, sizeof(buf)) > 0) {
+        if (util_file_read_str(sys_path, buf, sizeof(buf)) > 0) {
             rtrimws(buf);
 
             tx_bytes = str_to_ll(buf);
 
             if (tx_bytes >= 0) {
                 tx_mb = tx_bytes / (1024 * 1024);
-                record->vif[i].uplink_mb = tx_mb;
+                record->stats.vif[i].statUplinkMb = tx_mb;
             } else {
                 printf("Invalid tx_bytes value for %s\n", wlan_ifname[i]);
-                record->vif[i].uplink_mb = 0; 
+                record->stats.vif[i].statUplinkMb = 0; 
             }
         } else {
             printf("Failed to retrieve tx bytes of %s\n", wlan_ifname[i]);
-            record->vif[i].uplink_mb = 0; 
+            record->stats.vif[i].statUplinkMb = 0; 
         }
 
-        memset(&buf, 0, sizeof(buf));
-        memset(&sys_path, 0, sizeof(sys_path));
+        memset(buf, 0, sizeof(buf));
+        memset(sys_path, 0, sizeof(sys_path));
 
         sprintf(sys_path, "/sys/class/net/%s/statistics/rx_bytes", wlan_ifname[i]);
-        if (util_file_read_str(sys_path, &buf, sizeof(buf)) > 0) { 
+        if (util_file_read_str(sys_path, buf, sizeof(buf)) > 0) { 
             rtrimws(buf);
 
             rx_bytes = str_to_ll(buf);
 
             if (rx_bytes >= 0) { 
                 rx_mb = rx_bytes / (1024 * 1024);
-                record->vif[i].downlink_mb = rx_mb;
+                record->stats.vif[i].statDownlinkMb = rx_mb;
             } else {
                 printf("Invalid rx_bytes value for %s\n", wlan_ifname[i]);
-                record->vif[i].downlink_mb = 0; 
+                record->stats.vif[i].statDownlinkMb = 0; 
             }
         } else {
             printf("Failed to retrieve rx bytes of %s\n", wlan_ifname[i]);
-            record->vif[i].downlink_mb = 0;
+            record->stats.vif[i].statDownlinkMb = 0;
         }    
 
     }
     return true;
 }
 
-int get_channel_utilization(radio_stats_t *radio_info)
+int get_channel_utilization(const char *band, uint8_t channel)
 {
     radio_entry_t radio_cfg;
     uint8_t utilization = 0;
     uint32_t chan_busy = 0, chan_active = 0;
     
-    if ( strcmp(radio_info->band, "BAND2G") == 0) {
+    if ( strcmp(band, "BAND2G") == 0) {
         strcpy(radio_cfg.if_name, "phy0-ap0");
     } else { 
         strcpy(radio_cfg.if_name, "phy1-ap0");
     }
-    radio_cfg.chan = radio_info->channel;
+    radio_cfg.chan = channel;
 
-    if (nl80211_stats_survey_get(&radio_cfg, radio_cfg.chan, &chan_busy, &chan_active)) {
+    if (nl80211_stats_survey_get(&radio_cfg, channel, &chan_busy, &chan_active)) {
         if (chan_active > 0) {
             utilization = (chan_busy * 100) / chan_active;
         } else {
@@ -293,77 +297,77 @@ bool nl80211_stats_radio_get(vif_record_t *record)
 #define UCI_BUF_LEN 256
     char buf[UCI_BUF_LEN];
     size_t len;
-    int rc;
-    char phyname[4];
+    char phyname[8];
     char param[4];
-    int channel, channel_busy;
-    int ret;
 
-    record->n_radio = 2;
+    record->stats.n_radio = 2;
+    /* Info fields (band, channel, txpower) are now handled by netevd */
 
-    //2G
+    //2G - Fill stats only
     memset(phyname, 0, sizeof(phyname));
     strcpy(phyname, "phy0");
 
-    strcpy(record->radio[0].band, "BAND2G");
+    strcpy(record->stats.radio[0].band, "BAND2G");
     
     memset(buf, 0, sizeof(buf));
     memset(param, 0, sizeof(param));
-    rc = cmd_buf("uci get wireless.wifi1.channel", buf, (size_t)UCI_BUF_LEN);
+    (void)cmd_buf("uci get wireless.wifi1.channel", buf, (size_t)UCI_BUF_LEN);
     len = strlen(buf);
     if (len == 0)
     {
         LOGI("%s: No uci found", __func__);
-        return;
+        return false;
     }
     sscanf(buf, "%s", param);
-    record->radio[0].channel = atoi(param);    
+    uint8_t channel_2g = atoi(param);
 
     memset(buf, 0, sizeof(buf));
     memset(param, 0, sizeof(param));
-    rc = cmd_buf("uci get wireless.wifi1.txpower", buf, (size_t)UCI_BUF_LEN);
+    (void)cmd_buf("uci get wireless.wifi1.txpower", buf, (size_t)UCI_BUF_LEN);
     len = strlen(buf);
     if (len == 0)
     {
         LOGI("%s: No uci found", __func__);
-        return;
+        return false;
     }
     sscanf(buf, "%s", param);
-    record->radio[0].txpower = atoi(param);    
+    /* txpower is info, not stats - handled by netevd */
 
-    record->radio[0].channel_utilization = get_channel_utilization(&record->radio[0]);
+    // Fill stats - channel utilization
+    record->stats.radio[0].channel_utilization = get_channel_utilization("BAND2G", channel_2g);
 
-    //5G
+    //5G - Fill stats only
     memset(phyname, 0, sizeof(phyname));
     strcpy(phyname, "phy1");
 
-    strcpy(record->radio[1].band, "BAND5G");
+    strcpy(record->stats.radio[1].band, "BAND5G");
 
     memset(buf, 0, sizeof(buf));
     memset(param, 0, sizeof(param));
-    rc = cmd_buf("uci get wireless.wifi0.channel", buf, (size_t)UCI_BUF_LEN);
+    (void)cmd_buf("uci get wireless.wifi0.channel", buf, (size_t)UCI_BUF_LEN);
     len = strlen(buf);
     if (len == 0)
     {
         LOGI("%s: No uci found", __func__);
-        return;
+        return false;
     }
     sscanf(buf, "%s", param);
-    record->radio[1].channel = atoi(param);    
+    uint8_t channel_5g = atoi(param);
 
     memset(buf, 0, sizeof(buf));
     memset(param, 0, sizeof(param));
-    rc = cmd_buf("uci get wireless.wifi0.txpower", buf, (size_t)UCI_BUF_LEN);
+    (void)cmd_buf("uci get wireless.wifi0.txpower", buf, (size_t)UCI_BUF_LEN);
     len = strlen(buf);
     if (len == 0)
     {
         LOGI("%s: No uci found", __func__);
-        return;
+        return false;
     }
     sscanf(buf, "%s", param);
-    record->radio[1].txpower = atoi(param);    
+    /* txpower is info, not stats - handled by netevd */
 
-    record->radio[1].channel_utilization = get_channel_utilization(&record->radio[1]);
+    // Fill stats - channel utilization
+    record->stats.radio[1].channel_utilization = get_channel_utilization("BAND5G", channel_5g);
     
     return true;
 }

@@ -11,8 +11,8 @@
 #include <zlib.h>
 #include "cgw.h"
 #include "report.h"
-#include "unixcomm.h"
 #include "cgw_state_mgr.h"
+#include "info_events.h"
 #include "log.h"
 
 static struct ubus_context *ctx = NULL;
@@ -232,7 +232,7 @@ static int ubus_netstats_handler(struct ubus_context* ctx, struct ubus_object* o
         {
             cgw_response_t res = {0};
             if (!cgw_queue_put(&qi, &res)) {
-                unixcomm_log_error("Queue put failed: error=%u", res.error);
+                LOG(ERR, "Queue put failed: error=%u", res.error);
                 if (qi) cgw_queue_item_free(qi);
             }
         }
@@ -385,6 +385,104 @@ static int ubus_netaction_handler(struct ubus_context* ctx, struct ubus_object* 
     return 0;
 }
 
+static int ubus_netinfo_handler(struct ubus_context* ctx, struct ubus_object* obj,
+                                struct ubus_request_data* req, const char* method,
+                                struct blob_attr* msg) 
+{
+    (void)ctx;
+    (void)obj;
+    (void)req;
+    (void)method;
+    
+    if (!msg) {
+        return -1;
+    }
+    
+    // === Define parsing policy ===
+    enum {
+        DATA,
+        SIZE,
+        __MAX
+    };
+    static const struct blobmsg_policy policy[__MAX] = {
+        [DATA] = { .name = "data", .type = BLOBMSG_TYPE_UNSPEC },
+        [SIZE] = { .name = "size", .type = BLOBMSG_TYPE_INT32 },
+    };
+
+    struct blob_attr *tb[__MAX];
+    blobmsg_parse(policy, __MAX, tb, blob_data(msg), blob_len(msg));
+
+    if (!tb[DATA] || !tb[SIZE]) {
+        LOG(ERR, "Missing expected fields in netinfo message");
+        return -1;
+    }
+
+    int size = blobmsg_get_u32(tb[SIZE]);
+    void *data = blobmsg_data(tb[DATA]);
+    int len = blobmsg_data_len(tb[DATA]);
+
+    LOG(DEBUG, "netinfo: Declared size: %d | Actual data length: %d", size, len);
+
+    // Determine info event type for logging
+    const char *msgtype_str = "unknown";
+    if (data && len >= sizeof(info_event_type_t)) {
+        info_event_type_t info_type = *(info_event_type_t *)data;
+        switch (info_type) {
+            case INFO_EVENT_CLIENT:
+                msgtype_str = "client_info";
+                break;
+            case INFO_EVENT_VIF:
+                msgtype_str = "vif_info";
+                break;
+            case INFO_EVENT_DEVICE:
+                msgtype_str = "device_info";
+                break;
+            default:
+                msgtype_str = "unknown_info";
+                break;
+        }
+    }
+
+    LOG(INFO, "ANJAN-DEBUG NETEVD->CGWD: msgtype=%s msglen=%d (declared=%d actual=%d)", msgtype_str, size, size, len);
+
+    // Enqueue into QM queue and signal MQTT worker
+    cgw_item_t *qi = CALLOC(1, sizeof(cgw_item_t));
+    if (!qi) {
+        LOG(ERR, "ANJAN-DEBUG Failed to allocate cgw_item_t");
+        return -1;
+    }
+    
+    // Fill request metadata
+    qi->req.data_type = DATA_INFO_EVENT;
+    if (data && len && size > 0) {
+        // Use actual data length, not declared size
+        //size_t actual_size = (len < size) ? len : size;
+        size_t actual_size = size;
+        qi->buf = MALLOC(actual_size);
+        if (!qi->buf) {
+            LOG(ERR, "ANJAN-DEBUG Failed to allocate data buffer");
+            cgw_queue_item_free(qi);
+            return -1;
+        }
+        memcpy(qi->buf, data, actual_size);
+        qi->size = actual_size;
+        LOG(DEBUG, "ANJAN-DEBUG netinfo: Enqueued event type=%d size=%zu", 
+            *(info_event_type_t *)qi->buf, qi->size);
+    } else {
+        LOG(ERR, "ANJAN-DEBUG netinfo: Invalid data: data=%p len=%d size=%d", data, len, size);
+        cgw_queue_item_free(qi);
+        return -1;
+    }
+    cgw_response_t res = {0};
+    if (!cgw_queue_put(&qi, &res)) {
+        LOG(ERR, "ANJAN-DEBUG Queue put failed: error=%u", res.error);
+        if (qi) cgw_queue_item_free(qi);
+        return -1;
+    }
+    LOG(DEBUG, "ANJAN-DEBUG netinfo: Successfully enqueued info event");
+    return 0;
+}
+
 static void ubus_io_cb(EV_P_ struct ev_io *w, int revents)
 {
     if (!ctx)
@@ -424,25 +522,28 @@ bool cgw_ubus_service_init()
 
     obj.name = "cgwd";
     obj.type = &(struct ubus_object_type){.name = "cgw"};
-    // Fix: Array size should be 5 to hold 5 methods (indices 0-4)
-    static struct ubus_method methods[5];
+    // Array size should be 6 to hold 6 methods (indices 0-5)
+    static struct ubus_method methods[6];
     methods[0].name = "netstats";
     methods[0].handler = ubus_netstats_handler;
     methods[0].policy = NULL;
-    methods[1].name = "netaction";
-    methods[1].handler = ubus_netaction_handler;
+    methods[1].name = "netinfo";
+    methods[1].handler = ubus_netinfo_handler;
     methods[1].policy = NULL;
-    methods[2].name = "get.cgwd.state";
-    methods[2].handler = ubus_get_state_handler;
+    methods[2].name = "netaction";
+    methods[2].handler = ubus_netaction_handler;
     methods[2].policy = NULL;
-    methods[3].name = "cmdexec.event";
-    methods[3].handler = ubus_event_handler;
+    methods[3].name = "get.cgwd.state";
+    methods[3].handler = ubus_get_state_handler;
     methods[3].policy = NULL;
-    methods[4].name = "cmdexec.config";
-    methods[4].handler = ubus_conf_handler;
+    methods[4].name = "cmdexec.event";
+    methods[4].handler = ubus_event_handler;
     methods[4].policy = NULL;
+    methods[5].name = "cmdexec.config";
+    methods[5].handler = ubus_conf_handler;
+    methods[5].policy = NULL;
     obj.methods = methods;
-    obj.n_methods = 5;
+    obj.n_methods = 6;
 
     if (ubus_add_object(ctx, &obj) != 0) {
         LOG(ERR, "Failed to add ubus object");

@@ -23,6 +23,7 @@
 #include <time.h>
 #include "stats_report.h"
 #include "ext_event.h"
+#include "os.h"
 
 #define MAX_IFACES 8
 #define IFACE_NAME_LEN 16
@@ -160,51 +161,8 @@ uint64_t calculate_duration_ms(uint64_t connected_tms)
     return (current_time - connected_tms) * 1000;  // Convert to milliseconds
 }
 
-void fill_client_info_from_proc(client_record_t *rec, char *sta_ifname)
-{
-    FILE *fp = fopen("/proc/airpro/stainfo", "r");
-    if (!fp) {
-        perror("fopen");
-        return;
-    }
-
-    char line[256];
-    char mac_str[18], ip[IPADDR_MAX_LEN], hostname[HOSTNAME_MAX_LEN], ifname[IFACE_NAME_LEN];
-    char tms_str[32];
-    uint64_t tms;
-    bool mac_found = false;
-
-    while (fgets(line, sizeof(line), fp)) {
-        int rx, tx;
-        if (sscanf(line, "%17s %15s %31s %31s %d %d %31s",
-                   mac_str, ip, hostname, ifname, &rx, &tx, tms_str) == 7) {
-
-            // Match MAC address
-            char rec_mac_str[18];
-            snprintf(rec_mac_str, sizeof(rec_mac_str), "%02x:%02x:%02x:%02x:%02x:%02x",
-                     rec->macaddr[0], rec->macaddr[1], rec->macaddr[2],
-                     rec->macaddr[3], rec->macaddr[4], rec->macaddr[5]);
-
-            if (strcasecmp(mac_str, rec_mac_str) == 0) {
-                mac_found = true;
-                strncpy(rec->ipaddr, ip, IPADDR_MAX_LEN - 1);
-                strncpy(rec->hostname, hostname, HOSTNAME_MAX_LEN - 1);
-                //strncpy(rec->ssid, ifname, SSID_MAX_LEN - 1);
-                break;
-            }
-        }
-    }
-
-    fclose(fp);
-    
-    if (!mac_found) {
-        strncpy(rec->ipaddr, "0.0.0.0", IPADDR_MAX_LEN - 1);
-        strncpy(rec->hostname, "unknown", HOSTNAME_MAX_LEN - 1);
-        LOG(INFO, "NOT FOUND IN ADPI: ADDING STA %s MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-                       ifname, rec->macaddr[0], rec->macaddr[1], rec->macaddr[2], rec->macaddr[3], rec->macaddr[4], rec->macaddr[5]);
-        //nl_ext_event_enqueue(NL80211_CMD_NEW_STATION, rec->macaddr, sta_ifname);
-    }
-}
+/* fill_client_info_from_proc removed - info fields moved to netevd */
+/* This function is no longer needed as client info is handled by netevd */
 
 /* Helper function to grow the records array */
 static int grow_report_data(client_report_data_t *data)
@@ -256,41 +214,85 @@ static int nl80211_parse_station_cb(struct nl_msg *msg, void *arg)
     nla_parse_nested(sinfo, NL80211_STA_INFO_MAX, tb[NL80211_ATTR_STA_INFO], NULL);
 
     if (sinfo[NL80211_STA_INFO_RX_BYTES64])
-        rec->rx_bytes = nla_get_u64(sinfo[NL80211_STA_INFO_RX_BYTES64]);
+        rec->stats.rx_bytes = nla_get_u64(sinfo[NL80211_STA_INFO_RX_BYTES64]);
 
     if (sinfo[NL80211_STA_INFO_TX_BYTES64])
-        rec->tx_bytes = nla_get_u64(sinfo[NL80211_STA_INFO_TX_BYTES64]);
+        rec->stats.tx_bytes = nla_get_u64(sinfo[NL80211_STA_INFO_TX_BYTES64]);
 
     if (sinfo[NL80211_STA_INFO_ACK_SIGNAL_AVG]) {
-        rec->rssi = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_ACK_SIGNAL_AVG]);
+        rec->stats.rssi = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_ACK_SIGNAL_AVG]);
     }
 
     if (sinfo[NL80211_STA_INFO_CONNECTED_TIME]) {
         uint32_t connected_sec = nla_get_u32(sinfo[NL80211_STA_INFO_CONNECTED_TIME]);
-        rec->duration_ms = connected_sec * 1000;
+        rec->stats.duration_ms = connected_sec * 1000;
     }
     
-    get_interface_essid(ifname, rec->ssid);
-            
-    /* Determine radio type */
-    if (strstr(ifname, "phy1")) {
-        rec->radio_type = RADIO_TYPE_5G;
-    } else if (strstr(ifname, "phy0")) {
-        rec->radio_type = RADIO_TYPE_2G;
-    } else {
-        rec->radio_type = RADIO_TYPE_NONE;
+    /* RX packets */
+    if (sinfo[NL80211_STA_INFO_RX_PACKETS])
+        rec->stats.rx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]);
+
+    /* TX packets */
+    if (sinfo[NL80211_STA_INFO_TX_PACKETS])
+        rec->stats.tx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]);
+
+    /* TX retries */
+    if (sinfo[NL80211_STA_INFO_TX_RETRIES])
+        rec->stats.tx_retries = nla_get_u32(sinfo[NL80211_STA_INFO_TX_RETRIES]);
+
+    /* TX failures */
+    if (sinfo[NL80211_STA_INFO_TX_FAILED])
+        rec->stats.tx_failures = nla_get_u32(sinfo[NL80211_STA_INFO_TX_FAILED]);
+
+    /* SNR = signal - noise (if drivers expose NL80211_STA_INFO_CHAIN_SIGNAL) */
+    if (sinfo[NL80211_STA_INFO_SIGNAL]) {
+        rec->stats.signal_avg = (int32_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
     }
-    rec->channel = get_channel(rec->radio_type);
+    if (sinfo[NL80211_STA_INFO_SIGNAL_AVG]) {
+        rec->stats.signal_avg = (int32_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]);
+    }
 
-    strncpy(rec->osinfo, "other", sizeof(rec->osinfo) - 1);
-    rec->osinfo[sizeof(rec->osinfo) - 1] = '\0';
+    /* TX bitrate info */
+    if (sinfo[NL80211_STA_INFO_TX_BITRATE]) {
+        struct nlattr *tb_rate[NL80211_RATE_INFO_MAX + 1];
+        nla_parse_nested(tb_rate, NL80211_RATE_INFO_MAX,
+                         sinfo[NL80211_STA_INFO_TX_BITRATE], NULL);
 
-    strncpy(rec->client_type, "wireless", sizeof(rec->client_type) - 1);
-    rec->client_type[sizeof(rec->client_type) - 1] = '\0';
+        if (tb_rate[NL80211_RATE_INFO_BITRATE])
+            rec->stats.tx_rate_mbps = nla_get_u16(tb_rate[NL80211_RATE_INFO_BITRATE]) / 10;
+
+        if (tb_rate[NL80211_RATE_INFO_BITRATE32])
+            rec->stats.tx_rate_mbps = nla_get_u32(tb_rate[NL80211_RATE_INFO_BITRATE32]) / 10;
+
+        /* Legacy PHY rate (old 802.11a/b/g) */
+        rec->stats.tx_phy_rate = rec->stats.tx_rate_mbps;
+    }
+
+    /* RX bitrate info */
+    if (sinfo[NL80211_STA_INFO_RX_BITRATE]) {
+        struct nlattr *tb_rate[NL80211_RATE_INFO_MAX + 1];
+        nla_parse_nested(tb_rate, NL80211_RATE_INFO_MAX,
+                         sinfo[NL80211_STA_INFO_RX_BITRATE], NULL);
+
+        if (tb_rate[NL80211_RATE_INFO_BITRATE])
+            rec->stats.rx_rate_mbps = nla_get_u16(tb_rate[NL80211_RATE_INFO_BITRATE]) / 10;
+
+        if (tb_rate[NL80211_RATE_INFO_BITRATE32])
+            rec->stats.rx_rate_mbps = nla_get_u32(tb_rate[NL80211_RATE_INFO_BITRATE32]) / 10;
+
+        rec->stats.rx_phy_rate = rec->stats.rx_rate_mbps;
+    }
 
 
-    rec->is_connected = 1;
-    fill_client_info_from_proc(rec, ifname);
+    /* SNR calculation if noise is provided (rare): signal - noise */
+    if (sinfo[NL80211_STA_INFO_CHAIN_SIGNAL] && sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG]) {
+        int8_t signal = nla_get_u8(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL]);
+        int8_t noise  = nla_get_u8(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG]); // depends on driver
+        rec->stats.snr = signal - noise;
+    }
+
+    /* Info fields (hostname, IP, SSID, band, channel, etc.) are now handled by netevd */
+    /* This function only collects stats, not info */
     
     return NL_SKIP;
 }

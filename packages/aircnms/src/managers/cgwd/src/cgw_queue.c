@@ -5,7 +5,6 @@
 #include "cgw.h"
 #include "memutil.h"
 #include <pthread.h>
-#include "unixcomm.h"
 
 cgw_queue_t g_cgw_queue;
 pthread_mutex_t g_cgw_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -209,6 +208,8 @@ bool cgw_queue_put(cgw_item_t **qitem, cgw_response_t *res)
     } else if ((*qitem)->req.data_type == DATA_CONF) {
         result = cgw_send_config_cloud(*qitem);
     } else if ((*qitem)->req.data_type == DATA_EVENT) {
+        result = cgw_send_event_cloud(*qitem);
+    } else if ((*qitem)->req.data_type == DATA_INFO_EVENT) {
         result = cgw_send_event_cloud(*qitem);
     } else if((*qitem)->req.data_type == DATA_STATS){
         result = cgw_queue_append_item(qitem, res);

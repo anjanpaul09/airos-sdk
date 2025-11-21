@@ -1,5 +1,6 @@
 #include <linux/export.h>
 #include <linux/etherdevice.h>
+#include <linux/inet.h>
 #include "air_coplane.h"
 #include "air_ioctl.h" /* for IFNAME_HASH */
 
@@ -26,10 +27,14 @@ int airdpi_sta_add(const u8 *macaddr, const char *ifname)
 
     cn = client_reg_table_lookup((uint8_t *)macaddr);
     if (!cn) {
-        cn = client_reg_table_alloc((uint8_t *)macaddr);
+        cn = client_reg_table_alloc((char *)macaddr);
         if (!cn)
             return -ENOMEM;
     }
+    /* Mark as wireless since this comes from mac80211 */
+    cn->is_wireless = 1;
+
+    /* Store capabilities from the struct */
     if (ifname && cn->ifname[0] == '\0') {
         strncpy(cn->ifname, ifname, sizeof(cn->ifname) - 1);
         cn->ifname[sizeof(cn->ifname) - 1] = '\0';

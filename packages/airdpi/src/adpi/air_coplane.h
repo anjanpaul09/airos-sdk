@@ -164,6 +164,7 @@ struct client_node {
     u32 rxbytes;
     u32 txbytes;
     u32 connected_tms;
+    u8 is_wireless;   /* 1 if learned via mac80211, otherwise 0 (wired) */
     struct ratelimit_bucket *rl[AIR_RL_DIR_MAX];
     TAILQ_ENTRY(client_node) nl;
     LIST_ENTRY(client_node) nh;

@@ -81,29 +81,75 @@ typedef struct {
     uint64_t timestamp_ms;
 } device_report_data_t;
 
-/* Virtual Interface (VIF) Statistics */
-typedef struct {
-    char radio[8];
-    char ssid[SSID_MAX_LEN];
-    uint32_t num_sta;
-    long uplink_mb;
-    long downlink_mb;
-} vif_stats_t;
+#define MAX_ETHERNET 8
+#define INTERFACE_NAME_LEN 16
 
+/* Radio Info (static configuration) */
 typedef struct {
-    char band[8];    
-    char ssid[SSID_MAX_LEN];
-    uint8_t channel;
-    uint8_t txpower;
-    uint8_t channel_utilization;
+    char band[8];           // Band (e.g., "BAND2G", "BAND5G")
+    uint8_t channel;        // Channel number
+    uint8_t txpower;        // TX power
+} radio_info_t;
+
+/* Radio Stats (dynamic metrics) */
+typedef struct {
+    char band[8];          // Band (e.g., "BAND2G", "BAND5G")
+    uint8_t channel_utilization;  // Channel utilization percentage
 } radio_stats_t;
 
-/* VIF Record */
+/* VIF Info (static configuration) */
 typedef struct {
-    int n_vif;
-    vif_stats_t vif[MAX_VIF];
-    int n_radio;
-    radio_stats_t radio[MAX_RADIO];
+    char radio[8];         // Radio band (e.g., "BAND2G", "BAND5G")
+    char ssid[SSID_MAX_LEN]; // SSID name
+} vif_info_t;
+
+/* VIF Stats (dynamic metrics) */
+typedef struct {
+    char radio[8];          // Radio band (e.g., "BAND2G", "BAND5G")
+    char ssid[SSID_MAX_LEN]; // SSID name
+    uint32_t statNumSta;    // Number of stations
+    long statUplinkMb;      // Uplink traffic in MB
+    long statDownlinkMb;    // Downlink traffic in MB
+} vif_stats_t;
+
+/* Ethernet Info (static configuration) */
+typedef struct {
+    char interface[INTERFACE_NAME_LEN];  // Interface name (e.g., "eth0")
+    char name[32];                       // Interface display name (e.g., "WAN", "LAN1")
+    char type[16];                       // Interface type (e.g., "wan", "lan")
+} ethernet_info_t;
+
+/* Ethernet Stats (dynamic metrics) */
+typedef struct {
+    char interface[INTERFACE_NAME_LEN];  // Interface name (e.g., "eth0")
+    uint64_t rxBytes;                   // Received bytes
+    uint64_t txBytes;                    // Transmitted bytes
+    uint64_t rxPackets;                  // Received packets
+    uint64_t txPackets;                  // Transmitted packets
+    uint32_t rxErrors;                   // Receive errors
+    uint32_t txErrors;                   // Transmit errors
+    uint32_t rxDropped;                  // Receive dropped packets
+    uint32_t txDropped;                  // Transmit dropped packets
+    uint32_t speed;                       // Link speed in Mbps
+    char duplex[8];                      // Duplex mode ("full" or "half")
+    uint32_t link;                        // Link status (1 = up, 0 = down)
+} ethernet_stats_t;
+
+/* VIF Info Record - Moved to info_events.h, removed from here */
+
+/* VIF Stats Record - Stats only (info moved to info_events) */
+typedef struct {
+    int n_radio;                     // Number of radios
+    radio_stats_t radio[MAX_RADIO];  // Radio stats array
+    int n_vif;                       // Number of VIFs
+    vif_stats_t vif[MAX_VIF];        // VIF stats array
+    int n_ethernet;                  // Number of ethernet interfaces
+    ethernet_stats_t ethernet[MAX_ETHERNET];  // Ethernet stats array
+} vif_stats_record_t;
+
+/* VIF Record - Stats only (info moved to info_events.h for netevd) */
+typedef struct {
+    vif_stats_record_t stats; // VIF stats only
 } vif_record_t;
 
 typedef struct {
@@ -121,21 +167,41 @@ typedef enum {
     RADIO_TYPE_6G
 } radio_type_t;
 
-/* Client Record */
+/* Client Capability */
+typedef struct {
+    char phy[8];            // PHY type (e.g., "HE")
+    char roaming[16];        // Roaming capability (e.g., "11kr")
+    char mcs[8];            // MCS value
+    char nss[8];            // NSS value
+    char ps[8];             // Power save
+    char wmm[8];            // WMM
+    char mu_mimo[8];        // MU-MIMO
+    char ofdma[8];          // OFDMA
+    char bw[8];             // Bandwidth
+} client_capability_t;
+
+/* Client Stats (sta_stats) - Only stats, no info */
+typedef struct {
+    uint64_t duration_ms;   // Duration in milliseconds
+    int32_t rssi;           // RSSI value
+    int32_t snr;            // SNR value
+    uint32_t tx_rate_mbps;  // TX rate in Mbps
+    uint32_t rx_rate_mbps;  // RX rate in Mbps
+    uint64_t tx_bytes;      // Transmitted bytes
+    uint64_t rx_bytes;      // Received bytes
+    uint64_t tx_packets;    // Transmitted packets
+    uint64_t rx_packets;    // Received packets
+    uint32_t tx_retries;    // TX retries
+    uint32_t tx_failures;   // TX failures
+    uint32_t tx_phy_rate;   // TX PHY rate
+    uint32_t rx_phy_rate;   // RX PHY rate
+    int32_t signal_avg;     // Average signal strength
+} sta_stats_t;
+
+/* Client Record - Stats only (info moved to info_events.h for netevd) */
 typedef struct {
     uint8_t macaddr[6];     // MAC address in uint8_t array format
-    char hostname[HOSTNAME_MAX_LEN]; // Hostname of the client
-    char ipaddr[IPADDR_MAX_LEN];     // IP Address as string
-    char ssid[SSID_MAX_LEN];         // SSID of connected network
-    char osinfo[64];    
-    char client_type[16];
-    uint64_t rx_bytes;       // Received bytes
-    uint64_t tx_bytes;       // Transmitted bytes
-    int32_t rssi;
-    uint32_t is_connected;
-    uint64_t duration_ms;
-    radio_type_t radio_type;
-    uint32_t channel;
+    sta_stats_t stats;      // Station stats only
 } client_record_t;
 
 typedef struct {
