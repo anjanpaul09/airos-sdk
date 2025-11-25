@@ -36,6 +36,7 @@ typedef struct {
     uint32_t mem_used;
     uint32_t swap_total;
     uint32_t swap_used;
+    uint32_t mem_util_percent;
 } device_memutil_t;
 
 /* CPU utilization: [percent] */
@@ -56,6 +57,7 @@ typedef struct {
     device_fs_type_t  fs_type;
     uint32_t fs_total;
     uint32_t fs_used;
+    uint32_t fs_util_percent; /* filesystem usage percentage */
 } device_fsutil_t;
 
 /* wifi info */

@@ -321,18 +321,6 @@ bool nl80211_stats_radio_get(vif_record_t *record)
     sscanf(buf, "%s", param);
     uint8_t channel_2g = atoi(param);
 
-    memset(buf, 0, sizeof(buf));
-    memset(param, 0, sizeof(param));
-    (void)cmd_buf("uci get wireless.wifi1.txpower", buf, (size_t)UCI_BUF_LEN);
-    len = strlen(buf);
-    if (len == 0)
-    {
-        LOGI("%s: No uci found", __func__);
-        return false;
-    }
-    sscanf(buf, "%s", param);
-    /* txpower is info, not stats - handled by netevd */
-
     // Fill stats - channel utilization
     record->stats.radio[0].channel_utilization = get_channel_utilization("BAND2G", channel_2g);
 
@@ -353,18 +341,6 @@ bool nl80211_stats_radio_get(vif_record_t *record)
     }
     sscanf(buf, "%s", param);
     uint8_t channel_5g = atoi(param);
-
-    memset(buf, 0, sizeof(buf));
-    memset(param, 0, sizeof(param));
-    (void)cmd_buf("uci get wireless.wifi0.txpower", buf, (size_t)UCI_BUF_LEN);
-    len = strlen(buf);
-    if (len == 0)
-    {
-        LOGI("%s: No uci found", __func__);
-        return false;
-    }
-    sscanf(buf, "%s", param);
-    /* txpower is info, not stats - handled by netevd */
 
     // Fill stats - channel utilization
     record->stats.radio[1].channel_utilization = get_channel_utilization("BAND5G", channel_5g);

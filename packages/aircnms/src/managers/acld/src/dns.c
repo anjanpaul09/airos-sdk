@@ -11,7 +11,7 @@
 #include <netinet/udp.h>
 #include <net/ethernet.h>
 
-/* Extract domain name from DNS query */
+/* Extract domain name from DNS query or skip name (if name is NULL) */
 int dns_extract_name(const uint8_t *dns_data, int offset, int max_len, 
                      char *name, int name_size)
 {
@@ -19,6 +19,7 @@ int dns_extract_name(const uint8_t *dns_data, int offset, int max_len,
     int name_pos = 0;
     int jumped = 0;
     int jump_count = 0;
+    int skip_name = (name == NULL || name_size == 0);
     
     while (pos < max_len && jump_count < 5) {
         uint8_t len = dns_data[pos];
@@ -36,26 +37,32 @@ int dns_extract_name(const uint8_t *dns_data, int offset, int max_len,
         
         /* End of name */
         if (len == 0) {
-            if (name_pos > 0 && name_pos < name_size) {
+            if (!skip_name && name_pos > 0 && name_pos < name_size) {
                 name[name_pos - 1] = '\0'; /* Remove last dot */
             }
             return jumped ? offset : pos + 1;
         }
         
         /* Add dot separator (except for first label) */
-        if (name_pos > 0 && name_pos < name_size - 1) {
+        if (!skip_name && name_pos > 0 && name_pos < name_size - 1) {
             name[name_pos++] = '.';
         }
         
         pos++; /* Skip length byte */
         
-        /* Copy label */
-        for (int i = 0; i < len && pos < max_len && name_pos < name_size - 1; i++) {
-            name[name_pos++] = (char)dns_data[pos++];
+        /* Copy label or skip it */
+        if (skip_name) {
+            pos += len;
+        } else {
+            for (int i = 0; i < len && pos < max_len && name_pos < name_size - 1; i++) {
+                name[name_pos++] = (char)dns_data[pos++];
+            }
         }
     }
     
-    name[name_pos] = '\0';
+    if (!skip_name && name_pos < name_size) {
+        name[name_pos] = '\0';
+    }
     return jumped ? offset : pos;
 }
 
@@ -152,6 +159,55 @@ int dns_parse_packet(pcap_t *pcap_handle, const u_char *packet, int packet_len,
             int name_offset = dns_offset + sizeof(struct dns_header);
             dns_extract_name(packet, name_offset, packet_len, 
                            app_data->domain, sizeof(app_data->domain));
+        }
+        app_data->ip_count = 0;
+    } else {
+        /* Parse DNS response to extract IP addresses */
+        uint16_t questions = ntohs(dns_hdr->questions);
+        uint16_t answers = ntohs(dns_hdr->answers);
+        const uint8_t *dns_data = (const uint8_t *)dns_hdr;
+        int pos = sizeof(struct dns_header);  /* Start after DNS header */
+        int max_pos = packet_len - dns_offset;
+        int i;
+        
+        app_data->ip_count = 0;
+        
+        /* Extract domain name from question section */
+        if (questions > 0) {
+            int name_end = dns_extract_name(dns_data, pos, max_pos, 
+                                           app_data->domain, sizeof(app_data->domain));
+            if (name_end > 0 && name_end <= max_pos) {
+                pos = name_end;
+                if (pos + 4 <= max_pos) {
+                    pos += 4; /* Skip QTYPE + QCLASS */
+                } else {
+                    return 0; /* Can't continue, but packet is valid DNS */
+                }
+            } else {
+                return 0; /* Failed to extract name, but packet is valid DNS */
+            }
+        }
+        
+        /* Parse answers section for A records (IPv4 addresses) */
+        for (i = 0; i < answers && pos < max_pos && app_data->ip_count < 16; i++) {
+            /* Skip name in answer (may be pointer or name) */
+            int name_end = dns_extract_name(dns_data, pos, max_pos, 
+                                           NULL, 0); /* Don't need the name, just skip it */
+            if (name_end <= 0 || name_end > max_pos) break;
+            pos = name_end;
+            
+            if (pos + 10 > max_pos) break; /* TYPE(2) + CLASS(2) + TTL(4) + RDLENGTH(2) */
+            
+            uint16_t type = ntohs(*(uint16_t *)(dns_data + pos));
+            uint16_t rdlength = ntohs(*(uint16_t *)(dns_data + pos + 8));
+            pos += 10;
+            
+            /* Type 1 = A record (IPv4) */
+            if (type == 1 && rdlength == 4 && pos + 4 <= max_pos) {
+                uint32_t ip = ntohl(*(uint32_t *)(dns_data + pos));
+                app_data->resolved_ips[app_data->ip_count++] = ip;
+            }
+            pos += rdlength;
         }
     }
     

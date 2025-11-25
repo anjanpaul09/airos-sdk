@@ -275,12 +275,12 @@ bool sanitize_and_validate_primary_radio_settings(const char *band,
     /* --- sanitize htmode --- */
     if (strcmp(band, "2.4GHz") == 0) {
         if (strlen(params->htmode) == 0) {
-            printf("Missing htmode → fallback to HT20\n");
+            printf("Missing htmode → fallback to HE40\n");
             strcpy(params->htmode, "HE40");
         }
     } else if (strcmp(band, "5GHz") == 0) {
         if (strlen(params->htmode) == 0) {
-            printf("Missing htmode → fallback to HT20\n");
+            printf("Missing htmode → fallback to HE80\n");
             strcpy(params->htmode, "HE80");
         }
     }
@@ -339,7 +339,7 @@ bool is_valid_channel(const char *band, const char *htmode, int channel)
 bool sanitize_and_validate_secondary_radio_settings(const char* radio_name, const char *band,
                                                     struct airpro_mgr_wlan_radio_params *params)
 {
-    char htmode[32];
+    char htmode[32] = {0};
     char cmd[128];
 
     if (!band || !params) return false;
@@ -363,10 +363,11 @@ bool sanitize_and_validate_secondary_radio_settings(const char* radio_name, cons
         }
     }
 
-    memset(cmd, 0, sizeof(cmd)); 
+    memset(cmd, 0, sizeof(cmd));
     // Read current htmode
     snprintf(cmd, sizeof(cmd), "uci get wireless.%s.htmode 2>/dev/null", radio_name);
-    if (!execute_uci_command(cmd, htmode, sizeof(htmode))) {
+
+    if (execute_uci_command(cmd, htmode, sizeof(htmode)) != 0 || strlen(htmode) == 0) {
         fprintf(stderr, "Failed to read htmode for %s\n", radio_name);
         return false;
     }

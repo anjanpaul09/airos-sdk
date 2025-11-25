@@ -46,12 +46,14 @@ int main(int argc, char **argv)
         LOG(ERR, "Initializing NETSTATS ""(Failed to start ubus service)");
         return -1;
     }
-    
+
+#if 0 
     if (!netstats_nl_event_monitor()) {
         LOG(ERR, "Initializing NETSTATS""(Failed to nl event)");
         return -1;
     }
-    
+#endif
+
     if (!netstats_dequeue_timer_init()) {
         return -1;
     }

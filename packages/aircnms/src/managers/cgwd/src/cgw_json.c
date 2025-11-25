@@ -100,37 +100,40 @@ bool cgw_parse_device_newjson(device_report_data_t *device, char *data)
 
     // Memory utilization
     json_t *memUtil_obj = json_object();
-    json_object_set_new(memUtil_obj, "memTotal", json_integer(device->record.mem_util.mem_total));
-    json_object_set_new(memUtil_obj, "memUsed", json_integer(device->record.mem_util.mem_used));
-    json_object_set_new(memUtil_obj, "swapTotal", json_integer(device->record.mem_util.swap_total));
-    json_object_set_new(memUtil_obj, "swapUsed", json_integer(device->record.mem_util.swap_used));
-    json_object_set_new(device_root, "memUtil", memUtil_obj);
+    //json_object_set_new(memUtil_obj, "memTotal", json_integer(device->record.mem_util.mem_total));
+    //json_object_set_new(memUtil_obj, "memUsed", json_integer(device->record.mem_util.mem_used));
+    //json_object_set_new(memUtil_obj, "swapTotal", json_integer(device->record.mem_util.swap_total));
+    //json_object_set_new(memUtil_obj, "swapUsed", json_integer(device->record.mem_util.swap_used));
+    json_object_set_new(memUtil_obj, "ramUsed", json_integer(device->record.mem_util.mem_util_percent)); 
 
     // Filesystem utilization
-    json_t *fsUtil_arr = json_array();
+    //json_t *fsUtil_arr = json_array();
     for (int i = 0; i < DEVICE_FS_TYPE_QTY; i++)
     {
-        json_t *fsUtil_obj = json_object();
-        const char *fs_type_str = "UNKNOWN";
+        //json_t *fsUtil_obj = json_object();
+        //const char *fs_type_str = "UNKNOWN";
 
         switch (device->record.fs_util[i].fs_type)
         {
         case DEVICE_FS_TYPE_ROOTFS:
-            fs_type_str = "FS_TYPE_ROOTFS";
+            //fs_type_str = "FS_TYPE_ROOTFS";
+            json_object_set_new(memUtil_obj, "diskUsed", json_integer(device->record.fs_util[i].fs_util_percent));
             break;
         case DEVICE_FS_TYPE_TMPFS:
-            fs_type_str = "FS_TYPE_TMPFS";
+            //fs_type_str = "FS_TYPE_TMPFS";
             break;
         default:
             break;
         }
 
-        json_object_set_new(fsUtil_obj, "fsType", json_string(fs_type_str));
-        json_object_set_new(fsUtil_obj, "fsTotal", json_integer(device->record.fs_util[i].fs_total));
-        json_object_set_new(fsUtil_obj, "fsUsed", json_integer(device->record.fs_util[i].fs_used));
-        json_array_append_new(fsUtil_arr, fsUtil_obj);
+        //json_object_set_new(fsUtil_obj, "fsType", json_string(fs_type_str));
+        //json_object_set_new(fsUtil_obj, "fsTotal", json_integer(device->record.fs_util[i].fs_total));
+        //json_object_set_new(fsUtil_obj, "fsUsed", json_integer(device->record.fs_util[i].fs_used));
+        //json_object_set_new(fsUtil_obj, "fsUsedPercent", json_integer(device->record.fs_util[i].fs_util_percent));
+        //json_array_append_new(fsUtil_arr, fsUtil_obj);
     }
-    json_object_set_new(device_root, "fsUtil", fsUtil_arr);
+    //json_object_set_new(device_root, "fsUtil", fsUtil_arr);
+    json_object_set_new(device_root, "memUtil", memUtil_obj);
 
     // CPU utilization
     json_t *cpuutil_obj = json_object();

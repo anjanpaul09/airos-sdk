@@ -32,6 +32,8 @@ struct app_data {
     uint16_t dns_rcode;
     int is_query;
     time_t timestamp;
+    uint32_t resolved_ips[16];  /* IP addresses from DNS response (max 16) */
+    int ip_count;                /* Number of IPs in resolved_ips */
 };
 
 /* Extract domain name from DNS query */

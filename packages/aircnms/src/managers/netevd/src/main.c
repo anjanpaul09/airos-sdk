@@ -2,6 +2,7 @@
 #include <netev.h>
 #include "netev_ubus_tx.h"
 #include "netev_vif_info.h"
+#include "netev_device_info.h"
 #include "log.h"
 #include "dhcp_fp.h"
 
@@ -10,6 +11,8 @@ int listen_events(struct nl80211_state *state, const int n_waits, const __u32 *w
 
 int main()
 {
+        struct ev_loop *loop = EV_DEFAULT;
+        (void)loop;
 	struct nl80211_state nlstate;
 	int ret = -1;
         
@@ -20,6 +23,10 @@ int main()
 		return -1;
 	}
 
+        if (!netev_monitor_device_info()) {
+            LOG(ERR, "Initializing DM ""(Failed to start MQTT)");
+            return -1;
+        }
 	/* Send VIF info event on startup */
 	netev_send_vif_info();
 
@@ -27,8 +34,9 @@ int main()
 	hostapd_events_start(NULL);
 
 	ret = nl80211_init(&nlstate);
-
 	listen_events(&nlstate, 0, 0);
+
+        ev_run(EV_DEFAULT, 0);
 	
 	/* Cleanup */
 	netev_ubus_tx_service_cleanup();
