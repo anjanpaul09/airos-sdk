@@ -47,12 +47,12 @@ void netstats_nlev_timer_handler(struct ev_loop *loop, ev_timer *timer, int reve
             LOG(INFO, " STA ADD, MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
                         nl->mac[0], nl->mac[1], nl->mac[2], nl->mac[3], nl->mac[4], nl->mac[5]);
             usleep(1000*1000);
-            netstats_nlev_get_curr_client();
+            //netstats_nlev_get_curr_client();
         } else if (nl->event == NL80211_CMD_DEL_STATION) {
             LOG(INFO, " STA DEL, MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
                         nl->mac[0], nl->mac[1], nl->mac[2], nl->mac[3], nl->mac[4], nl->mac[5]);
             usleep(1000*1000);
-            netstats_nlev_get_curr_client();
+            //netstats_nlev_get_curr_client();
         }
         ds_dlist_remove_head(&g_ext_event_list);
         free(nl);

@@ -37,9 +37,10 @@ UNIT_SRC += ../../platform/mtk_jedi/ioctljedi/ioctljedi_scan.c
 endif
 
 ifeq ($(BOARD_TYPE), BOARD_TYPE_MTK)
-UNIT_SRC += src/netstats_nl_event.c
+#UNIT_SRC += src/netstats_nl_event.c
 UNIT_SRC += ../../platform/mtk/target/target_nl80211_init.c
 UNIT_SRC += ../../platform/mtk/target/target_stats.c
+UNIT_SRC += ../../platform/mtk/target/target_ethstats.c
 UNIT_SRC += ../../platform/mtk/target/wiphy_info.c
 endif
 

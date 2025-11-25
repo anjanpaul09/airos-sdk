@@ -10,16 +10,6 @@
 // Forward declaration - target_info_vif_get is defined in platform/mtk/target/target_stats.c
 bool target_info_vif_get(vif_info_event_t *vif_info);
 
-/* Get current timestamp in milliseconds */
-static uint64_t get_timestamp_ms(void)
-{
-    struct timespec ts;
-    if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
-        return 0;
-    }
-    return (uint64_t)ts.tv_sec * 1000 + (uint64_t)ts.tv_nsec / 1000000;
-}
-
 /* Send VIF info event by calling target_info_vif_get */
 bool netev_send_vif_info(void)
 {

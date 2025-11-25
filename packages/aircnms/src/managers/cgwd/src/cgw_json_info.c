@@ -201,12 +201,12 @@ bool cgw_parse_device_info_json(device_info_event_t *device_info, char *data, ui
 
     // Add data object
     json_t *data_obj = json_object();
-    json_object_set_new(data_obj, "serialNum", json_string(device_info->serialNum));
-    json_object_set_new(data_obj, "macAddr", json_string(device_info->macAddr));
-    json_object_set_new(data_obj, "deviceType", json_string(device_info->deviceType));
-    json_object_set_new(data_obj, "model", json_string(device_info->model));
+    json_object_set_new(data_obj, "serialNum", json_string(air_dev.serial_num));
+    json_object_set_new(data_obj, "macAddr", json_string(air_dev.macaddr));
+    json_object_set_new(data_obj, "deviceType", json_string("Access Point"));
+    json_object_set_new(data_obj, "model", json_string("MT7621"));
     json_object_set_new(data_obj, "firmwareVersion", json_string(device_info->firmwareVersion));
-    json_object_set_new(data_obj, "manufacturer", json_string(device_info->manufacturer));
+    json_object_set_new(data_obj, "manufacturer", json_string("Airpro"));
     json_object_set_new(data_obj, "egressIp", json_string(device_info->egressIp));
     json_object_set_new(data_obj, "mgmtIp", json_string(device_info->mgmtIp));
     json_object_set_new(data_obj, "latitude", json_string(device_info->latitude));

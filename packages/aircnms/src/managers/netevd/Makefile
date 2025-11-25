@@ -7,12 +7,15 @@ UNIT_SRC += src/netev_info_events.c
 UNIT_SRC += src/netev_ubus_tx.c
 UNIT_SRC += src/netev_client_events.c
 UNIT_SRC += src/netev_vif_info.c
+UNIT_SRC += src/netev_device_info.c
 UNIT_SRC += src/netev_client_cap.c
 
 # Platform target code for VIF info
 ifeq ($(BOARD_TYPE), BOARD_TYPE_MTK)
 UNIT_SRC += ../../platform/mtk/target/target_nl80211_init.c
 UNIT_SRC += ../../platform/mtk/target/target_stats.c
+UNIT_SRC += ../../platform/mtk/target/target_ethstats.c
+#UNIT_SRC += ../../platform/mtk/target/target_dhcp.c
 UNIT_SRC += ../../platform/mtk/target/wiphy_info.c
 UNIT_SRC += ../../platform/mtk/nl80211/src/nl80211_vif_stats.c
 endif

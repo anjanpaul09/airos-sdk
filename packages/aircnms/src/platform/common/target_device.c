@@ -75,6 +75,7 @@ typedef struct
 static uint32_t PAGE_KB   =    4;
 static uint32_t CLOCK_TCK =  100;
 static cpu_stats_hz_t  g_cpu_stats_prev;
+static bool g_cpu_stats_initialized = false;
 //static system_util_t   g_sysutil_prev;
 
 static bool linux_device_uptime_get(device_record_t *record)
@@ -189,6 +190,13 @@ static bool linux_device_memutil_get(device_memutil_t *memutil)
     memutil->swap_total = system_util.swap_total;
     memutil->swap_used  = system_util.swap_used;
 
+    if (system_util.mem_total > 0) {
+        memutil->mem_util_percent =
+            (system_util.mem_used * 100U) / system_util.mem_total;
+    } else {
+        memutil->mem_util_percent = 0;
+    }
+
     return true;
 }
 
@@ -223,9 +231,17 @@ static bool linux_device_fsutil_get(device_fsutil_t *fsutil)
     fsutil->fs_total = (fs_info.f_blocks * fs_info.f_bsize) / 1024;
     fsutil->fs_used = ((fs_info.f_blocks - fs_info.f_bfree) * fs_info.f_bsize) / 1024;
 
+    if (fsutil->fs_total > 0) {
+        fsutil->fs_util_percent =
+            (uint32_t)((fsutil->fs_used * 100ULL) / fsutil->fs_total);
+    } else {
+        fsutil->fs_util_percent = 0;
+    }
+
     return true;
 }
 
+#if 0
 static bool linux_device_cpuutil_get(device_cpuutil_t *cpuutil)
 {
     const char *filename = LINUX_PROC_STAT_FILE;
@@ -283,6 +299,86 @@ static bool linux_device_cpuutil_get(device_cpuutil_t *cpuutil)
         cpuutil->cpu_util = (uint32_t) (busy + 0.5);
 
         break;  // found the aggregate 'cpu' line, exit loop
+    }
+
+    fclose(proc_file);
+    return true;
+
+parse_error:
+    fclose(proc_file);
+    LOG(ERROR, "Error parsing %s.", filename);
+    return false;
+}
+#endif
+static bool linux_device_cpuutil_get(device_cpuutil_t *cpuutil)
+{
+    const char *filename = LINUX_PROC_STAT_FILE;
+    FILE *proc_file = NULL;
+    char buf[256] = { 0 };
+
+    memset(cpuutil, 0, sizeof(*cpuutil));
+
+    proc_file = fopen(filename, "r");
+    if (proc_file == NULL)
+    {
+        LOG(ERROR, "Failed opening file: %s", filename);
+        return false;
+    }
+
+    while (fgets(buf, sizeof(buf), proc_file) != NULL)
+    {
+        cpu_stats_hz_t now;
+        cpu_stats_hz_t diff;
+        uint64_t hz_total_diff;
+        double busy;
+
+        /* Look for the aggregate CPU line ("cpu "), not "cpu0", "cpu1", etc */
+        if (!STR_BEGINS_WITH(buf, "cpu ")) continue;
+
+        if (sscanf(buf, "cpu %"PRIu64" %"PRIu64" %"PRIu64" %"PRIu64"",
+                   &now.hz_user, &now.hz_nice, &now.hz_system, &now.hz_idle) != 4)
+        {
+            goto parse_error;
+        }
+
+        /* First call: just initialize and report 0% */
+        if (!g_cpu_stats_initialized)
+        {
+            g_cpu_stats_prev = now;
+            g_cpu_stats_initialized = true;
+            cpuutil->cpu_util = 0;
+            break;
+        }
+
+        /* Compute delta since previous sample */
+        diff.hz_user   = now.hz_user   - g_cpu_stats_prev.hz_user;
+        diff.hz_nice   = now.hz_nice   - g_cpu_stats_prev.hz_nice;
+        diff.hz_system = now.hz_system - g_cpu_stats_prev.hz_system;
+        diff.hz_idle   = now.hz_idle   - g_cpu_stats_prev.hz_idle;
+
+        /* Update stored values */
+        g_cpu_stats_prev = now;
+
+        hz_total_diff = diff.hz_user +
+                        diff.hz_nice +
+                        diff.hz_system +
+                        diff.hz_idle;
+
+        if (hz_total_diff == 0)
+        {
+            LOG(ERROR, "%s: Unexpected hz_total value: %"PRIu64"",
+                __func__, hz_total_diff);
+            fclose(proc_file);
+            return false;
+        }
+
+        /* Calculate CPU busy percentage */
+        busy = (1.0 - ((double)diff.hz_idle / (double)hz_total_diff)) * 100.0;
+
+        /* Round to nearest integer */
+        cpuutil->cpu_util = (uint32_t)(busy + 0.5);
+
+        break;
     }
 
     fclose(proc_file);
