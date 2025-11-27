@@ -18,6 +18,7 @@ typedef struct {
     uint64_t start_time;            // Start time in milliseconds
     uint64_t end_time;              // End time in milliseconds
     client_capability_t capability; // Client capability
+    bool is_connected;
 } client_info_event_t;
 
 /* VIF Info Event Structure */

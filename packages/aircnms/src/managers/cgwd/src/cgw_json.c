@@ -323,6 +323,7 @@ bool cgw_parse_client_newjson(client_report_data_t *client, char *data)
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
     json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(client->timestamp_ms));
+    json_object_set_new(root, "type", json_string("client_stats"));
 
     LOG(DEBUG, "Processing %d clients for JSON", n_client);
 

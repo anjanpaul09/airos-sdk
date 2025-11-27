@@ -33,7 +33,6 @@ static void read_str(const char *path, char *buf, size_t size)
 /* Identify valid Ethernet interfaces in OpenWrt */
 static int is_valid_eth(const char *ifname)
 {
-    if (strncmp(ifname, "eth", 3) == 0) return 1;
     if (strncmp(ifname, "lan", 3) == 0) return 1;       // DSA ports
     if (strcmp(ifname, "wan") == 0) return 1;           // Logical WAN
     return 0;

@@ -7,7 +7,9 @@
 #include "dhcp_fp.h"
 
 int nl80211_init(struct nl80211_state *state);
-int listen_events(struct nl80211_state *state, const int n_waits, const __u32 *waits);
+int listen_events(struct nl80211_state *state, const int n_waits,
+                  const __u32 *waits, struct ev_loop *loop);
+void nl80211_cleanup(struct ev_loop *loop);
 
 int main()
 {
@@ -30,15 +32,28 @@ int main()
 	/* Send VIF info event on startup */
 	netev_send_vif_info();
 
+            /* Initialize nl80211 */
+    ret = nl80211_init(&nlstate);
+    if (ret) {
+        LOG(ERR, "Failed to initialize nl80211: %d", ret);
+        goto cleanup;
+    }
+
+    /* Start nl80211 event monitoring with libev */
+    ret = listen_events(&nlstate, 0, NULL, loop);
+    if (ret) {
+        LOG(ERR, "Failed to start nl80211 event listener: %d", ret);
+        goto cleanup;
+    }
+
 	/* start hostapd event listener (non-fatal if not present) */
 	hostapd_events_start(NULL);
 
-	ret = nl80211_init(&nlstate);
-	listen_events(&nlstate, 0, 0);
-
         ev_run(EV_DEFAULT, 0);
-	
+
+cleanup:
 	/* Cleanup */
+        nl80211_cleanup(loop);
 	netev_ubus_tx_service_cleanup();
 	
 	return ret;

@@ -3,6 +3,13 @@
 #include <stdint.h>  
 #include <stddef.h>
 #include <poll.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
 
 #include "log.h"
 #include "memutil.h"
@@ -10,87 +17,316 @@
 
 #define UCI_BUF_LEN 256
 
+typedef struct {
+    char lat[32];
+    char lon[32];
+    time_t last_updated;
+    bool valid;
+} location_cache_t;
+
+static location_cache_t g_location_cache = {0};
+
 bool get_location_from_ipinfo(char *lat, size_t lat_size, char *lon, size_t lon_size)
 {
-    FILE *fp;
-    char buffer[1024] = {0};
-    char *result = NULL;
-    char *lat_start = NULL;
-    char *lon_start = NULL;
-    char *lat_end = NULL;
-    char *lon_end = NULL;
-    
+    int sockfd;
+    struct addrinfo hints, *servinfo, *p;
+    char request[512];
+    char response[4096] = {0};
+    ssize_t bytes_received;
+    int rv;
+    char *body_start;
+    char *lat_start, *lon_start;
+
     if (!lat || !lon || lat_size == 0 || lon_size == 0) {
         fprintf(stderr, "Invalid parameters\n");
         return false;
     }
-    
-    // Execute curl command to get location
-    fp = popen("curl -s --connect-timeout 5 --max-time 10 http://ip-api.com/json 2>/dev/null", "r");
-    if (fp == NULL) {
-        fprintf(stderr, "Failed to execute curl command\n");
+
+    // Setup hints for getaddrinfo
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;     // IPv4 or IPv6
+    hints.ai_socktype = SOCK_STREAM; // TCP
+
+    // Resolve hostname
+    rv = getaddrinfo("ip-api.com", "80", &hints, &servinfo);
+    if (rv != 0) {
+        fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(rv));
         return false;
     }
-    
-    // Read the response
-    result = fgets(buffer, sizeof(buffer), fp);
-    pclose(fp);
-    
-    if (result == NULL || strlen(buffer) == 0) {
-        fprintf(stderr, "Failed to read curl response\n");
+
+    // Try to connect
+    for (p = servinfo; p != NULL; p = p->ai_next) {
+        sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (sockfd == -1) {
+            continue;
+        }
+
+        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            continue;
+        }
+
+        break; // Successfully connected
+    }
+
+    if (p == NULL) {
+        fprintf(stderr, "Failed to connect\n");
+        freeaddrinfo(servinfo);
         return false;
     }
-    
-    // Parse latitude from JSON
-    lat_start = strstr(buffer, "\"lat\":");
+
+    freeaddrinfo(servinfo);
+
+    // Build HTTP GET request
+    snprintf(request, sizeof(request),
+             "GET /json/ HTTP/1.1\r\n"
+             "Host: ip-api.com\r\n"
+             "Connection: close\r\n"
+             "\r\n");
+
+    // Send request
+    if (send(sockfd, request, strlen(request), 0) == -1) {
+        fprintf(stderr, "Failed to send request\n");
+        close(sockfd);
+        return false;
+    }
+
+    // Receive response
+    size_t total = 0;
+    while (total < sizeof(response) - 1) {
+        bytes_received = recv(sockfd, response + total, sizeof(response) - total - 1, 0);
+        if (bytes_received <= 0) {
+            break;
+        }
+        total += bytes_received;
+    }
+
+    close(sockfd);
+
+    if (total == 0) {
+        fprintf(stderr, "No response received\n");
+        return false;
+    }
+
+    response[total] = '\0';
+
+    // Find the body (after "\r\n\r\n")
+    body_start = strstr(response, "\r\n\r\n");
+    if (body_start == NULL) {
+        fprintf(stderr, "Invalid HTTP response\n");
+        return false;
+    }
+    body_start += 4; // Skip "\r\n\r\n"
+
+    // Debug output
+    // fprintf(stderr, "Body: %s\n", body_start);
+
+    // Parse latitude
+    lat_start = strstr(body_start, "\"lat\"");
     if (lat_start == NULL) {
-        fprintf(stderr, "Latitude not found in response\n");
+        fprintf(stderr, "Latitude not found\n");
         return false;
     }
-    lat_start += 6; // Skip "lat":
-    
-    // Find the end of latitude value (comma or closing brace)
-    lat_end = lat_start;
-    while (*lat_end && *lat_end != ',' && *lat_end != '}') {
+    lat_start = strchr(lat_start, ':');
+    if (lat_start == NULL) {
+        return false;
+    }
+    lat_start++;
+
+    // Skip whitespace
+    while (*lat_start && isspace(*lat_start)) {
+        lat_start++;
+    }
+
+    // Extract latitude
+    char *lat_end = lat_start;
+    while (*lat_end && (isdigit(*lat_end) || *lat_end == '.' || *lat_end == '-')) {
         lat_end++;
     }
-    
-    // Copy latitude
+
     size_t lat_len = lat_end - lat_start;
-    if (lat_len >= lat_size) {
-        lat_len = lat_size - 1;
+    if (lat_len == 0 || lat_len >= lat_size) {
+        fprintf(stderr, "Invalid latitude\n");
+        return false;
     }
     strncpy(lat, lat_start, lat_len);
     lat[lat_len] = '\0';
-    
-    // Parse longitude from JSON
-    lon_start = strstr(buffer, "\"lon\":");
+
+    // Parse longitude
+    lon_start = strstr(body_start, "\"lon\"");
     if (lon_start == NULL) {
-        fprintf(stderr, "Longitude not found in response\n");
+        fprintf(stderr, "Longitude not found\n");
         return false;
     }
-    lon_start += 6; // Skip "lon":
-    
-    // Find the end of longitude value
-    lon_end = lon_start;
-    while (*lon_end && *lon_end != ',' && *lon_end != '}') {
+    lon_start = strchr(lon_start, ':');
+    if (lon_start == NULL) {
+        return false;
+    }
+    lon_start++;
+
+    // Skip whitespace
+    while (*lon_start && isspace(*lon_start)) {
+        lon_start++;
+    }
+
+    // Extract longitude
+    char *lon_end = lon_start;
+    while (*lon_end && (isdigit(*lon_end) || *lon_end == '.' || *lon_end == '-')) {
         lon_end++;
     }
-    
-    // Copy longitude
+
     size_t lon_len = lon_end - lon_start;
-    if (lon_len >= lon_size) {
-        lon_len = lon_size - 1;
+    if (lon_len == 0 || lon_len >= lon_size) {
+        fprintf(stderr, "Invalid longitude\n");
+        return false;
     }
     strncpy(lon, lon_start, lon_len);
     lon[lon_len] = '\0';
-    
-    // Validate that we got both values
-    if (strlen(lat) == 0 || strlen(lon) == 0) {
-        fprintf(stderr, "Empty latitude or longitude\n");
+
+    return true;
+}
+
+bool get_location_cached(char *lat, size_t lat_size, char *lon, size_t lon_size)
+{
+    time_t now = time(NULL);
+
+    // Refresh only if cache is invalid or older than 1 hour
+    if (!g_location_cache.valid ||
+        (now - g_location_cache.last_updated) > 3600) {
+
+        if (!get_location_from_ipinfo(g_location_cache.lat,
+                                      sizeof(g_location_cache.lat),
+                                      g_location_cache.lon,
+                                      sizeof(g_location_cache.lon))) {
+            return false;
+        }
+
+        g_location_cache.last_updated = now;
+        g_location_cache.valid = true;
+    }
+
+    // Return cached values
+    strncpy(lat, g_location_cache.lat, lat_size - 1);
+    lat[lat_size - 1] = '\0';
+    strncpy(lon, g_location_cache.lon, lon_size - 1);
+    lon[lon_size - 1] = '\0';
+
+    return true;
+}
+
+bool get_timezone_from_ipapi(char *timezone, size_t timezone_size)
+{
+    int sockfd;
+    struct addrinfo hints, *servinfo, *p;
+    char request[512];
+    char response[4096] = {0};
+    ssize_t bytes_received;
+    int rv;
+    char *body_start;
+    char *tz_start;
+
+    if (!timezone || timezone_size == 0) {
+        fprintf(stderr, "Invalid parameters\n");
         return false;
     }
-    
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    rv = getaddrinfo("ip-api.com", "80", &hints, &servinfo);
+    if (rv != 0) {
+        fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(rv));
+        return false;
+    }
+
+    for (p = servinfo; p != NULL; p = p->ai_next) {
+        sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (sockfd == -1) continue;
+
+        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            continue;
+        }
+        break;
+    }
+
+    if (p == NULL) {
+        fprintf(stderr, "Failed to connect\n");
+        freeaddrinfo(servinfo);
+        return false;
+    }
+
+    freeaddrinfo(servinfo);
+
+    snprintf(request, sizeof(request),
+             "GET /json/ HTTP/1.1\r\n"
+             "Host: ip-api.com\r\n"
+             "Connection: close\r\n"
+             "\r\n");
+
+    if (send(sockfd, request, strlen(request), 0) == -1) {
+        fprintf(stderr, "Failed to send request\n");
+        close(sockfd);
+        return false;
+    }
+
+    size_t total = 0;
+    while (total < sizeof(response) - 1) {
+        bytes_received = recv(sockfd, response + total, sizeof(response) - total - 1, 0);
+        if (bytes_received <= 0) break;
+        total += bytes_received;
+    }
+
+    close(sockfd);
+
+    if (total == 0) {
+        fprintf(stderr, "No response received\n");
+        return false;
+    }
+
+    response[total] = '\0';
+
+    body_start = strstr(response, "\r\n\r\n");
+    if (body_start == NULL) {
+        fprintf(stderr, "Invalid HTTP response\n");
+        return false;
+    }
+    body_start += 4;
+
+    // Parse timezone from JSON: "timezone":"America/Chicago"
+    tz_start = strstr(body_start, "\"timezone\"");
+    if (tz_start == NULL) {
+        fprintf(stderr, "Timezone not found\n");
+        return false;
+    }
+
+    // Find the value after the colon
+    tz_start = strchr(tz_start, ':');
+    if (tz_start == NULL) return false;
+    tz_start++;
+
+    // Skip whitespace and opening quote
+    while (*tz_start && (isspace(*tz_start) || *tz_start == '"')) {
+        tz_start++;
+    }
+
+    // Find closing quote
+    char *tz_end = strchr(tz_start, '"');
+    if (tz_end == NULL) {
+        fprintf(stderr, "Malformed timezone value\n");
+        return false;
+    }
+
+    size_t tz_len = tz_end - tz_start;
+    if (tz_len == 0 || tz_len >= timezone_size) {
+        fprintf(stderr, "Invalid timezone length\n");
+        return false;
+    }
+
+    strncpy(timezone, tz_start, tz_len);
+    timezone[tz_len] = '\0';
+
     return true;
 }
 

@@ -159,10 +159,8 @@ bool target_info_clients_get(const uint8_t *macaddr, const char *ifname,
         snprintf(client_info->client_type, sizeof(client_info->client_type), "wireless");
         
     } else {
-        printf("Ankit: call IOCTL \n");
         if (ioctl(fd, IOCTL_ADPI_GET_STA_DATA, &sta) < 0) {
             LOG(ERR, "IOCTL_ADPI_GET_STA_DATA failed: %s", strerror(errno));
-        printf("Ankit: call IOCTL failed: %s\n", strerror(errno));
             close(fd);
             // Fallback to defaults
             snprintf(client_info->hostname, HOSTNAME_MAX_LEN, "unknown");
@@ -173,7 +171,6 @@ bool target_info_clients_get(const uint8_t *macaddr, const char *ifname,
         } else {
             close(fd);
             
-        printf("Ankit: call IOCTL valid\n");
             if (sta.result_valid) {
                 struct sta_info *info = &sta.info;
                 
@@ -210,7 +207,6 @@ bool target_info_clients_get(const uint8_t *macaddr, const char *ifname,
                     use_ifname = ioctl_ifname;
                 }
             } else {
-        printf("Ankit: call IOCTL sta not found\n");
                 // Client not found in airdpi
                 snprintf(client_info->hostname, HOSTNAME_MAX_LEN, "unknown");
                 snprintf(client_info->ipaddr, IPADDR_MAX_LEN, "0.0.0.0");
@@ -467,16 +463,6 @@ bool target_info_vif_get(vif_info_event_t *vif_info)
         }
         closedir(net_dir);
     }
-    
-    // Fill ethernet info (placeholder for now - should be read from system)
-    //vif_info->n_ethernet = 2;
-    //snprintf(vif_info->ethernet[0].interface, sizeof(vif_info->ethernet[0].interface), "wan");
-    //snprintf(vif_info->ethernet[0].name, sizeof(vif_info->ethernet[0].name), "WAN");
-    //snprintf(vif_info->ethernet[0].type, sizeof(vif_info->ethernet[0].type), "wan");
-    
-    //snprintf(vif_info->ethernet[1].interface, sizeof(vif_info->ethernet[1].interface), "lan");
-    //snprintf(vif_info->ethernet[1].name, sizeof(vif_info->ethernet[1].name), "LAN");
-    //snprintf(vif_info->ethernet[1].type, sizeof(vif_info->ethernet[1].type), "lan");
     
     get_all_ethernet_info(vif_info);
     

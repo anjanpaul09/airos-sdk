@@ -284,7 +284,6 @@ char *parse_device_info_to_json_string(struct DeviceInfo device)
     char fw_version[UCI_BUF_LEN];
     int retry_count = 0;
     char ipaddr[32] = {0};
-    char location[64] = {0};
     char timezone[64] = {0};
     char uci_value[32] = {0};
     //char cmd[128] = {0};
@@ -383,20 +382,11 @@ char *parse_device_info_to_json_string(struct DeviceInfo device)
     json_object_set_new(json, "radio", radio_obj);
 
     json_t *location_array = json_array();
-    memset(location, 0, sizeof(location));
+    char lat[32], lon[32];
 
-    if (cmd_buf("curl -s https://ipinfo.io/loc", location, sizeof(location)) == 0) {
-        // Parse latitude and longitude
-        char *comma = strchr(location, ',');
-        if (comma) {
-            *comma = '\0';
-            // Keep as strings to preserve exact precision from ipinfo.io
-            json_array_append_new(location_array, json_string(location));
-            json_array_append_new(location_array, json_string(comma + 1));
-        } else {
-            json_array_append_new(location_array, json_string("0.0"));
-            json_array_append_new(location_array, json_string("0.0"));
-        }
+    if (get_location_from_ipinfo(lat, sizeof(lat), lon, sizeof(lon))) {
+        json_array_append_new(location_array, json_string(lat));
+        json_array_append_new(location_array, json_string(lon));
     } else {
         LOG(ERR, "Failed to get location from ipinfo.io");
         json_array_append_new(location_array, json_string("0.0"));
@@ -407,7 +397,7 @@ char *parse_device_info_to_json_string(struct DeviceInfo device)
 
     // Get timezone from ipinfo.io
     memset(timezone, 0, sizeof(timezone));
-    if (cmd_buf("curl -s https://ipinfo.io/timezone", timezone, sizeof(timezone)) == 0) {
+    if (get_timezone_from_ipapi(timezone, sizeof(timezone))) {
         json_object_set_new(json, "timezone", json_string(timezone));
     } else {
         LOG(ERR, "Failed to get timezone from ipinfo.io");
