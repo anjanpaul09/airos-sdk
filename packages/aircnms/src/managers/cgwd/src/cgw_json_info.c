@@ -45,29 +45,32 @@ bool cgw_parse_client_info_json(client_info_event_t *client_info, char *data, ui
     // Add data object
     json_t *data_obj = json_object();
     json_object_set_new(data_obj, "macAddress", json_string(mac_str));
-    json_object_set_new(data_obj, "hostname", json_string(client_info->hostname));
-    json_object_set_new(data_obj, "ipAddress", json_string(client_info->ipaddr));
-    json_object_set_new(data_obj, "ssid", json_string(client_info->ssid));
-    json_object_set_new(data_obj, "band", json_string(client_info->band));
-    json_object_set_new(data_obj, "channel", json_integer(client_info->channel));
-    json_object_set_new(data_obj, "clientType", json_string(client_info->client_type));
-    json_object_set_new(data_obj, "osInfo", json_string(client_info->osinfo));
-    json_object_set_new(data_obj, "startTime", json_integer(client_info->start_time));
-    json_object_set_new(data_obj, "endTime", json_integer(client_info->end_time));
     
-    // Add capability object
-    json_t *capability_obj = json_object();
-    json_object_set_new(capability_obj, "phy", json_string(client_info->capability.phy));
-    json_object_set_new(capability_obj, "roaming", json_string(client_info->capability.roaming));
-    json_object_set_new(capability_obj, "mcs", json_string(client_info->capability.mcs));
-    json_object_set_new(capability_obj, "nss", json_string(client_info->capability.nss));
-    json_object_set_new(capability_obj, "ps", json_string(client_info->capability.ps));
-    json_object_set_new(capability_obj, "wmm", json_string(client_info->capability.wmm));
-    json_object_set_new(capability_obj, "mu-mimo", json_string(client_info->capability.mu_mimo));
-    json_object_set_new(capability_obj, "ofdma", json_string(client_info->capability.ofdma));
-    json_object_set_new(capability_obj, "bw", json_string(client_info->capability.bw));
-    json_object_set_new(data_obj, "capability", capability_obj);
+    if (client_info->is_connected) {
+        json_object_set_new(data_obj, "hostname", json_string(client_info->hostname));
+        json_object_set_new(data_obj, "ipAddress", json_string(client_info->ipaddr));
+        json_object_set_new(data_obj, "ssid", json_string(client_info->ssid));
+        json_object_set_new(data_obj, "band", json_string(client_info->band));
+        json_object_set_new(data_obj, "channel", json_integer(client_info->channel));
+        json_object_set_new(data_obj, "clientType", json_string(client_info->client_type));
+        json_object_set_new(data_obj, "osInfo", json_string(client_info->osinfo));
+        json_object_set_new(data_obj, "startTime", json_integer(client_info->start_time));
     
+        // Add capability object
+        json_t *capability_obj = json_object();
+        json_object_set_new(capability_obj, "phy", json_string(client_info->capability.phy));
+        json_object_set_new(capability_obj, "roaming", json_string(client_info->capability.roaming));
+        json_object_set_new(capability_obj, "mcs", json_string(client_info->capability.mcs));
+        json_object_set_new(capability_obj, "nss", json_string(client_info->capability.nss));
+        json_object_set_new(capability_obj, "ps", json_string(client_info->capability.ps));
+        json_object_set_new(capability_obj, "wmm", json_string(client_info->capability.wmm));
+        json_object_set_new(capability_obj, "mu-mimo", json_string(client_info->capability.mu_mimo));
+        json_object_set_new(capability_obj, "ofdma", json_string(client_info->capability.ofdma));
+        json_object_set_new(capability_obj, "bw", json_string(client_info->capability.bw));
+        json_object_set_new(data_obj, "capability", capability_obj);
+    } else {
+        json_object_set_new(data_obj, "endTime", json_integer(client_info->end_time));
+    }
     json_object_set_new(root, "data", data_obj);
 
     // Convert JSON object to string

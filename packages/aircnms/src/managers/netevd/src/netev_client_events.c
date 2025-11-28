@@ -47,6 +47,7 @@ void netev_handle_client_connect(const uint8_t *macaddr, const char *ifname)
     
     client_info_event_t client_info = {0};
     uint64_t timestamp_ms = get_timestamp_ms();
+    client_info.is_connected = true;
     sleep(2);  
     // Call target function to fill client info
     if (!target_info_clients_get(macaddr, ifname, &client_info, timestamp_ms, true)) {
@@ -89,6 +90,7 @@ void netev_handle_client_disconnect(const uint8_t *macaddr, const char *ifname)
     
     client_info_event_t client_info = {0};
     uint64_t timestamp_ms = get_timestamp_ms();
+    client_info.is_connected = false;
     
     // Call target function to fill client info
     if (!target_info_clients_get(macaddr, ifname, &client_info, timestamp_ms, false)) {

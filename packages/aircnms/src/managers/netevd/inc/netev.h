@@ -10,8 +10,8 @@ struct nl80211_state {
 	int nl80211_id;
 };
 
-int nl80211_init(struct nl80211_state *state);
-int listen_events(struct nl80211_state *state, const int n_waits, const __u32 *waits);
+//int nl80211_init(struct nl80211_state *state);
+//int listen_events(struct nl80211_state *state, const int n_waits, const __u32 *waits);
 
 /* hostapd event listener */
 int hostapd_events_start(const char *ctrl_dir);

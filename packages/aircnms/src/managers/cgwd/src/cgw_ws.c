@@ -10,8 +10,9 @@
 #include "cgw_state_mgr.h"
 #include "log.h"
 
-#define WEBSOCKET_URL "69.30.254.180"
-#define WEBSOCKET_PORT 8003
+//wss://api.cloud.netstream.net.in/ws/
+#define WEBSOCKET_URL "api.cloud.netstream.net.in"
+#define WEBSOCKET_PORT 443
 #define WEBSOCKET_PATH "/ws/AIR1231212"
 #define UCI_BUF_LEN 256
 
@@ -97,84 +98,113 @@ static void ws_service_cb(EV_P_ ev_timer *w, int revents) {
     }
 }
 
-static void ws_reconnect_cb(EV_P_ ev_timer *w, int revents) {
-    // Check if already connected
+static void ws_reconnect_cb(EV_P_ ev_timer *w, int revents)
+{
     if (ws_connected) {
         LOG(DEBUG, "Already connected, skipping reconnection attempt");
         return;
     }
 
-    struct lws_client_connect_info connect_info = {0};
+    /* ------------------------------------------------------------------ */
+    /* Step 1: Get Serial Number from UCI                                 */
+    /* ------------------------------------------------------------------ */
 
-    // Get serial number for WebSocket path
-    char buf[UCI_BUF_LEN];
-    memset(buf, 0, sizeof(buf));
-    if (cmd_buf("uci get aircnms.@aircnms[0].serial_num", buf, sizeof(buf)) != 0 || strlen(buf) == 0) {
-        LOG(ERR, "Failed to get serial number from UCI. Using default path");
-        strncpy(buf, "AIR1231234", sizeof(buf) - 1); // Fallback to default
-        buf[sizeof(buf) - 1] = '\0';
+    char serial[64] = {0};
+
+    if (cmd_buf("uci get aircnms.@aircnms[0].serial_num", serial, sizeof(serial)) != 0 ||
+        strlen(serial) == 0)
+    {
+        LOG(ERR, "Failed to get serial number from UCI. Using fallback serial");
+        strncpy(serial, "AIR1231234", sizeof(serial) - 1);
     }
-    // Remove trailing newline if present
-    buf[strcspn(buf, "\n")] = 0;
+    serial[strcspn(serial, "\n")] = 0;     // strip newline
 
     char websocket_path[128];
-    int ret = snprintf(websocket_path, sizeof(websocket_path), "/ws/%s", buf);
-    if (ret < 0 || ret >= (int)sizeof(websocket_path)) {
-        LOG(ERR, "WebSocket path buffer overflow (ret=%d)", ret);
-        return;
-    }
-    LOG(DEBUG, "Reconnection attempt - websocket path: %s", websocket_path);
+    snprintf(websocket_path, sizeof(websocket_path), "/ws/%s", serial);
 
-    // Stop timers
+    LOG(DEBUG, "Reconnection attempt – websocket path: %s", websocket_path);
+
+    /* ------------------------------------------------------------------ */
+    /* Step 2: Stop timers before rebuild                                 */
+    /* ------------------------------------------------------------------ */
+
     ev_timer_stop(ws_loop, &ws_service_timer);
     ev_timer_stop(ws_loop, w);
 
-    // Destroy previous context if it exists
+    /* ------------------------------------------------------------------ */
+    /* Step 3: Destroy previous context                                   */
+    /* ------------------------------------------------------------------ */
+
     if (ws_context) {
+        LOG(DEBUG, "Destroying previous LWS context");
         lws_context_destroy(ws_context);
         ws_context = NULL;
-        LOG(DEBUG, "Context destroyed");
     }
 
-    // Create new context
-    struct lws_context_creation_info context_info = {0};
-    context_info.port = CONTEXT_PORT_NO_LISTEN;
-    context_info.protocols = ws_protocols;
-    context_info.options = 0; // No LIBEV or SSL options
-    context_info.connect_timeout_secs = 10; // 10-second timeout
+    /* ------------------------------------------------------------------ */
+    /* Step 4: Create new context + vhost                                 */
+    /* Note: You MUST create a VHOST when using SSL in client mode        */
+    /* ------------------------------------------------------------------ */
 
-    ws_context = lws_create_context(&context_info);
+    struct lws_context_creation_info info;
+    memset(&info, 0, sizeof(info));
+
+    info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
+    info.port = CONTEXT_PORT_NO_LISTEN;
+    info.protocols = ws_protocols;
+
+    ws_context = lws_create_context(&info);
     if (!ws_context) {
-        LOG(ERR, "Failed to create context. Reconnecting in 5 seconds...");
+        LOG(ERR, "Failed to create LWS context. Retrying in 5 sec...");
         ev_timer_again(ws_loop, w);
         return;
     }
-    LOG(DEBUG, "Context created");
 
-    // Set up connection info
-    connect_info.context = ws_context;
-    connect_info.address = WEBSOCKET_URL;
-    connect_info.port = WEBSOCKET_PORT;
-    connect_info.path = websocket_path;
-    connect_info.host = WEBSOCKET_URL;
-    connect_info.origin = WEBSOCKET_URL;
-    connect_info.protocol = ws_protocols[0].name;
-    connect_info.ietf_version_or_minus_one = -1;
-    connect_info.userdata = websocket_path; // For logging in callback
+    LOG(DEBUG, "New LWS context created");
 
-    ws_wsi = lws_client_connect_via_info(&connect_info);
+    /* ------------------------------------------------------------------ */
+    /* Step 5: Setup connection info                                      */
+    /* ------------------------------------------------------------------ */
+
+    struct lws_client_connect_info ccinfo;
+    memset(&ccinfo, 0, sizeof(ccinfo));
+
+    ccinfo.context  = ws_context;
+    ccinfo.address  = WEBSOCKET_URL;
+    ccinfo.port     = WEBSOCKET_PORT;
+    ccinfo.path     = websocket_path;
+
+    ccinfo.host     = WEBSOCKET_URL;
+    ccinfo.origin   = WEBSOCKET_URL;
+
+    ccinfo.ssl_connection = LCCSCF_USE_SSL |
+                            LCCSCF_ALLOW_INSECURE;  // remove if CA is real
+
+    ccinfo.protocol = ws_protocols[0].name;
+
+    /* ⚠ IMPORTANT: userdata must point to persistent memory */
+    ccinfo.userdata = strdup(websocket_path);   // free in close callback
+
+    ws_wsi = lws_client_connect_via_info(&ccinfo);
+
     if (!ws_wsi) {
-        LOG(ERR, "Failed to connect to %s. Reconnecting in 5 seconds...", websocket_path);
+        LOG(ERR, "Failed to connect to %s. Retrying in 5 sec...", websocket_path);
         lws_context_destroy(ws_context);
         ws_context = NULL;
+
         ev_timer_again(ws_loop, w);
         return;
     }
-    LOG(DEBUG, "Connection initiated to %s", websocket_path);
 
-    // Start service timer immediately to handle connection process
+    LOG(DEBUG, "WebSocket connection initiated to %s", websocket_path);
+
+    /* ------------------------------------------------------------------ */
+    /* Step 6: Start service timer                                        */
+    /* ------------------------------------------------------------------ */
+
     ev_timer_start(ws_loop, &ws_service_timer);
 }
+
 
 // Initialize WebSocket client
 int ws_init(void) {

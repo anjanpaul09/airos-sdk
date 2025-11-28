@@ -49,6 +49,8 @@ int set_fw_upgrade_status_to_aircnms(event_status status);
 int get_fw_id_frm_aircnms(char *fw_id); 
 int get_fw_version(char *version_buf, size_t buf_size); 
 bool get_public_ip(char *public_ip);
+bool get_location_cached(char *lat, size_t lat_size, char *lon, size_t lon_size);
 bool get_location_from_ipinfo(char *lat, size_t lat_size, char *lon, size_t lon_size);
+bool get_timezone_from_ipapi(char *timezone, size_t timezone_size);
 
 #endif // AIR_UTIL_H
