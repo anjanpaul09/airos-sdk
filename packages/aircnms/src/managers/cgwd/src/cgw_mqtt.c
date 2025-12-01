@@ -422,6 +422,10 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
         LOG(ERR, "cgw_send_event_cloud: Invalid parameters");
         return false;
     }
+    
+    if(!cgw_mqtt_is_connected()){
+        return true;
+    }
 
     // Check if this is an info event (from netevd) or regular event (from cmdexecd/alrmd)
     if (qi->size >= sizeof(info_event_type_t)) {

@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <wpa_ctrl.h>
 #include "report.h"
+#include "netev_vif_info.h"
 
 #define HOSTAPD_CTRL_DIR "/var/run/hostapd"
 #define MAX_CTRLS 16
@@ -127,6 +128,48 @@ static void hostapd_scan_dir(const char *dir)
     closedir(d);
 }
 
+/* Helper function to check if event is a configuration change */
+static bool is_config_change_event(const char *event)
+{
+    /* Configuration change events that affect VIF info */
+    const char *config_events[] = {
+        "AP-ENABLED",           // AP interface enabled
+        "AP-DISABLED",          // AP interface disabled
+        "AP-STA-POSSIBLE-PSK-MISMATCH",  // Security config issue
+        "INTERFACE-ENABLED",    // Interface brought up
+        "INTERFACE-DISABLED",   // Interface brought down
+        "ACS-STARTED",          // Automatic channel selection started
+        "ACS-COMPLETED",        // Channel changed via ACS
+        "ACS-FAILED",           // ACS failed
+        "DFS-CAC-START",        // DFS channel availability check
+        "DFS-CAC-COMPLETED",    // DFS check completed
+        "DFS-NOP-FINISHED",     // DFS non-occupancy period finished
+        "AP-CSA-FINISHED",      // Channel switch announcement finished
+        "WPS-NEW-AP-SETTINGS",  // WPS changed AP settings
+        "WPS-REG-SUCCESS",      // WPS registration (may change config)
+        NULL
+    };
+
+    /* Skip STA connection/disconnection events */
+    if (strstr(event, "AP-STA-CONNECTED") ||
+        strstr(event, "AP-STA-DISCONNECTED") ||
+        strstr(event, "STA-OPMODE-") ||
+        strstr(event, "AP-STA-POLL-OK") ||
+        strstr(event, "WPS-ENROLLEE-SEEN") ||
+        strstr(event, "EAPOL-TX") ||
+        strstr(event, "EAPOL-RX")) {
+        return false;
+    }
+
+    /* Check for configuration change events */
+    for (int i = 0; config_events[i] != NULL; i++) {
+        if (strstr(event, config_events[i]) != NULL) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 static void *hostapd_ev_thread(void *arg)
 {
@@ -160,6 +203,10 @@ static void *hostapd_ev_thread(void *arg)
 					buf[len] = '\0';
 					/* Print raw event */
 					printf("hostapd_ev: %s: %s\n", g_ctrls[i].path, buf);
+                                        if (is_config_change_event(buf)) {
+                                            printf("hostapd_ev: Config change detected, sending VIF info\n");
+                                            netev_send_vif_info();
+                                        }
                                 } else {
 					printf("hostapd_ev: recv failed on %s\n", g_ctrls[i].path);
 				}
