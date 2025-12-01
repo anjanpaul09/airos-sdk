@@ -34,6 +34,14 @@ int handle_device_state_change(device_state_t state)
 
     case DEVICE_STATE_REGISTERED:
         LOG(INFO, "[REGISTERED] Initializing MQTT and services...");
+        if (!cgw_mqtt_init()) {
+            LOG(ERR, "Failed to initialize MQTT");
+        }
+
+        cgw_queue_init();
+        if (!cgw_mqtt_start_worker()) {
+            LOG(ERR, "Failed to start MQTT worker");
+        }
         break;
     default:
         LOG(ERR, "Unknown device state");

@@ -55,6 +55,7 @@ bool cgw_parse_client_info_json(client_info_event_t *client_info, char *data, ui
         json_object_set_new(data_obj, "clientType", json_string(client_info->client_type));
         json_object_set_new(data_obj, "osInfo", json_string(client_info->osinfo));
         json_object_set_new(data_obj, "startTime", json_integer(client_info->start_time));
+        json_object_set_new(data_obj, "isConnected", json_integer(client_info->is_connected));
     
         // Add capability object
         json_t *capability_obj = json_object();
@@ -70,6 +71,7 @@ bool cgw_parse_client_info_json(client_info_event_t *client_info, char *data, ui
         json_object_set_new(data_obj, "capability", capability_obj);
     } else {
         json_object_set_new(data_obj, "endTime", json_integer(client_info->end_time));
+        json_object_set_new(data_obj, "isConnected", json_integer(client_info->is_connected));
     }
     json_object_set_new(root, "data", data_obj);
 

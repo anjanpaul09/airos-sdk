@@ -69,27 +69,33 @@ int main(int argc, char *argv[])
         goto cleanup_ubus;
     }
 
+#if 0
+    printf("Ankit:1 \n");
     if (!cgw_mqtt_init()) {
         LOG(ERR, "Failed to initialize MQTT");
         ret = -1;
         goto cleanup_device_state;
     }
+    printf("Ankit:2 \n");
 
     cgw_queue_init();
+    printf("Ankit:3 \n");
     
     if (!cgw_mqtt_start_worker()) {
         LOG(ERR, "Failed to start MQTT worker");
         ret = -1;
         goto cleanup_mqtt;
     }
-
+    printf("Ankit:4 \n");
+#endif
+    
     ev_run(g_loop, 0);
     
-cleanup_mqtt:
-    cgw_mqtt_stop_worker();
-    cgw_mqtt_stop();
-cleanup_device_state:
-    device_state_deinit();
+//cleanup_mqtt:
+  //  cgw_mqtt_stop_worker();
+  //  cgw_mqtt_stop();
+//cleanup_device_state:
+  //  device_state_deinit();
 cleanup_ubus:
     cgw_ubus_service_cleanup();
 cleanup_ubus_rx:
@@ -98,6 +104,8 @@ cleanup_params:
     // No cleanup needed for cgw_params_init
 cleanup:
     ws_cleanup();
+    cgw_mqtt_stop_worker();
+    cgw_mqtt_stop();
     LOG(INFO, "CGWD shutting down");
     return ret;
 }

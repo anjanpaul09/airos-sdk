@@ -47,8 +47,7 @@ void netev_handle_client_connect(const uint8_t *macaddr, const char *ifname)
     
     client_info_event_t client_info = {0};
     uint64_t timestamp_ms = get_timestamp_ms();
-    client_info.is_connected = true;
-    sleep(2);  
+    sleep(2); 
     // Call target function to fill client info
     if (!target_info_clients_get(macaddr, ifname, &client_info, timestamp_ms, true)) {
         LOG(ERR, "Failed to get client info from target");
@@ -70,6 +69,7 @@ void netev_handle_client_connect(const uint8_t *macaddr, const char *ifname)
         printf("Failed to get client capabilities\n");
     }
 
+    client_info.is_connected = true;
     // Send client info event
     LOG(INFO, "Client connected: MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s",
         macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5], 
@@ -90,7 +90,6 @@ void netev_handle_client_disconnect(const uint8_t *macaddr, const char *ifname)
     
     client_info_event_t client_info = {0};
     uint64_t timestamp_ms = get_timestamp_ms();
-    client_info.is_connected = false;
     
     // Call target function to fill client info
     if (!target_info_clients_get(macaddr, ifname, &client_info, timestamp_ms, false)) {
@@ -98,6 +97,7 @@ void netev_handle_client_disconnect(const uint8_t *macaddr, const char *ifname)
         return;
     }
     
+    client_info.is_connected = false;
     // Send client info event
     LOG(INFO, "Client disconnected: MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s",
         macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5], 
