@@ -60,6 +60,13 @@ bool netconf_process_vif_list(json_t *vif_list)
     int hidden;
     size_t i;
     vif_record_t *record = (vif_record_t *)malloc(sizeof(vif_record_t));
+    
+    // FIX: Add null check for malloc
+    if (!record) {
+        LOG(ERR, "Failed to allocate memory for vif_record_t");
+        return false;
+    }
+    
     memset(record, 0, sizeof(vif_record_t));
     json_t *vif;
     json_t *attr_value;
@@ -230,6 +237,13 @@ bool netconf_process_radio_list(json_t *radio_list)
     int disabled = 0;
     size_t i;
     radio_record_t *record = (radio_record_t *)malloc(sizeof(radio_record_t));
+    
+    // FIX: Add null check for malloc
+    if (!record) {
+        LOG(ERR, "Failed to allocate memory for radio_record_t");
+        return false;
+    }
+    
     json_t *radio;
     json_array_foreach(radio_list, i, radio) {
         

@@ -203,6 +203,7 @@ bool cgw_parse_device_info_json(device_info_event_t *device_info, char *data, ui
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
     json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(timestamp_ms));
+    json_object_set_new(root, "type", json_string("ap_info"));
 
     // Add data object
     json_t *data_obj = json_object();

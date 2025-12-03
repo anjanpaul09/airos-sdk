@@ -317,7 +317,11 @@ bool get_ssid_from_interface(const char *ifname, char *essid)
             *newline = '\0';
         }
         ssid = strdup(line);
-        strcpy(essid, ssid);
+        if (ssid) {
+            strcpy(essid, ssid);
+            free(ssid);  // FIX: Free strdup'd memory immediately after use
+            ssid = NULL;
+        }
     }
 
     pclose(fp);

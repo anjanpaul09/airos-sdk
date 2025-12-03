@@ -74,8 +74,9 @@ bool cgw_queue_remove(cgw_item_t *qitem)
     ds_dlist_remove(&g_cgw_queue.queue, qitem);
     g_cgw_queue.length--;
     g_cgw_queue.size -= qitem->size;
-    pthread_mutex_unlock(&g_cgw_queue_mutex);
+    // SECURITY_FIX: Issue #5 - Free item while holding lock to prevent use-after-free
     cgw_queue_item_free(qitem);
+    pthread_mutex_unlock(&g_cgw_queue_mutex);
     return true;
 }
 
@@ -112,8 +113,9 @@ bool cgw_queue_append_item(cgw_item_t **qitem, cgw_response_t *res)
     ds_dlist_insert_tail(&g_cgw_queue.queue, qi);
     g_cgw_queue.length++;
     g_cgw_queue.size += qi->size;
-    cgw_mqtt_signal_new_item(); // wake worker
     pthread_mutex_unlock(&g_cgw_queue_mutex);
+    // SECURITY_FIX: Issue #13 - Signal after releasing lock to prevent deadlock
+    cgw_mqtt_signal_new_item(); // wake worker
     // take ownership
     *qitem = NULL;
     return true;
@@ -150,6 +152,9 @@ bool cgw_queue_append_log(cgw_item_t **qitem, cgw_response_t *res)
         msg = "--- DROPPED TOO BIG ---";
         size = strlen(msg);
     }
+    // SECURITY_FIX: Issue #6 - Add mutex protection for global log buffer
+    pthread_mutex_lock(&g_cgw_queue_mutex);
+    
     // size +1 for newline
     new_size = g_cgw_log_buf_size + size + 1;
     if (new_size > CGW_LOG_QUEUE_SIZE) {
@@ -172,8 +177,15 @@ bool cgw_queue_append_log(cgw_item_t **qitem, cgw_response_t *res)
     if (*drop_str) {
         new_size += strlen(drop_str) + 1;
     }
-    // resize buf
-    g_cgw_log_buf = REALLOC(g_cgw_log_buf, new_size + 1); // +1 for nul term
+    // SECURITY_FIX: Issue #14 - Check REALLOC return value
+    char *new_buf = REALLOC(g_cgw_log_buf, new_size + 1); // +1 for nul term
+    if (!new_buf) {
+        LOG(ERR, "SECURITY_FIX: Failed to realloc log buffer (size=%d)", new_size + 1);
+        pthread_mutex_unlock(&g_cgw_queue_mutex);
+        return false;
+    }
+    g_cgw_log_buf = new_buf;
+    
     // copy drop count
     if (*drop_str) {
         strscpy(g_cgw_log_buf, drop_str, new_size);
@@ -191,6 +203,8 @@ bool cgw_queue_append_log(cgw_item_t **qitem, cgw_response_t *res)
         g_cgw_log_buf_size = new_size;
         g_cgw_log_buf[g_cgw_log_buf_size] = 0;
     }
+    
+    pthread_mutex_unlock(&g_cgw_queue_mutex);
 #else
     (void) *qitem;
     (void) res;

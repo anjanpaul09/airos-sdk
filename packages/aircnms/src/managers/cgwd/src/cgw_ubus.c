@@ -187,6 +187,25 @@ static int ubus_netstats_handler(struct ubus_context* ctx, struct ubus_object* o
 
     LOG(DEBUG, "Declared size: %d | Actual data length: %d", size, len);
 
+    // SECURITY_FIX: Issue #1 - NULL pointer check
+    if (!data) {
+        LOG(ERR, "SECURITY_FIX: NULL data pointer from blobmsg_data");
+        return -1;
+    }
+
+    // SECURITY_FIX: Issue #9 - Size mismatch validation
+    if (size != len) {
+        LOG(ERR, "SECURITY_FIX: Size mismatch attack detected - declared=%d actual=%d", size, len);
+        return -1;
+    }
+
+    // SECURITY_FIX: Issue #12 - Resource exhaustion protection
+    #define MAX_UBUS_MESSAGE_SIZE (2 * 1024 * 1024)  // 2MB limit
+    if (size == 0 || size > MAX_UBUS_MESSAGE_SIZE) {
+        LOG(ERR, "SECURITY_FIX: Invalid message size: %d (max=%d)", size, MAX_UBUS_MESSAGE_SIZE);
+        return -1;
+    }
+
     // Try to peek at message type for logging
     // Use actual blobmsg data length (len) for decompression, not declared size
     const char *msgtype_str = "unknown";
@@ -277,6 +296,18 @@ static int ubus_conf_handler(struct ubus_context* ctx, struct ubus_object* obj,
 
     LOG(DEBUG, "Declared size: %d | Actual data length: %d", size, len);
 
+    // SECURITY_FIX: Issue #1 - NULL pointer check
+    if (!data) {
+        LOG(ERR, "SECURITY_FIX: NULL data pointer in conf_handler");
+        return -1;
+    }
+
+    // SECURITY_FIX: Size validation
+    if (size != len || size == 0 || size > MAX_UBUS_MESSAGE_SIZE) {
+        LOG(ERR, "SECURITY_FIX: Invalid size in conf_handler: declared=%d actual=%d", size, len);
+        return -1;
+    }
+
     // Enqueue into QM queue and signal MQTT worker
     cgw_item_t *qi = CALLOC(1, sizeof(cgw_item_t));
     if (!qi) {
@@ -342,6 +373,18 @@ static int ubus_event_handler(struct ubus_context* ctx, struct ubus_object* obj,
     int len = blobmsg_data_len(tb[DATA]);
 
     LOG(DEBUG, "Declared size: %d | Actual data length: %d", size, len);
+
+    // SECURITY_FIX: Issue #1 - NULL pointer check
+    if (!data) {
+        LOG(ERR, "SECURITY_FIX: NULL data pointer in event_handler");
+        return -1;
+    }
+
+    // SECURITY_FIX: Size validation
+    if (size != len || size == 0 || size > MAX_UBUS_MESSAGE_SIZE) {
+        LOG(ERR, "SECURITY_FIX: Invalid size in event_handler: declared=%d actual=%d", size, len);
+        return -1;
+    }
 
     // Enqueue into QM queue and signal MQTT worker
     cgw_item_t *qi = CALLOC(1, sizeof(cgw_item_t));
@@ -423,10 +466,24 @@ static int ubus_netinfo_handler(struct ubus_context* ctx, struct ubus_object* ob
 
     LOG(DEBUG, "netinfo: Declared size: %d | Actual data length: %d", size, len);
 
+    // SECURITY_FIX: Issue #1 - NULL pointer check
+    if (!data) {
+        LOG(ERR, "SECURITY_FIX: NULL data pointer in netinfo_handler");
+        return -1;
+    }
+
+    // SECURITY_FIX: Size validation
+    if (size != len || size == 0 || size > MAX_UBUS_MESSAGE_SIZE) {
+        LOG(ERR, "SECURITY_FIX: Invalid size in netinfo_handler: declared=%d actual=%d", size, len);
+        return -1;
+    }
+
     // Determine info event type for logging
     const char *msgtype_str = "unknown";
     if (data && len >= sizeof(info_event_type_t)) {
-        info_event_type_t info_type = *(info_event_type_t *)data;
+        // SECURITY_FIX: Issue #8 - Use memcpy for unaligned access
+        info_event_type_t info_type;
+        memcpy(&info_type, data, sizeof(info_type));
         switch (info_type) {
             case INFO_EVENT_CLIENT:
                 msgtype_str = "client_info";
@@ -443,43 +500,39 @@ static int ubus_netinfo_handler(struct ubus_context* ctx, struct ubus_object* ob
         }
     }
 
-    LOG(INFO, "ANJAN-DEBUG NETEVD->CGWD: msgtype=%s msglen=%d (declared=%d actual=%d)", msgtype_str, size, size, len);
+    LOG(INFO, "NETEVD->CGWD: msgtype=%s msglen=%d", msgtype_str, size);
 
     // Enqueue into QM queue and signal MQTT worker
     cgw_item_t *qi = CALLOC(1, sizeof(cgw_item_t));
     if (!qi) {
-        LOG(ERR, "ANJAN-DEBUG Failed to allocate cgw_item_t");
+        LOG(ERR, "Failed to allocate cgw_item_t");
         return -1;
     }
     
     // Fill request metadata
     qi->req.data_type = DATA_INFO_EVENT;
     if (data && len && size > 0) {
-        // Use actual data length, not declared size
-        //size_t actual_size = (len < size) ? len : size;
-        size_t actual_size = size;
-        qi->buf = MALLOC(actual_size);
+        qi->buf = MALLOC(size);
         if (!qi->buf) {
-            LOG(ERR, "ANJAN-DEBUG Failed to allocate data buffer");
+            LOG(ERR, "Failed to allocate data buffer");
             cgw_queue_item_free(qi);
             return -1;
         }
-        memcpy(qi->buf, data, actual_size);
-        qi->size = actual_size;
-        LOG(DEBUG, "ANJAN-DEBUG netinfo: Enqueued event type=%d size=%zu", 
-            *(info_event_type_t *)qi->buf, qi->size);
+        memcpy(qi->buf, data, size);
+        qi->size = size;
+        LOG(DEBUG, "netinfo: Enqueued event size=%zu", qi->size);
     } else {
-        LOG(ERR, "ANJAN-DEBUG netinfo: Invalid data: data=%p len=%d size=%d", data, len, size);
+        LOG(ERR, "netinfo: Invalid data: data=%p len=%d size=%d", data, len, size);
         cgw_queue_item_free(qi);
         return -1;
     }
     cgw_response_t res = {0};
     if (!cgw_queue_put(&qi, &res)) {
-        LOG(ERR, "ANJAN-DEBUG Queue put failed: error=%u", res.error);
+        LOG(ERR, "Queue put failed: error=%u", res.error);
         if (qi) cgw_queue_item_free(qi);
         return -1;
     }
-    LOG(DEBUG, "ANJAN-DEBUG netinfo: Successfully enqueued info event");
+    LOG(DEBUG, "netinfo: Successfully enqueued info event");
     return 0;
 }
 
