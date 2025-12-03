@@ -87,6 +87,7 @@ bool cgw_parse_device_newjson(device_report_data_t *device, char *data)
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
     json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(device->timestamp_ms));
+    json_object_set_new(root, "type", json_string("ap_stats"));
 
     // System info
     json_t *system_obj = json_object();

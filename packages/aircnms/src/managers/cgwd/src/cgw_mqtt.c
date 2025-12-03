@@ -28,6 +28,7 @@ bool cgw_parse_client_info_json(client_info_event_t *client_info, char *data, ui
 bool cgw_parse_vif_info_json(vif_info_event_t *vif_info, char *data, uint64_t timestamp_ms);
 bool cgw_parse_device_info_json(device_info_event_t *device_info, char *data, uint64_t timestamp_ms);
 void cgw_restart_mqtt_worker(void);
+void free_netstats_stats(netstats_stats_t *stats);  // Forward declaration
 
 #define MODULE_ID LOG_MODULE_ID_MAIN
 #define MQTT_BROKER_TOPIC       "test"
@@ -221,6 +222,12 @@ static size_t deserialize_client_data(client_report_data_t *client, const uint8_
 
     // Deserialize records
     if (client->n_client > 0) {
+        // SECURITY_FIX: Issue #10 - Check for integer overflow
+        if (client->n_client > SIZE_MAX / sizeof(client_record_t)) {
+            LOG(ERR, "SECURITY_FIX: Integer overflow in records_size calculation (n_client=%d)", client->n_client);
+            return 0;
+        }
+        
         size_t records_size = client->n_client * sizeof(client_record_t);
 
         if (offset + records_size > buffer_size) {
@@ -292,6 +299,7 @@ bool decompress_deserialize_netstats_stats(const uint8_t *compressed_data, size_
                                                          decompressed_size - offset);
             if (client_size == 0) {
                 LOG(ERR, "Failed to deserialize client data");
+                free_netstats_stats(stats);  // FIX: Free nested allocations on error
                 return false;
             }
             offset += client_size;
@@ -304,6 +312,7 @@ bool decompress_deserialize_netstats_stats(const uint8_t *compressed_data, size_
         {
             if (offset + stats->size > decompressed_size) {
                 LOG(ERR, "Buffer too small for data");
+                free_netstats_stats(stats);  // FIX: Free nested allocations on error
                 return false;
             }
             memcpy(&stats->u, decompressed_data + offset, stats->size);
@@ -313,6 +322,7 @@ bool decompress_deserialize_netstats_stats(const uint8_t *compressed_data, size_
 
         default:
             LOG(ERR, "Unknown stats type: %d", stats->type);
+            free_netstats_stats(stats);  // FIX: Free nested allocations on error
             return false;
     }
 
@@ -429,9 +439,11 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
 
     // Check if this is an info event (from netevd) or regular event (from cmdexecd/alrmd)
     if (qi->size >= sizeof(info_event_type_t)) {
-        info_event_type_t info_type = *(info_event_type_t *)qi->buf;
+        // SECURITY_FIX: Issue #8 - Use memcpy for unaligned access
+        info_event_type_t info_type;
+        memcpy(&info_type, qi->buf, sizeof(info_type));
 
-        LOG(DEBUG, "ANJAN-DEBUG cgw_send_event_cloud: Checking info event type=%d size=%zu", info_type, qi->size);
+        LOG(DEBUG, "cgw_send_event_cloud: Checking info event type=%d size=%zu", info_type, qi->size);
 
         // Check if it's an info event (1-3 are valid info event types)
         if (info_type >= INFO_EVENT_CLIENT && info_type <= INFO_EVENT_DEVICE) {
@@ -448,7 +460,7 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
             memcpy(&timestamp_ms, ptr, sizeof(timestamp_ms));
             ptr += sizeof(timestamp_ms);
 
-            LOG(DEBUG, "ANJAN-DEBUG cgw_send_event_cloud: Processing info event type=%d timestamp=%" PRIu64,
+            LOG(DEBUG, "cgw_send_event_cloud: Processing info event type=%d timestamp=%" PRIu64,
                 type, timestamp_ms);
 
             if (qi->size < sizeof(info_event_type_t) + sizeof(uint64_t)) {

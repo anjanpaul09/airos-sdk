@@ -16,7 +16,7 @@ typedef struct {
 static const int channels_2g_20mhz[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
 
 // 2.4 GHz - 40 MHz channels (practical subset to avoid severe overlap)
-static const int channels_2g_40mhz[] = {3, 11};
+static const int channels_2g_40mhz[] = {1, 6, 11};
 
 // 5 GHz - 20 MHz channels
 static const int channels_5g_20mhz[] = {
@@ -44,18 +44,18 @@ static const int channels_5g_80mhz[] = {
 
 static const wifi_htmode_map_t wifi_htmode_table[] = {
     // 2.4 GHz Band
-    {"2g", "HT20",  20, channels_2g_20mhz, ARRAY_SIZE(channels_2g_20mhz)},
-    {"2g", "HT40",  40, channels_2g_40mhz, ARRAY_SIZE(channels_2g_40mhz)},
-    {"2g", "HE20",  20, channels_2g_20mhz, ARRAY_SIZE(channels_2g_20mhz)},
-    {"2g", "HE40",  40, channels_2g_40mhz, ARRAY_SIZE(channels_2g_40mhz)},
+    {"2.4GHz", "HT20",  20, channels_2g_20mhz, ARRAY_SIZE(channels_2g_20mhz)},
+    {"2.4GHz", "HT40",  40, channels_2g_40mhz, ARRAY_SIZE(channels_2g_40mhz)},
+    {"2.4GHz", "HE20",  20, channels_2g_20mhz, ARRAY_SIZE(channels_2g_20mhz)},
+    {"2.4GHz", "HE40",  40, channels_2g_40mhz, ARRAY_SIZE(channels_2g_40mhz)},
 
     // 5 GHz Band
-    {"5g", "HT20",  20, channels_5g_20mhz, ARRAY_SIZE(channels_5g_20mhz)},
-    {"5g", "HT40",  40, channels_5g_40mhz, ARRAY_SIZE(channels_5g_40mhz)},
-    {"5g", "VHT20", 20, channels_5g_20mhz, ARRAY_SIZE(channels_5g_20mhz)},
-    {"5g", "VHT40", 40, channels_5g_40mhz, ARRAY_SIZE(channels_5g_40mhz)},
-    {"5g", "VHT80", 80, channels_5g_80mhz, ARRAY_SIZE(channels_5g_80mhz)},
-    {"5g", "HE20",  20, channels_5g_20mhz, ARRAY_SIZE(channels_5g_20mhz)},
-    {"5g", "HE40",  40, channels_5g_40mhz, ARRAY_SIZE(channels_5g_40mhz)},
-    {"5g", "HE80",  80, channels_5g_80mhz, ARRAY_SIZE(channels_5g_80mhz)},
+    {"5GHz", "HT20",  20, channels_5g_20mhz, ARRAY_SIZE(channels_5g_20mhz)},
+    {"5GHz", "HT40",  40, channels_5g_40mhz, ARRAY_SIZE(channels_5g_40mhz)},
+    {"5GHz", "VHT20", 20, channels_5g_20mhz, ARRAY_SIZE(channels_5g_20mhz)},
+    {"5GHz", "VHT40", 40, channels_5g_40mhz, ARRAY_SIZE(channels_5g_40mhz)},
+    {"5GHz", "VHT80", 80, channels_5g_80mhz, ARRAY_SIZE(channels_5g_80mhz)},
+    {"5GHz", "HE20",  20, channels_5g_20mhz, ARRAY_SIZE(channels_5g_20mhz)},
+    {"5GHz", "HE40",  40, channels_5g_40mhz, ARRAY_SIZE(channels_5g_40mhz)},
+    {"5GHz", "HE80",  80, channels_5g_80mhz, ARRAY_SIZE(channels_5g_80mhz)},
 };
