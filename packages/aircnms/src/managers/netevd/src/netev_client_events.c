@@ -56,17 +56,7 @@ void netev_handle_client_connect(const uint8_t *macaddr, const char *ifname)
  
     resolve_client_osinfo(&client_info);
     if (get_client_capability(ifname, &client_info) == 0) {
-        printf("Client Capabilities:\n");
-        printf("  PHY: %s\n", client_info.capability.phy);
-        printf("  Roaming: %s\n", client_info.capability.roaming);
-        printf("  MCS: %s\n", client_info.capability.mcs);
-        printf("  NSS: %s\n", client_info.capability.nss);
-        printf("  WMM: %s\n", client_info.capability.wmm);
-        printf("  MU-MIMO: %s\n", client_info.capability.mu_mimo);
-        printf("  OFDMA: %s\n", client_info.capability.ofdma);
-        printf("  Bandwidth: %s MHz\n", client_info.capability.bw);
-    } else {
-        printf("Failed to get client capabilities\n");
+        LOG(INFO, "Collected Client Capabilities\n");
     }
 
     client_info.is_connected = true;

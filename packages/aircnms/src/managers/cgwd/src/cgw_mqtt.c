@@ -60,6 +60,7 @@ typedef enum json_report {
     JSON_REPORT_NEIGHBOR = 3
 } json_report_type;
 
+bool cgw_publish_json_qos(char *data, char *topic, int qos, bool retain);
 void cgw_mqtt_subscriber_set(mosqev_t *self, void *data, const char *topic, void *msg, size_t msglen);
 
 bool cgw_mqtt_is_connected()
@@ -147,6 +148,18 @@ bool cgw_mqtt_config_valid(void)
 
 void cgw_mqtt_stop(void)
 {
+    // Send offline status before graceful disconnect
+    if (cgw_mqtt_is_connected()) {
+        char offline_payload[512];
+        build_status_payload_to_buf("Offline", offline_payload, sizeof(offline_payload));
+        LOG(INFO, "[MQTT] Sending OFFLINE status before graceful disconnect: topic=%s retain=true qos=1", 
+            stats_topic.status);
+        cgw_publish_json_qos(offline_payload, stats_topic.status, 1, true);
+        
+        // Give time for message to be sent (100ms should be sufficient)
+        usleep(100000);
+    }
+    
     if (cgw_mosqev_init) mosqev_del(&cgw_mqtt);
     if (cgw_mosquitto_init) mosquitto_lib_cleanup();
 
@@ -164,7 +177,7 @@ uint64_t get_current_timestamp_ms() {
     return (uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);  // Convert to milliseconds
 }
 
-bool cgw_publish_json_qos(char *data, char *topic, int qos)
+bool cgw_publish_json_qos(char *data, char *topic, int qos, bool retain)
 {
     mosqev_t *mqtt = &cgw_mqtt;
     void *mbuf;
@@ -178,9 +191,10 @@ bool cgw_publish_json_qos(char *data, char *topic, int qos)
     uint64_t time_diff = (prev_timestamp > 0) ? (current_timestamp - prev_timestamp) : 0;
     prev_timestamp = current_timestamp;  // Update previous timestamp
 
-    LOG(DEBUG, "MQTT: Publishing %zu bytes to topic-%s qos=%d | Time since last publish: %" PRIu64 " ms", mlen, topic, qos, time_diff);
+    LOG(DEBUG, "MQTT: Publishing %zu bytes to topic-%s qos=%d retain=%d | Time since last publish: %" PRIu64 " ms", 
+        mlen, topic, qos, retain, time_diff);
 
-    ret = mosqev_publish(mqtt, NULL, topic, mlen, mbuf, qos, false);
+    ret = mosqev_publish(mqtt, NULL, topic, mlen, mbuf, qos, retain);
 
     if(ret == false) {
         //cgw_mqtt_reconnect();
@@ -193,7 +207,7 @@ bool cgw_publish_json_qos(char *data, char *topic, int qos)
 
 bool cgw_publish_json(char *data, char *topic)
 {
-    return cgw_publish_json_qos(data, topic, 1);
+    return cgw_publish_json_qos(data, topic, 1, false);
 }
 
 
@@ -513,7 +527,7 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
                 size_t msglen = strlen(data);
                 LOG(INFO, "ANJAN-DEBUG NETINFO->CLOUD: msgtype=info_event type=%d msglen=%zu qos=%d topic=%s",
                     type, msglen, qos, topic);
-                ret = cgw_publish_json_qos(data, topic, qos);
+                ret = cgw_publish_json_qos(data, topic, qos, false);
             } else {
                 LOG(ERR, "ANJAN-DEBUG Failed to parse info event JSON for type=%d", type);
             }
@@ -652,12 +666,33 @@ int cgw_send_status_online(void)
     char online_payload[512];
     
     build_status_payload_to_buf("Online", online_payload, sizeof(online_payload));
-    ret = cgw_publish_json(online_payload, stats_topic.status);
+    LOG(INFO, "[MQTT] Sending ONLINE status: topic=%s retain=true qos=1", stats_topic.status);
+    ret = cgw_publish_json_qos(online_payload, stats_topic.status, 1, true);
+    
+    if (ret) {
+        LOG(INFO, "[MQTT] Online status sent successfully");
+    } else {
+        LOG(ERR, "[MQTT] Failed to send online status");
+    }
+    
     return ret;
 }
 
 
 // --- Callbacks ---
+
+// Disconnect callback: log disconnect events
+static void cgw_mqtt_on_disconnect(mosqev_t *self, void *data, int rc)
+{
+    (void)self;
+    (void)data;
+    
+    if (rc == 0) {
+        LOG(INFO, "[MQTT] Disconnect callback: rc=%d (graceful - will message NOT sent by broker)", rc);
+    } else {
+        LOG(INFO, "[MQTT] Disconnect callback: rc=%d (unexpected - will message WILL be sent by broker)", rc);
+    }
+}
 
 void cgw_restart_mqtt_worker(void)
 {
@@ -675,7 +710,24 @@ static void reconnect_cb(EV_P_ ev_timer *w, int revents) {
 
     if (g_mqtt_connected) {
         LOG(INFO, "[MQTT] Connected");
-        cgw_send_status_online();
+        
+        // Retry online status up to 3 times to ensure delivery
+        int retry = 0;
+        bool status_sent = false;
+        while (retry < 3) {
+            if (cgw_send_status_online()) {
+                status_sent = true;
+                break;
+            }
+            LOG(WARNING, "[MQTT] Failed to send online status, retry %d/3", retry + 1);
+            usleep(100000); // 100ms delay between retries
+            retry++;
+        }
+        
+        if (!status_sent) {
+            LOG(ERR, "[MQTT] Failed to send online status after 3 retries");
+        }
+        
         ev_timer_stop(EV_A_ w); // stop reconnect timer once connected
     } else {
         LOG(DEBUG, "[MQTT] Not connected, will retry...");
@@ -883,7 +935,10 @@ bool cgw_mqtt_init(void)
     {
         LOG(ERR, "Failed to set MQTT Will");
     }
+    
+    // Register callbacks
     mosqev_message_cbk_set(&cgw_mqtt, cgw_mqtt_subscriber_set);
+    mosqev_disconnect_cbk_set(&cgw_mqtt, cgw_mqtt_on_disconnect);
 
     cgw_mosqev_init = true;
 

@@ -287,7 +287,7 @@ bool sanitize_and_validate_primary_radio_settings(const char *band,
 
     return true;
 }
-
+#if 0
 static int get_best_channel(const char *band, const char *htmode)
 {
     for (size_t i = 0; i < ARRAY_SIZE(wifi_htmode_table); i++) {
@@ -334,13 +334,13 @@ bool is_valid_channel(const char *band, const char *htmode, int channel)
     printf("Channel %d is NOT valid for %s (%s)\n", channel, band, htmode);
     return false;
 }
-
+#endif
 
 bool sanitize_and_validate_secondary_radio_settings(const char* radio_name, const char *band,
                                                     struct airpro_mgr_wlan_radio_params *params)
 {
-    char htmode[32] = {0};
-    char cmd[128];
+    //char htmode[32] = {0};
+    //char cmd[128];
 
     if (!band || !params) return false;
 
@@ -362,7 +362,7 @@ bool sanitize_and_validate_secondary_radio_settings(const char* radio_name, cons
             strcpy(params->txpower, "23");
         }
     }
-
+#if 0
     memset(cmd, 0, sizeof(cmd));
     // Read current htmode
     snprintf(cmd, sizeof(cmd), "uci get wireless.%s.htmode 2>/dev/null", radio_name);
@@ -383,6 +383,7 @@ bool sanitize_and_validate_secondary_radio_settings(const char* radio_name, cons
         printf("Selected fallback channel: %d\n", final_channel);
     }
     sprintf(params->channel, "%d", final_channel);
+#endif
 
     return true;
 }

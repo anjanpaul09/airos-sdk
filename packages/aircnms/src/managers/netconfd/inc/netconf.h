@@ -229,6 +229,7 @@ bool sanitize_and_validate_secondary_radio_settings(const char *radio_name, cons
 void get_ht_mode(char *htmode, struct airpro_mgr_wlan_radio_params rp, const char *radio_name);
 void get_encryption_type(char *encrypt_type, const char *encryption);
 
+bool target_chan_switch(const char *radio_name, int channel);
 const char *get_config_file(const char *iface); 
 int map_interface_to_index(const char *iface); 
 #endif /* NETCONF_H_INCLUDED */

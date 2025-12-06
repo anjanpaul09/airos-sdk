@@ -7,6 +7,7 @@ UNIT_SRC += src/netconf_network.c
 UNIT_SRC += src/netconf_vlan.c 
 UNIT_SRC += src/netconf_nat.c
 UNIT_SRC += src/target_mtk.c
+UNIT_SRC += src/netconf_chan_switch.c
 UNIT_SRC += src/netconf_sanitize_mtkconf.c
 #UNIT_SRC += src/netconf_qm.c
 UNIT_SRC += src/netconf_rate_limit.c
