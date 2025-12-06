@@ -74,82 +74,6 @@ bool target_config_vif_get(vif_record_t *record)
     return true;
 }
 
-int util_chan_to_freq(int chan)
-{
-    if (chan == 14)
-        return 2484;
-    else if (chan < 14)
-        return 2407 + chan * 5;
-    else if (chan >= 182 && chan <= 196)
-        return 4000 + chan * 5;
-    else
-        return 5000 + chan * 5;
-    return 0;
-}
-
-bool hostapd_chan_switch(const char *radio_name, int channel)
-{
-    char ifname[12];
-    char phyname[8];
-    char cmd[256];
-    int freq = 0;
-    
-    if (strcmp(radio_name, "wifi0") == 0) {
-        strcpy(ifname, "phy1-ap0");
-        strcpy(phyname, "phy1");
-    } else if (strcmp(radio_name, "wifi1") == 0) {
-        strcpy(ifname, "phy0-ap0");
-        strcpy(phyname, "phy0");
-    } else {
-        fprintf(stderr, "Invalid radio name: %s\n", radio_name);
-        return false;
-    }
-
-    // Convert channel → frequency
-    freq = util_chan_to_freq(channel);
-    if (freq <= 0) {
-        fprintf(stderr, "Invalid channel %d for %s\n", channel, radio_name);
-        return false;
-    }
-
-    snprintf(cmd, sizeof(cmd),
-             "hostapd_cli -p /var/run/hostapd -i %s chan_switch 5 %d",
-             ifname, freq);
-
-    printf("Applying channel switch: %s\n", cmd);
-
-    pid_t pid = fork();
-    if (pid == 0) {
-        // Child process — execute command
-        execl("/bin/sh", "sh", "-c", cmd, (char *)NULL);
-        _exit(127); // only if execl fails
-    } else if (pid < 0) {
-        perror("fork");
-        return false;
-    }
-
-    // Parent process — wait up to 3 seconds
-    int status = 0;
-    int waited = 0;
-    while (waited < 30) { // check every 100ms
-        pid_t ret = waitpid(pid, &status, WNOHANG);
-        if (ret == pid) {
-            if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-                return true;
-            else
-                break;
-        }
-        usleep(100000); // 100ms
-        waited++;
-    }
-
-    // Timeout — kill the child
-    fprintf(stderr, "Timeout: killing hostapd_cli for %s\n", ifname);
-    kill(pid, SIGKILL);
-    waitpid(pid, &status, 0);
-    return false;
-}
-
 bool hostapd_set_txpower(const char *radio_name, int txpower_dbm)
 {
     char phyname[12];
@@ -179,7 +103,6 @@ bool hostapd_set_txpower(const char *radio_name, int txpower_dbm)
 
     // Build iw command
     snprintf(cmd, sizeof(cmd), "iw dev %s set txpower fixed %d", phyname, txpower_mbm);
-    printf("Applying: %s\n", cmd);
 
     // Execute command
     int ret = system(cmd);
@@ -257,8 +180,26 @@ bool target_config_radio_set(radio_record_t *record)
 
             ret = uci_set_radio_params(radio_name, &rad_params);
 
-            ret = hostapd_chan_switch(radio_name, atoi(rad_params.channel));
+            // Channel switch with error handling
+            printf("Applying channel switch for %s to channel %s\n", radio_name, rad_params.channel);
+            ret = target_chan_switch(radio_name, atoi(rad_params.channel));
+            if (!ret) {
+                fprintf(stderr, "ERROR: Channel switch failed for %s to channel %s\n", 
+                        radio_name, rad_params.channel);
+                // Continue to next radio instead of failing completely
+            } else {
+                printf("Channel switch successful for %s\n", radio_name);
+            }
+            sleep(3); 
+            // TX power setting with error handling
+            printf("Applying TX power for %s to %s dBm\n", radio_name, rad_params.txpower);
             ret = hostapd_set_txpower(radio_name, atoi(rad_params.txpower));
+            if (!ret) {
+                fprintf(stderr, "ERROR: TX power setting failed for %s to %s dBm\\n",
+                        radio_name, rad_params.txpower);
+            } else {
+                printf("TX power setting successful for %s\\n", radio_name);
+            }
 
 #ifdef CONFIG_PLATFORM_MTK_JEDI
             jedi_set_secondary_radio_params(radio_name, &rad_params);            

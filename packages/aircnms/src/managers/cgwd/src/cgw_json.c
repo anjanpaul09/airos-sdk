@@ -175,7 +175,7 @@ bool cgw_parse_device_newjson(device_report_data_t *device, char *data)
 bool cgw_parse_vif_newjson(vif_report_data_t *vif, char *data)
 {
     json_t *vif_root = json_object();
-    json_t *data_obj = json_object();
+    //json_t *data_obj = json_object();
     json_t *stats_obj = json_object();
 
     if (!vif || !data) {
@@ -183,7 +183,7 @@ bool cgw_parse_vif_newjson(vif_report_data_t *vif, char *data)
         return false;
     }
 
-    if (!vif_root || !data_obj || !stats_obj)
+    if (!vif_root || !stats_obj)
     {
         LOG(ERR, "Failed to allocate JSON objects");
         goto cleanup;
@@ -194,6 +194,7 @@ bool cgw_parse_vif_newjson(vif_report_data_t *vif, char *data)
     json_object_set_new(vif_root, "deviceId", json_string(air_dev.device_id));
     json_object_set_new(vif_root, "OrgId", json_string(air_dev.org_id));
     json_object_set_new(vif_root, "tms", json_integer(vif->timestamp_ms));
+    json_object_set_new(vif_root, "type", json_string("vif_stats"));
 
     // Info moved to netevd - only stats here
     // Fill stats object
@@ -241,10 +242,10 @@ bool cgw_parse_vif_newjson(vif_report_data_t *vif, char *data)
     json_object_set_new(stats_obj, "ethernet", ethernet_stats_array);
 
     /* Store stats only inside `data` (info moved to netevd) */
-    json_object_set_new(data_obj, "stats", stats_obj);
+    //json_object_set_new(data_obj, "stats", stats_obj);
 
     /* Attach `data` to `vif_root` */
-    json_object_set_new(vif_root, "data", data_obj);
+    json_object_set_new(vif_root, "data", stats_obj);
 
     /* Convert JSON object to string */
     char *json_str = json_dumps(vif_root, 0);
@@ -273,7 +274,7 @@ bool cgw_parse_vif_newjson(vif_report_data_t *vif, char *data)
 
 cleanup:
     if (vif_root) json_decref(vif_root);
-    if (data_obj) json_decref(data_obj);
+    //if (data_obj) json_decref(data_obj);
     if (stats_obj) json_decref(stats_obj);
     return false;
 }
