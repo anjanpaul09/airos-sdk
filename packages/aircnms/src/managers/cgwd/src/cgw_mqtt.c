@@ -438,7 +438,7 @@ bool cgw_send_stats_json(cgw_item_t *qi)
 
 bool cgw_send_event_cloud(cgw_item_t *qi)
 {
-    bool ret;
+    bool ret = false;
     char data[MAX_MQTT_SEND_DATA_SIZE] = {0};
     char topic[100] = {0};
 
@@ -451,114 +451,110 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
         return true;
     }
 
-    // Check if this is an info event (from netevd) or regular event (from cmdexecd/alrmd)
-    if (qi->size >= sizeof(info_event_type_t)) {
-        // SECURITY_FIX: Issue #8 - Use memcpy for unaligned access
-        info_event_type_t info_type;
-        memcpy(&info_type, qi->buf, sizeof(info_type));
-
-        LOG(DEBUG, "cgw_send_event_cloud: Checking info event type=%d size=%zu", info_type, qi->size);
-
-        // Check if it's an info event (1-3 are valid info event types)
-        if (info_type >= INFO_EVENT_CLIENT && info_type <= INFO_EVENT_DEVICE) {
-            // This is an info event from netevd
-            uint8_t *ptr = (uint8_t *)qi->buf;
-
-            // Extract type
-            info_event_type_t type;
-            memcpy(&type, ptr, sizeof(type));
-            ptr += sizeof(type);
-
-            // Extract timestamp
-            uint64_t timestamp_ms;
-            memcpy(&timestamp_ms, ptr, sizeof(timestamp_ms));
-            ptr += sizeof(timestamp_ms);
-
-            LOG(DEBUG, "cgw_send_event_cloud: Processing info event type=%d timestamp=%" PRIu64,
-                type, timestamp_ms);
-
-            if (qi->size < sizeof(info_event_type_t) + sizeof(uint64_t)) {
-                LOG(ERR, "ANJAN-DEBUG Info event too small: size=%zu expected>=%zu",
-                    qi->size, sizeof(info_event_type_t) + sizeof(uint64_t));
-                return false;
-            }
-
-            // Parse based on type
-            int qos = 1; // Default QoS for info events
-            switch (type) {
-                case INFO_EVENT_CLIENT:
-                {
-                    client_info_event_t client;
-                    memcpy(&client, ptr, sizeof(client));
-
-                    ret = cgw_parse_client_info_json(&client, data, timestamp_ms);
-                    strncpy(topic, stats_topic.client, sizeof(topic) - 1);
-                    topic[sizeof(topic) - 1] = '\0';
-                    qos = 1; // Client info events use QoS 1
-                    break;
-                }
-                case INFO_EVENT_VIF:
-                {
-                    vif_info_event_t vif;
-                    memcpy(&vif, ptr, sizeof(vif));
-
-                    ret = cgw_parse_vif_info_json(&vif, data, timestamp_ms);
-                    strncpy(topic, stats_topic.vif, sizeof(topic) - 1);
-                    topic[sizeof(topic) - 1] = '\0';
-                    qos = 1; // VIF info events use QoS 1
-                    break;
-                }
-                case INFO_EVENT_DEVICE:
-                {
-                    device_info_event_t device;
-                    memcpy(&device, ptr, sizeof(device));
-
-                    ret = cgw_parse_device_info_json(&device, data, timestamp_ms);
-                    strncpy(topic, stats_topic.device, sizeof(topic) - 1);
-                    topic[sizeof(topic) - 1] = '\0';
-                    break;
-                }
-                default:
-                    LOG(ERR, "Unknown info event type: %d", type);
-                    return false;
-            }
-
-            if (ret) {
-                size_t msglen = strlen(data);
-                LOG(INFO, "ANJAN-DEBUG NETINFO->CLOUD: msgtype=info_event type=%d msglen=%zu qos=%d topic=%s",
-                    type, msglen, qos, topic);
-                ret = cgw_publish_json_qos(data, topic, qos, false);
-            } else {
-                LOG(ERR, "ANJAN-DEBUG Failed to parse info event JSON for type=%d", type);
-            }
-
-            return ret;
+    // Check data type explicitly
+    if (qi->req.data_type == CGW_DATA_INFO_EVENT) {
+        // This is an info event from netevd
+        
+        // Basic validation
+        if (qi->size < sizeof(info_event_type_t) + sizeof(uint64_t)) {
+            LOG(ERR, "ANJAN-DEBUG Info event too small: size=%zu", qi->size);
+            return false;
         }
-    }
 
-    // Regular event (from cmdexecd/alrmd) - original handling
-    if (qi->size < sizeof(event_msg_t)) {
+        uint8_t *ptr = (uint8_t *)qi->buf;
+
+        // Extract type
+        info_event_type_t type;
+        memcpy(&type, ptr, sizeof(type));
+        ptr += sizeof(type);
+
+        // Extract timestamp
+        uint64_t timestamp_ms;
+        memcpy(&timestamp_ms, ptr, sizeof(timestamp_ms));
+        ptr += sizeof(timestamp_ms);
+
+        LOG(DEBUG, "cgw_send_event_cloud: Processing info event type=%d timestamp=%" PRIu64,
+            type, timestamp_ms);
+
+        // Parse based on type
+        int qos = 1; // Default QoS for info events
+        switch (type) {
+            case INFO_EVENT_CLIENT:
+            {
+                client_info_event_t client;
+                memcpy(&client, ptr, sizeof(client));
+
+                ret = cgw_parse_client_info_json(&client, data, timestamp_ms);
+                strncpy(topic, stats_topic.client, sizeof(topic) - 1);
+                topic[sizeof(topic) - 1] = '\0';
+                qos = 1; // Client info events use QoS 1
+                break;
+            }
+            case INFO_EVENT_VIF:
+            {
+                vif_info_event_t vif;
+                memcpy(&vif, ptr, sizeof(vif));
+
+                ret = cgw_parse_vif_info_json(&vif, data, timestamp_ms);
+                strncpy(topic, stats_topic.vif, sizeof(topic) - 1);
+                topic[sizeof(topic) - 1] = '\0';
+                qos = 1; // VIF info events use QoS 1
+                break;
+            }
+            case INFO_EVENT_DEVICE:
+            {
+                device_info_event_t device;
+                memcpy(&device, ptr, sizeof(device));
+
+                ret = cgw_parse_device_info_json(&device, data, timestamp_ms);
+                strncpy(topic, stats_topic.device, sizeof(topic) - 1);
+                topic[sizeof(topic) - 1] = '\0';
+                break;
+            }
+            default:
+                LOG(ERR, "Unknown info event type: %d", type);
+                return false;
+        }
+
+        if (ret) {
+            size_t msglen = strlen(data);
+            LOG(INFO, "ANJAN-DEBUG NETINFO->CLOUD: msgtype=info_event type=%d msglen=%zu qos=%d topic=%s",
+                type, msglen, qos, topic);
+            ret = cgw_publish_json_qos(data, topic, qos, false);
+        } else {
+            LOG(ERR, "ANJAN-DEBUG Failed to parse info event JSON for type=%d", type);
+        }
+
+        return ret;
+    } 
+    else if (qi->req.data_type == CGW_DATA_EVENT) {
+        // Regular event (from cmdexecd/alrmd)
+        if (qi->size < sizeof(event_msg_t)) {
+            LOG(ERR, "Event message too small");
+            return false;
+        }
+
+        event_msg_t event;
+        memcpy(&event, qi->buf, qi->size);
+
+        ret = cgw_parse_event_newjson(&event, data);
+
+        if (event.type == EVENT_TYPE_UPGRADE) {
+            strncpy(topic, stats_topic.config, sizeof(topic) - 1);
+            topic[sizeof(topic) - 1] = '\0';
+        } else if (event.type == EVENT_TYPE_CMD) {
+            strncpy(topic, stats_topic.cmdr, sizeof(topic) - 1);
+            topic[sizeof(topic) - 1] = '\0';
+        } else {
+            topic[0] = '\0';
+        }
+
+        ret = cgw_publish_json(data, topic);
+        return ret;
+    } else {
+        LOG(ERR, "cgw_send_event_cloud: Unknown data type %d", qi->req.data_type);
         return false;
     }
-
-    event_msg_t event;
-    memcpy(&event, qi->buf, qi->size);
-
-    ret = cgw_parse_event_newjson(&event, data);
-
-    if (event.type == EVENT_TYPE_UPGRADE) {
-        strncpy(topic, stats_topic.config, sizeof(topic) - 1);
-        topic[sizeof(topic) - 1] = '\0';
-    } else if (event.type == EVENT_TYPE_CMD) {
-        strncpy(topic, stats_topic.cmdr, sizeof(topic) - 1);
-        topic[sizeof(topic) - 1] = '\0';
-    } else {
-        topic[0] = '\0';
-    }
-
-    ret = cgw_publish_json(data, topic);
-
-    return ret;
 }
 
 bool cgw_send_config_cloud(cgw_item_t *qi)

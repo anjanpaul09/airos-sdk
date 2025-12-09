@@ -284,17 +284,11 @@ bool target_config_vif_set(vif_record_t *record)
                     strlcpy(vif_params.vlan_id, record->vif_param[vid].vlan_id, sizeof(vif_params.vlan_id));
                 }
             }
-
-            if( strcmp(vif_params.forward_type, "NAT") == 0 && (record->vif_param[vid].is_auth == false)) {
+            if( strcmp(vif_params.forward_type, "NAT") == 0) {
                 printf("Ankit: nat true auth false\n");
                 strlcpy(vif_params.network, "nat_network", sizeof(vif_params.network));
-                //rc = system("ifup nat_network");
-                //if (rc == 0) {
-                  //  sleep(3);
-                //}
-            } else {
-                strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
             }
+
 #endif
             if (!sanitize_and_validate_vif_params(&vif_params)) {
                 fprintf(stderr, "Warning: vif_params contains invalid data, skipping UCI set.\n");
@@ -424,15 +418,9 @@ bool target_config_vif_set(vif_record_t *record)
                 }
             }
 
-            if( strcmp(vif_params.forward_type, "NAT") == 0 && (record->vif_param[vid].is_auth == false)) {
+            if( strcmp(vif_params.forward_type, "NAT") == 0) {
                 printf("Ankit: nat true auth false\n");
                 strlcpy(vif_params.network, "nat_network", sizeof(vif_params.network));
-                //rc = system("ifup nat_network");
-                //if (rc == 0) {
-                  //  sleep(3);
-                //}
-            } else {
-                strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
             }
 #endif
 
@@ -440,6 +428,7 @@ bool target_config_vif_set(vif_record_t *record)
                 fprintf(stderr, "Warning: vif_params contains invalid data, skipping UCI set.\n");
                 return -1;
             }
+            
             uci_set_vap_params(vif_name, &vif_params);
             
             memset(cmd, 0, sizeof(cmd));
