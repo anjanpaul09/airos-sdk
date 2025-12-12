@@ -226,6 +226,7 @@ bool cgw_parse_vif_newjson(vif_report_data_t *vif, char *data)
     for (int i = 0; i < vif->record.stats.n_ethernet; i++) {
         json_t *eth_stats = json_object();
         json_object_set_new(eth_stats, "interface", json_string(vif->record.stats.ethernet[i].interface));
+        json_object_set_new(eth_stats, "type", json_string(vif->record.stats.ethernet[i].interface));
         json_object_set_new(eth_stats, "rxBytes", json_integer(vif->record.stats.ethernet[i].rxBytes));
         json_object_set_new(eth_stats, "txBytes", json_integer(vif->record.stats.ethernet[i].txBytes));
         json_object_set_new(eth_stats, "rxPackets", json_integer(vif->record.stats.ethernet[i].rxPackets));
@@ -564,10 +565,11 @@ bool cgw_parse_neighbor_newjson(neighbor_report_data_t *rpt, char *data)
         return false;
     }
 
-    json_object_set_new(root, "serialNum", json_string(air_dev.serial_num));
+    json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "macAddr", json_string(air_dev.macaddr));
+    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(rpt->timestamp_ms));
+    json_object_set_new(root, "type", json_string("neighbor"));
 
     for (int itr = 0; itr < rpt->n_entry; itr++) {
         json_t *neighbor = json_object();

@@ -4,6 +4,8 @@
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
+#include <stdbool.h>
+#include "log.h"
 
 struct nl80211_state {
 	struct nl_sock *nl_sock;
@@ -16,6 +18,7 @@ struct nl80211_state {
 /* hostapd event listener */
 int hostapd_events_start(const char *ctrl_dir);
 void hostapd_events_stop(void);
+bool sta_exists_on_any_iface(const char *mac_str);
 
 #endif /* NETEVD_NETEV_H */
 
