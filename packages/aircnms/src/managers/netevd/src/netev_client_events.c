@@ -47,7 +47,12 @@ void netev_handle_client_connect(const uint8_t *macaddr, const char *ifname)
     
     client_info_event_t client_info = {0};
     uint64_t timestamp_ms = get_timestamp_ms();
-    sleep(2); 
+    //usleep(3000*1000); 
+    struct timespec ts = {
+        .tv_sec = 3,
+        .tv_nsec = 0
+    };
+    nanosleep(&ts, NULL);
     // Call target function to fill client info
     if (!target_info_clients_get(macaddr, ifname, &client_info, timestamp_ms, true)) {
         LOG(ERR, "Failed to get client info from target");

@@ -249,10 +249,12 @@ char* get_os_info(const char* options, const char* vendor_class) {
     }
     
     // Format: "OS Version (Device Type)"
-    snprintf(os_info, sizeof(os_info), "%s %s (%s)", 
-             device->os_name, 
-             device->os_version, 
-             device->device_type);
+    snprintf(os_info, sizeof(os_info), "%s", 
+             device->os_name);
+    //snprintf(os_info, sizeof(os_info), "%s %s (%s)", 
+      //       device->os_name, 
+        //     device->os_version, 
+          //   device->device_type);
     
     return os_info;
 }

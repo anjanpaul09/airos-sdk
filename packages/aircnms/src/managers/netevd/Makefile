@@ -1,6 +1,6 @@
 UNIT_SRC += src/main.c
-UNIT_SRC += src/nlev.c
-UNIT_SRC += src/nl.c
+#UNIT_SRC += src/nlev.c
+#UNIT_SRC += src/nl.c
 UNIT_SRC += src/hostapd_ev.c
 UNIT_SRC += src/wpa_os_shim.c
 UNIT_SRC += src/netev_info_events.c
@@ -9,6 +9,7 @@ UNIT_SRC += src/netev_client_events.c
 UNIT_SRC += src/netev_vif_info.c
 UNIT_SRC += src/netev_device_info.c
 UNIT_SRC += src/netev_client_cap.c
+UNIT_SRC += src/nl_client_check.c
 
 # Platform target code for VIF info
 ifeq ($(BOARD_TYPE), BOARD_TYPE_MTK)

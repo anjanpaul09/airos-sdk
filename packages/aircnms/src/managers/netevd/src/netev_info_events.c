@@ -10,8 +10,8 @@
 #include "stats_report.h"
 #include "netev_ubus_tx.h"
 
-#define INFO_EVENT_BUF_SZ (64*1024)    // 64 KB
-static uint8_t netev_info_buf[INFO_EVENT_BUF_SZ];
+#define INFO_EVENT_BUF_SZ (4*1024)    // 4 KB
+//static uint8_t netev_info_buf[INFO_EVENT_BUF_SZ];
 
 /* Helper function to send info event via unixcomm to cgwd */
 static bool netev_send_info_event(info_event_t *event)
@@ -23,6 +23,7 @@ static bool netev_send_info_event(info_event_t *event)
 
     // Serialize the event
     size_t event_size = sizeof(info_event_type_t) + sizeof(uint64_t);
+    uint8_t netev_info_buf[INFO_EVENT_BUF_SZ];
     
     switch (event->type) {
         case INFO_EVENT_CLIENT:

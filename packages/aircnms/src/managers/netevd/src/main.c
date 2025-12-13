@@ -6,23 +6,20 @@
 #include "log.h"
 #include "dhcp_fp.h"
 
-int nl80211_init(struct nl80211_state *state);
-int listen_events(struct nl80211_state *state, const int n_waits,
-                  const __u32 *waits, struct ev_loop *loop);
-void nl80211_cleanup(struct ev_loop *loop);
+int nl80211_init(void);
+void nl80211_cleanup(void);
+void hostapd_events_stop(void);
 
 int main()
 {
         struct ev_loop *loop = EV_DEFAULT;
         (void)loop;
-	struct nl80211_state nlstate;
 	int ret = -1;
         
-        //dhcp_fp_init();
 	/* Initialize ubus TX service for sending info events to cgwd */
 	if (!netev_ubus_tx_service_init()) {
-		LOG(ERR, "Failed to initialize ubus TX service");
-		return -1;
+	    LOG(ERR, "Failed to initialize ubus TX service");
+	    return -1;
 	}
 
         if (!netev_monitor_device_info()) {
@@ -31,29 +28,23 @@ int main()
         }
 	/* Send VIF info event on startup */
 	netev_send_vif_info();
-
-            /* Initialize nl80211 */
-    ret = nl80211_init(&nlstate);
-    if (ret) {
-        LOG(ERR, "Failed to initialize nl80211: %d", ret);
-        goto cleanup;
-    }
-
-    /* Start nl80211 event monitoring with libev */
-    ret = listen_events(&nlstate, 0, NULL, loop);
-    if (ret) {
-        LOG(ERR, "Failed to start nl80211 event listener: %d", ret);
-        goto cleanup;
-    }
+ 
+        ret = nl80211_init();
+        if (ret) {
+            LOG(ERR, "Failed to initialize nl80211: %d", ret);
+            goto cleanup;
+        }
 
 	/* start hostapd event listener (non-fatal if not present) */
 	hostapd_events_start(NULL);
 
         ev_run(EV_DEFAULT, 0);
 
+        hostapd_events_stop();
+
 cleanup:
 	/* Cleanup */
-        nl80211_cleanup(loop);
+        nl80211_cleanup();
 	netev_ubus_tx_service_cleanup();
 	
 	return ret;
