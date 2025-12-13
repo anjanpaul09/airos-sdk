@@ -120,6 +120,7 @@ bool cgw_parse_vif_info_json(vif_info_event_t *vif_info, char *data, uint64_t ti
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
     json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(timestamp_ms));
+    json_object_set_new(root, "type", json_string("vif_info"));
 
     // Add data object
     json_t *data_obj = json_object();
