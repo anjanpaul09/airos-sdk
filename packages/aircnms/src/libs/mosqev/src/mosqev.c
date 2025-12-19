@@ -167,7 +167,8 @@ bool mosqev_init(mosqev_t *self, const char *cid, struct ev_loop *ev, void *data
 	 * Instantiate a new Mosquitto structure --
 	 * The 2nd paramater is the "clean_session" parameter, needs to be true if cid is NULL
 	 */
-	self->me_mosq = mosquitto_new(cid, true, self);
+	self->me_mosq = mosquitto_new(cid, false, self);  //to get persistent config
+	//self->me_mosq = mosquitto_new(cid, true, self);
 	if (self->me_mosq == NULL)
 	{
 		LOG(ERR, "Error initializing Mosquitto instance: CID: %s", cid);

@@ -94,7 +94,7 @@ int cgw_handle_msgrx(char *payload, long payloadlen, char *topic)
     bool ret;
      
     if (strstr(payload, "cmd") != NULL) {
-        if (strstr(payload, "trigger_neighbour_scan") != NULL) {
+        if (strstr(payload, "rf_scan") != NULL) {
             ret = cgw_send_msg_to_sm(payload, payloadlen, topic);
         } else {
             ret = cgw_send_msg_to_dm(payload, payloadlen, topic);

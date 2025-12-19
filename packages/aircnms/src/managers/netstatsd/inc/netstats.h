@@ -19,6 +19,7 @@
 #include "stats_report.h"
 
 struct netstats_cxt;  // Forward declaration
+extern char cmd_id[128];   // Id for rf-scan, for cloud 
 
 #define RADIO_COUNTRY_CODE_LEN          8
 #define RADIO_NAME_LEN                  32

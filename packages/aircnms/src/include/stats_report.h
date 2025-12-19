@@ -228,6 +228,7 @@ typedef struct {
 typedef struct {
     uint64_t timestamp_ms;
     int n_entry;
+    char id[128];
     neighbor_record_t record[MAX_NEIGHBOUR];
 } neighbor_report_data_t;
 
