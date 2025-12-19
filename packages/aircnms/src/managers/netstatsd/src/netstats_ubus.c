@@ -18,7 +18,7 @@
 struct ubus_context *g_netstats_ubus_ctx = NULL;
 static struct ev_loop *loop = NULL;
 static ev_io ubus_watcher;
-
+char cmd_id[128];
 /* ===================================================
  * TX (Transmit) Functionality
  * =================================================== */
@@ -171,6 +171,39 @@ static int ubus_neighbor_scan_handler(struct ubus_context* ctx, struct ubus_obje
 /* ---------------------------------------------------
  * Handler for incoming ubus commands (legacy)
  * --------------------------------------------------- */
+
+int parse_cmd_json(const char *json_str)
+{
+    json_error_t error;
+    json_t *root = json_loads(json_str, 0, &error);
+    if (!root) {
+        fprintf(stderr, "JSON parse error at line %d: %s\n",
+                error.line, error.text);
+        return -1;
+    }
+
+    /* Ensure root is an object */
+    if (!json_is_object(root)) {
+        fprintf(stderr, "Root is not a JSON object\n");
+        json_decref(root);
+        return -1;
+    }
+
+    json_t *jdev   = json_object_get(root, "id");
+
+    if (!json_is_string(jdev)) {
+        fprintf(stderr, "Invalid or missing fields\n");
+        json_decref(root);
+        return -1;
+    }
+
+    const char *devid = json_string_value(jdev);
+    snprintf(cmd_id, sizeof(cmd_id), "%s", devid);
+
+    json_decref(root);
+    return 0;
+}
+
 static int ubus_netstats_cmd_handler(struct ubus_context* ctx, struct ubus_object* obj,
                               struct ubus_request_data* req, const char* method,
                               struct blob_attr* msg) 
@@ -203,10 +236,15 @@ static int ubus_netstats_cmd_handler(struct ubus_context* ctx, struct ubus_objec
         return -1;
     }
 
+    uint8_t *data = blobmsg_data(tb[DATA]);
     int size = blobmsg_get_u32(tb[SIZE]);
     (void)size;  // May be used in future
     int len = blobmsg_data_len(tb[DATA]);
-    (void)len;  // May be used in future
+
+    char str[512];
+    memcpy(str, data, len);
+    str[len] = '\0';
+    parse_cmd_json(str);
 
     LOG(DEBUG, "Declared size: %d | Actual data length: %d", size, len);
     netstats_init_neighbor_stats();

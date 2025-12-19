@@ -623,7 +623,7 @@ void cgw_mqtt_reconnect()
                 {
                     int ret;
                     for (int i = 0; i < cgw_topic_lst.n_topic; i++) {
-                        ret = mosquitto_subscribe(mqtt->me_mosq, NULL, cgw_topic_lst.topic[i], 0);
+                        ret = mosquitto_subscribe(mqtt->me_mosq, NULL, cgw_topic_lst.topic[i], 1);
                         if (ret) {
                             LOG(ERR, "Error subscribing to topic %s: %d", cgw_topic_lst.topic[i], ret);
                             break;
@@ -662,8 +662,8 @@ int cgw_send_status_online(void)
     char online_payload[512];
     
     build_status_payload_to_buf("Online", online_payload, sizeof(online_payload));
-    LOG(INFO, "[MQTT] Sending ONLINE status: topic=%s retain=true qos=1", stats_topic.status);
-    ret = cgw_publish_json_qos(online_payload, stats_topic.status, 1, true);
+    LOG(INFO, "[MQTT] Sending ONLINE status: topic=%s retain=false qos=1", stats_topic.status);
+    ret = cgw_publish_json_qos(online_payload, stats_topic.status, 1, false);
     
     if (ret) {
         LOG(INFO, "[MQTT] Online status sent successfully");
@@ -918,7 +918,7 @@ bool cgw_mqtt_init(void)
     }
     
     uci_get_mqtt_params();
-    strncpy(cID, air_dev.macaddr, sizeof(cID));
+    strncpy(cID, air_dev.device_id, sizeof(cID));
     if (!mosqev_init(&cgw_mqtt, cID, EV_DEFAULT, NULL))
     {
         LOGE("initializing MQTT library.\n");
@@ -927,7 +927,7 @@ bool cgw_mqtt_init(void)
 
     build_status_payload_to_buf("Offline", offline_payload, sizeof(offline_payload));
     
-    if (!mosqev_set_will(&cgw_mqtt, stats_topic.status, offline_payload, 1, true))
+    if (!mosqev_set_will(&cgw_mqtt, stats_topic.status, offline_payload, 1, false))
     {
         LOG(ERR, "Failed to set MQTT Will");
     }

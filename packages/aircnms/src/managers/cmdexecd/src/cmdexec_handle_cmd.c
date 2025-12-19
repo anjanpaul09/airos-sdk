@@ -30,7 +30,7 @@ void handle_cmd_device_delete(json_t *root)
 void handle_cmd_device_upgrade(json_t *root) 
 {
     memset(&fw_id, 0, sizeof(fw_id));
-    strcpy(fw_id, json_string_value(json_object_get(root, "device_firmware_id")));
+    strcpy(fw_id, json_string_value(json_object_get(root, "id")));
     set_fw_id_to_aircnms(fw_id);
     
     target_cmd_device_upgrade();
@@ -50,7 +50,7 @@ void handle_cmd_arp(json_t *root)
 void handle_cmd_device_conf(json_t *root) 
 {
     memset(&cmd_id, 0, sizeof(cmd_id));
-    strcpy(cmd_id, json_string_value(json_object_get(root, "device_web_cli_id")));
+    strcpy(cmd_id, json_string_value(json_object_get(root, "id")));
     
     target_exec_cmd_custom("uci show aircnms.@device[0] | cut -d'=' -f2 | tr -d \"'\"");
 }
@@ -67,7 +67,7 @@ void handle_cmd_custom(json_t *root)
     } 
 
     memset(&cmd_id, 0, sizeof(cmd_id));
-    strcpy(cmd_id, json_string_value(json_object_get(root, "device_web_cli_id")));
+    strcpy(cmd_id, json_string_value(json_object_get(root, "id")));
     
     target_exec_cmd_custom(command);
 }

@@ -196,14 +196,19 @@ bool netstats_copy_stats(netstats_stats_t *dst, void *sts)
             // Copy timestamp
             dst->u.neighbor.timestamp_ms = report_data->timestamp_ms;
 
+            //cmd-id for cloud
+            snprintf(dst->u.neighbor.id, sizeof(dst->u.neighbor.id), "%s",
+                     cmd_id);
+
             // Copy client neighbor, ensuring it does not exceed MAX_NEIGHBOR
             dst->u.neighbor.n_entry = (report_data->n_entry > MAX_NEIGHBOUR) ? MAX_NEIGHBOUR : report_data->n_entry;
 
             // Copy neighbor records safely
             memcpy(dst->u.neighbor.record, report_data->record, dst->u.neighbor.n_entry * sizeof(neighbor_record_t));
             dst->size = sizeof(dst->u.neighbor.timestamp_ms)
-                      + sizeof(dst->u.neighbor.n_entry)
-                      + dst->u.neighbor.n_entry * sizeof(neighbor_record_t);
+                        + sizeof(dst->u.neighbor.n_entry)
+                        + sizeof(dst->u.neighbor.id)
+                        + dst->u.neighbor.n_entry * sizeof(neighbor_record_t);
             break;
         }
 

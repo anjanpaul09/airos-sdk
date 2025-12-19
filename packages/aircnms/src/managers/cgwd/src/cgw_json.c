@@ -496,25 +496,25 @@ bool cgw_parse_event_newjson(event_msg_t *event, char *data)
     } else if ( event->type == EVENT_TYPE_ALARM ) {
         json_object_set_new(root, "type", json_string("device_alarm"));
     } else if ( event->type == EVENT_TYPE_CMD ) {
-        json_object_set_new(root, "type", json_string("device_cmd_data"));
+        json_object_set_new(root, "type", json_string("web_cli"));
     }
+    json_object_set_new(root, "cmd", json_string(""));
+    json_object_set_new(root, "id", json_string(event->cloud_id));
     
     if ( event->type == EVENT_TYPE_UPGRADE ) {
         if ( event->status == EVENT_STATUS_DOWNLOADED ) {
-            json_object_set_new(event_root, "status", json_string("Downloaded"));
+            json_object_set_new(event_root, "cmd_reply", json_string("Downloaded"));
         } else if ( event->status == EVENT_STATUS_UPGRADING ) {
-            json_object_set_new(event_root, "status", json_string("Upgrading"));
+            json_object_set_new(event_root, "cmd_reply", json_string("Upgrading"));
         }  else if ( event->status == EVENT_STATUS_FAILED ) {
-            json_object_set_new(event_root, "status", json_string("Failed"));
+            json_object_set_new(event_root, "cmd_reply", json_string("Failed"));
         }  else if ( event->status == EVENT_STATUS_UPGRADED ) {
-            json_object_set_new(event_root, "status", json_string("Success"));
+            json_object_set_new(event_root, "cmd_reply", json_string("Success"));
         }
-        json_object_set_new(event_root, "device_firmware_id", json_string(event->cloud_id));
     } else if ( event->type == EVENT_TYPE_CMD ) {
         json_object_set_new(event_root, "cmd_reply", json_string(event->data));
-        json_object_set_new(event_root, "device_command_id", json_string(event->cloud_id));
     } 
-    json_object_set_new(root, "data", event_root);
+    json_object_set_new(root, "result", event_root);
 
 
     char *json_str = json_dumps(root, 0);
@@ -558,6 +558,14 @@ bool cgw_parse_neighbor_newjson(neighbor_report_data_t *rpt, char *data)
         return false;
     }
 
+    /* result object */
+    json_t *result = json_object();
+    if (!result) {
+        LOG(ERR, "Failed to create result object");
+        json_decref(root);
+        return false;
+    }
+
     json_t *neighbor_array = json_array();
     if (!neighbor_array) {
         LOG(ERR, "Failed to create JSON array");
@@ -565,11 +573,10 @@ bool cgw_parse_neighbor_newjson(neighbor_report_data_t *rpt, char *data)
         return false;
     }
 
-    json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
-    json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
-    json_object_set_new(root, "tms", json_integer(rpt->timestamp_ms));
-    json_object_set_new(root, "type", json_string("neighbor"));
+
+    json_object_set_new(root, "type", json_string("rf_scan"));
+    json_object_set_new(root, "cmd", json_string("rf_scan"));
+    json_object_set_new(root, "id", json_string(rpt->id));
 
     for (int itr = 0; itr < rpt->n_entry; itr++) {
         json_t *neighbor = json_object();
@@ -601,7 +608,11 @@ bool cgw_parse_neighbor_newjson(neighbor_report_data_t *rpt, char *data)
         json_array_append_new(neighbor_array, neighbor);
     }
 
-    json_object_set_new(root, "data", neighbor_array);
+    /* result → cmd_reply */
+    json_object_set_new(result, "cmd_reply", neighbor_array);
+
+    /* root → result */
+    json_object_set_new(root, "result", result);
 
     char *json_str = json_dumps(root, 0);
     if (!json_str) {
