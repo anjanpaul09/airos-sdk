@@ -38,7 +38,7 @@ bool cgw_parse_client_info_json(client_info_event_t *client_info, char *data, ui
     // Add root level fields
     json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id)); // TODO: Get from air_dev
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
+    json_object_set_new(root, "orgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(timestamp_ms));
     json_object_set_new(root, "type", json_string("client_event"));
 
@@ -118,7 +118,7 @@ bool cgw_parse_vif_info_json(vif_info_event_t *vif_info, char *data, uint64_t ti
     // Add root level fields
     json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id)); // TODO: Get from air_dev
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
+    json_object_set_new(root, "orgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(timestamp_ms));
     json_object_set_new(root, "type", json_string("vif_info"));
 
@@ -202,7 +202,7 @@ bool cgw_parse_device_info_json(device_info_event_t *device_info, char *data, ui
     // Add root level fields
     json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id)); // TODO: Get from air_dev
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
+    json_object_set_new(root, "orgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(timestamp_ms));
     json_object_set_new(root, "type", json_string("ap_info"));
 

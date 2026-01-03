@@ -36,6 +36,7 @@ static const char *TOPIC_SUFFIXES[] = {
   "vif",
   "client",
   "neighbor",
+  "cmdr",
 };
 
 typedef struct SubscribeContext {

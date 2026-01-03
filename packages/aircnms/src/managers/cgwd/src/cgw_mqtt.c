@@ -425,8 +425,10 @@ bool cgw_send_stats_json(cgw_item_t *qi)
             neighbor_report_data_t *neighbor = &stats->u.neighbor;
             ret = cgw_parse_neighbor_newjson(neighbor, data);
             size_t msglen = strlen(data);
+            char topic[256];
+            sprintf(topic, "dev/to/cloud/%s/%s/event", air_dev.device_id, air_dev.serial_num);
             LOG(INFO, "CGWD->CLOUD: msgtype=%s entries=%d msglen=%zu", msgtype_str, neighbor->n_entry, msglen);
-            ret = cgw_publish_json(data, stats_topic.neighbor);
+            ret = cgw_publish_json(data, topic);
 
         }break;
     }
@@ -539,16 +541,9 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
 
         ret = cgw_parse_event_newjson(&event, data);
 
-        if (event.type == EVENT_TYPE_UPGRADE) {
-            strncpy(topic, stats_topic.config, sizeof(topic) - 1);
-            topic[sizeof(topic) - 1] = '\0';
-        } else if (event.type == EVENT_TYPE_CMD) {
-            strncpy(topic, stats_topic.cmdr, sizeof(topic) - 1);
-            topic[sizeof(topic) - 1] = '\0';
-        } else {
-            topic[0] = '\0';
-        }
-
+        sprintf(topic, "dev/to/cloud/%s/%s/event", air_dev.device_id, air_dev.serial_num);
+        topic[sizeof(topic) - 1] = '\0';
+    
         ret = cgw_publish_json(data, topic);
         return ret;
     } else {
