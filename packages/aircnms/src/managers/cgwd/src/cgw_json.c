@@ -49,7 +49,7 @@ int build_status_payload_to_buf(const char *status,
 
     json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
+    json_object_set_new(root, "orgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(current_time_ms()));
 
     json_object_set_new(data_obj, "status", json_string(status));
@@ -85,7 +85,7 @@ bool cgw_parse_device_newjson(device_report_data_t *device, char *data)
     // Adding main metadata
     json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
+    json_object_set_new(root, "orgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(device->timestamp_ms));
     json_object_set_new(root, "type", json_string("ap_stats"));
 
@@ -192,7 +192,7 @@ bool cgw_parse_vif_newjson(vif_report_data_t *vif, char *data)
     // Add root level fields
     json_object_set_new(vif_root, "networkId", json_string(air_dev.netwrk_id));
     json_object_set_new(vif_root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(vif_root, "OrgId", json_string(air_dev.org_id));
+    json_object_set_new(vif_root, "orgId", json_string(air_dev.org_id));
     json_object_set_new(vif_root, "tms", json_integer(vif->timestamp_ms));
     json_object_set_new(vif_root, "type", json_string("vif_stats"));
 
@@ -324,7 +324,7 @@ bool cgw_parse_client_newjson(client_report_data_t *client, char *data)
     // Add device information - new format
     json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
-    json_object_set_new(root, "OrgId", json_string(air_dev.org_id));
+    json_object_set_new(root, "orgId", json_string(air_dev.org_id));
     json_object_set_new(root, "tms", json_integer(client->timestamp_ms));
     json_object_set_new(root, "type", json_string("client_stats"));
 
@@ -500,6 +500,10 @@ bool cgw_parse_event_newjson(event_msg_t *event, char *data)
     }
     json_object_set_new(root, "cmd", json_string(""));
     json_object_set_new(root, "id", json_string(event->cloud_id));
+    json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
+    json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
+    json_object_set_new(root, "orgId", json_string(air_dev.org_id));
+    json_object_set_new(root, "tms", json_integer(current_time_ms()));
     
     if ( event->type == EVENT_TYPE_UPGRADE ) {
         if ( event->status == EVENT_STATUS_DOWNLOADED ) {
@@ -577,6 +581,10 @@ bool cgw_parse_neighbor_newjson(neighbor_report_data_t *rpt, char *data)
     json_object_set_new(root, "type", json_string("rf_scan"));
     json_object_set_new(root, "cmd", json_string("rf_scan"));
     json_object_set_new(root, "id", json_string(rpt->id));
+    json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
+    json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
+    json_object_set_new(root, "orgId", json_string(air_dev.org_id));
+    json_object_set_new(root, "tms", json_integer(current_time_ms()));
 
     for (int itr = 0; itr < rpt->n_entry; itr++) {
         json_t *neighbor = json_object();
