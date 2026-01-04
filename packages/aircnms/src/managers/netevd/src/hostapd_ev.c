@@ -11,6 +11,7 @@
 #include <ev.h>
 #include <wpa_ctrl.h>
 #include "report.h"
+#include "log.h"
 #include "netev.h"
 #include "netev_vif_info.h"
 #include "netev_client_events.h"
@@ -91,18 +92,26 @@ static void *worker_thread(void *arg) {
                 netev_handle_client_connect(task.mac, task.ifname);
                 break;
             case EVENT_DISCONNECT:
-                usleep(100 * 1000); 
+                // Handle roaming scenario: if client connects to 2G then 5G, 
+                // the disconnect from 2G should be ignored if client is still on 5G.
+                // Wait a bit to allow connect events to be processed first.
+                usleep(250 * 1000);  // 250ms delay to allow connect events to process
 
                 char mac_str[18];
                 snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x",
                          task.mac[0], task.mac[1], task.mac[2],
                          task.mac[3], task.mac[4], task.mac[5]);
 
-                if (!sta_exists_on_any_iface(mac_str)) {
-                    netev_handle_client_disconnect(task.mac, task.ifname);
+                // Check if client exists on OTHER interfaces (excluding the one reporting disconnect)
+                // If check fails (error), send disconnect anyway (fail open)
+                bool exists_on_other = sta_exists_on_other_iface(mac_str, task.ifname);
+                
+                if (exists_on_other) {
+                    LOG(INFO, "hostapd_ev: Client %s still connected on another interface, ignoring disconnect from %s (roaming)",
+                        mac_str, task.ifname);
                 } else {
-                    printf("hostapd_ev: Client %s still connected, ignoring disconnect\n",
-                           mac_str);
+                    // Client not found on other interfaces - this is a real disconnect
+                    netev_handle_client_disconnect(task.mac, task.ifname);
                 }
                 break;
             case EVENT_CONFIG:

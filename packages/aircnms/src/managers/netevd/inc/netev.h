@@ -19,6 +19,7 @@ struct nl80211_state {
 int hostapd_events_start(const char *ctrl_dir);
 void hostapd_events_stop(void);
 bool sta_exists_on_any_iface(const char *mac_str);
+bool sta_exists_on_other_iface(const char *mac_str, const char *exclude_ifname);
 
 #endif /* NETEVD_NETEV_H */
 

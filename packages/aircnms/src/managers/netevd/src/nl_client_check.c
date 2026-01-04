@@ -1,6 +1,7 @@
 #include <linux/nl80211.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <net/if.h>
 #include <netev.h>
 
 struct nl_sock *nl_sock_global = NULL;
@@ -91,6 +92,52 @@ static int iface_list_cb(struct nl_msg *msg, void *arg)
     return NL_OK;
 }
 
+// Context for checking if STA exists on other interfaces (excluding exclude_ifname)
+struct iface_list_other_ctx {
+    const unsigned char *mac;
+    const char *exclude_ifname;
+    bool result;
+};
+
+// Enumerate all wireless AP-mode interfaces, checking for STA on OTHER interfaces
+static int iface_list_other_cb(struct nl_msg *msg, void *arg)
+{
+    struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+    struct nlattr *tb[NL80211_ATTR_MAX + 1];
+    int iftype, ifindex;
+    char ifname[IF_NAMESIZE];
+
+    struct iface_list_other_ctx *ctx = (struct iface_list_other_ctx *)arg;
+
+    nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+              genlmsg_attrlen(gnlh, 0), NULL);
+
+    if (!tb[NL80211_ATTR_IFINDEX] || !tb[NL80211_ATTR_IFTYPE])
+        return NL_OK;
+
+    ifindex = nla_get_u32(tb[NL80211_ATTR_IFINDEX]);
+    iftype  = nla_get_u32(tb[NL80211_ATTR_IFTYPE]);
+
+    // We only care about AP-mode interfaces
+    if (iftype != NL80211_IFTYPE_AP)
+        return NL_OK;
+
+    // Get interface name
+    if (!if_indextoname(ifindex, ifname))
+        return NL_OK;
+
+    // Skip the interface that reported the disconnect
+    if (ctx->exclude_ifname && strcmp(ifname, ctx->exclude_ifname) == 0)
+        return NL_OK;
+
+    // Check if STA exists on this OTHER interface
+    if (check_station_on_iface(ifindex, ctx->mac)) {
+        ctx->result = true;  // STA found on another interface
+    }
+
+    return NL_OK;
+}
+
 
 
 // PUBLIC FUNCTION
@@ -125,6 +172,45 @@ bool sta_exists_on_any_iface(const char *mac_str)
 
     nl_socket_modify_cb(nl_sock_global, NL_CB_VALID, NL_CB_CUSTOM,
                         iface_list_cb, &ctx);
+
+    nl_send_auto(nl_sock_global, msg);
+    nl_recvmsgs_default(nl_sock_global);
+
+    nlmsg_free(msg);
+
+    return ctx.result;
+}
+
+// PUBLIC FUNCTION
+// -------------------------------
+// Returns true  → STA is connected on OTHER interfaces (excluding exclude_ifname)
+// Returns false → STA not connected on other interfaces (or error)
+// -------------------------------
+bool sta_exists_on_other_iface(const char *mac_str, const char *exclude_ifname)
+{
+    unsigned char mac[6];
+    if (!mac_str_to_bytes(mac_str, mac)) {
+        fprintf(stderr, "Invalid MAC string: %s\n", mac_str);
+        return false;
+    }
+
+    struct nl_msg *msg = nlmsg_alloc();
+    if (!msg)
+        return false;
+
+    struct iface_list_other_ctx ctx = {
+        .mac = mac,
+        .exclude_ifname = exclude_ifname,
+        .result = false
+    };
+
+    // Build dump command: GET_INTERFACE dump
+    genlmsg_put(msg, 0, 0, nl80211_id, 0,
+                NLM_F_DUMP,
+                NL80211_CMD_GET_INTERFACE, 0);
+
+    nl_socket_modify_cb(nl_sock_global, NL_CB_VALID, NL_CB_CUSTOM,
+                        iface_list_other_cb, &ctx);
 
     nl_send_auto(nl_sock_global, msg);
     nl_recvmsgs_default(nl_sock_global);
