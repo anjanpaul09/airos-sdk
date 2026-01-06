@@ -155,27 +155,6 @@ bool cgw_params_init()
     return true;
 }
 
-bool cgw_set_online_status()
-{
-    int rc;
-    char cmd[256];
-
-    memset(cmd, 0, sizeof(cmd));
-    int ret = snprintf(cmd, sizeof(cmd), "uci set aircnms.@aircnms[0].online=1");
-    if (ret < 0 || ret >= (int)sizeof(cmd)) {
-        LOG(ERR, "Command buffer overflow for online status (ret=%d)", ret);
-        return false;
-    }
-    rc = system(cmd);
-    if (rc != 0) {
-        LOG(ERR, "Failed to set online status: command returned %d", rc);
-        return false;
-    }
-
-    return true;
-}
-
-
 int cgw_check_online_status()
 {
     char buf[UCI_BUF_LEN];

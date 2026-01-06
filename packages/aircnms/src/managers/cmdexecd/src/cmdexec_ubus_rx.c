@@ -107,8 +107,6 @@ bool cmdexec_ubus_rx_service_init()
         return false;
     }
 
-    printf("Connected to ubus\n");
-
     obj.name = "cmdexecd";
     obj.type = &(struct ubus_object_type){.name = "cmdexecd"};
     static struct ubus_method methods[4];
@@ -135,8 +133,6 @@ bool cmdexec_ubus_rx_service_init()
     // Register libev watcher for ubus socket
     ev_io_init(&ubus_watcher, ubus_io_cb, fd, EV_READ);
     ev_io_start(loop, &ubus_watcher);
-
-    printf("UBus integrated with libev loop ✅\n");
 
     return true;
 }

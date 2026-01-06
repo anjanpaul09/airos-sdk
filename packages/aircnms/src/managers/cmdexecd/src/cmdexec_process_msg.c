@@ -18,7 +18,7 @@ bool cmdexec_process_msg(cmdexec_item_t *qi)
     // Minimal inline request
     cmdexec_request_t req = qi->req;
     
-    LOG(INFO, "DM: RECIEVED: buf=%s len=%d\n", (char *)mbuf, (int)mlen);
+    LOG(INFO, "CMDEXECD: RECIEVED: buf=%s len=%d\n", (char *)mbuf, (int)mlen);
 
     memcpy(data, mbuf, mlen);
     data[qi->size] = '\0';

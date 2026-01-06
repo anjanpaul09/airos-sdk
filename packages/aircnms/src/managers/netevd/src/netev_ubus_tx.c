@@ -62,9 +62,9 @@ void netev_publish_info_event(void *buf, size_t size)
     // Log event type for debugging
     if (size >= sizeof(info_event_type_t)) {
         info_event_type_t event_type = *(info_event_type_t *)buf;
-        LOG(INFO, "ANJAN-DEBUG netevd: Publishing info event type=%d size=%zu to cgwd.netinfo", event_type, size);
+        LOG(INFO, "Publishing info event type=%d size=%zu to cgwd.netinfo", event_type, size);
     } else {
-        LOG(ERR, "ANJAN-DEBUG netevd: Event buffer too small: size=%zu", size);
+        LOG(ERR, "Event buffer too small: size=%zu", size);
         return;
     }
 
@@ -76,9 +76,9 @@ void netev_publish_info_event(void *buf, size_t size)
 
     int ret = call_ubus_method("cgwd", "netinfo", &b);
     if (ret != 0) {
-        LOG(ERR, "ANJAN-DEBUG netevd: Failed to send info event to cgwd.netinfo: %d", ret);
+        LOG(ERR, "Failed to send info event to cgwd.netinfo: %d", ret);
     } else {
-        LOG(DEBUG, "ANJAN-DEBUG netevd: Successfully sent info event to cgwd.netinfo");
+        LOG(DEBUG, "Successfully sent info event to cgwd.netinfo");
     }
 
     blob_buf_free(&b);

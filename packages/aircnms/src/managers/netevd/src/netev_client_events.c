@@ -65,6 +65,7 @@ void netev_handle_client_connect(const uint8_t *macaddr, const char *ifname)
     }
 
     client_info.is_connected = true;
+    
     // Send client info event
     LOG(INFO, "Client connected: MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s",
         macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5], 
@@ -93,6 +94,7 @@ void netev_handle_client_disconnect(const uint8_t *macaddr, const char *ifname)
     }
     
     client_info.is_connected = false;
+    
     // Send client info event
     LOG(INFO, "Client disconnected: MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s",
         macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5], 

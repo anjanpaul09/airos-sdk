@@ -16,7 +16,6 @@ int handle_device_state_change(device_state_t state)
                 set_device_state(DEVICE_STATE_NOT_REGISTERED);
             } else {
                 LOG(INFO, "Device registered successfully");
-                cgw_set_online_status();
                 set_device_state(DEVICE_STATE_REGISTERED);
             }
         } else {
@@ -42,6 +41,7 @@ int handle_device_state_change(device_state_t state)
         if (!cgw_mqtt_start_worker()) {
             LOG(ERR, "Failed to start MQTT worker");
         }
+        air_set_online_status(1);
         break;
     default:
         LOG(ERR, "Unknown device state");

@@ -4,6 +4,7 @@
 #include <ev.h>
 #include <stdio.h>
 #include <string.h>
+#include "cmdexec.h"
 
 static struct ubus_context *ctx = NULL;
 
@@ -22,28 +23,41 @@ static void call_result_cb(struct ubus_request *req, int type, struct blob_attr 
     free(str);
 }
 
-// Function to call a ubus method
-int call_cmdexec_method(const char *method, struct blob_buf *b)
-{
+/**
+ * Call a method on the cmdexecd ubus service
+ * @param method Method name to invoke
+ * @param b Blob buffer containing parameters
+ * @return 0 on success, negative error code on failure
+ */
+int call_cmdexec_method(const char *method, struct blob_buf *b) {
     uint32_t id;
     int ret;
-    
-    // Look up the object ID
+
+    // Validate inputs
+    if (!method || !b) {
+        LOG(ERR, "Invalid parameters to call_cmdexec_method");
+        return -EINVAL;
+    }
+
+    if (!ctx) {
+        LOG(ERR, "UBus context not initialized");
+        return -ENODEV;
+    }
+
+    // Lookup service
     ret = ubus_lookup_id(ctx, "cgwd", &id);
     if (ret) {
-        fprintf(stderr, "Failed to lookup netconfd: %s\n", ubus_strerror(ret));
+        LOG(ERR, "Failed to lookup %s", ubus_strerror(ret));
         return ret;
     }
-    
-    printf("Calling method: %s\n", method);
-    
-    // Invoke the method
-    ret = ubus_invoke(ctx, id, method, b->head, call_result_cb, NULL, 3000);
+
+    // Synchronous invoke with timeout
+    ret = ubus_invoke(ctx, id, method, b->head, call_result_cb, NULL, UBUS_TIMEOUT_MS);
     if (ret) {
-        fprintf(stderr, "Failed to invoke %s: %s\n", method, ubus_strerror(ret));
+        LOG(ERR, "Failed to invoke %s: %s", method, ubus_strerror(ret));
         return ret;
     }
-    
+
     return 0;
 }
 
@@ -56,15 +70,13 @@ bool cmdexec_ubus_tx_service_init()
         return false;
     }
 
-    printf("Connected to ubus\n");
-
     // Get the ubus socket FD
     int fd = ctx->sock.fd;
     if (fd < 0) {
         fprintf(stderr, "Invalid ubus fd\n");
         return false;
     }
-    printf("UBus integrated with libev loop ✅\n");
+    
     return true;
 }
 

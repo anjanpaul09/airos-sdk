@@ -159,6 +159,7 @@ int target_cmd_device_upgrade()
     sprintf(cmd, "sysupgrade %s", bin_filename);
     // Compare the MD5s and print result
     if (strcmp(img_md5sum, bin_md5sum) == 0) {
+        air_set_online_status(0);
         set_fw_upgrade_status_to_aircnms(UPGRADING);
         cmdexec_send_event_to_cloud(UPGRADE, UPGRADING, NULL, fw_id);
         system(cmd);

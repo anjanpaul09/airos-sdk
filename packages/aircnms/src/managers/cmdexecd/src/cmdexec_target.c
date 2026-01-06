@@ -293,7 +293,7 @@ bool target_exec_cmd_ping(char *dest)
     //exec_command(command, output, sizeof(output));
 
     if (!exec_command(command, output, sizeof(output))) {
-        LOG(ERR, "DM: CMD FAILED - %s", command);
+        LOG(ERR, "CMDEXECD: CMD FAILED - %s", command);
         strcpy(output, "ping failed or timed out\n");
     }
 
@@ -314,7 +314,7 @@ bool target_exec_cmd_arp()
     sprintf(command, "arp -a");
     //exec_command(command, output, sizeof(output));
     if (!exec_command(command, output, sizeof(output))) {
-        LOG(ERR, "DM: CMD FAILED - %s", command);
+        LOG(ERR, "CMDEXECD: CMD FAILED - %s", command);
         strcpy(output, "arp failed or timed out\n");
     }
 
@@ -331,7 +331,7 @@ bool target_exec_cmd_custom(char *cmd)
     memset(output, 0, sizeof (output)); 
     
     if (!exec_command(cmd, output, sizeof(output))) {
-        LOG(ERR, "DM: CMD FAILED - %s", cmd);
+        LOG(ERR, "CMDEXECD: CMD FAILED - %s", cmd);
         strcpy(output, "cmd timed out\n");
     }
 

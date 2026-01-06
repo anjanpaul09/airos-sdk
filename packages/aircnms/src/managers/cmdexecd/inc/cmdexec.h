@@ -11,6 +11,9 @@
 #include "unixcomm.h"
 #include "dppline.h"
 
+#define UBUS_TIMEOUT_MS 3000
+#define CMDEXEC_EVENT_METHOD "cmdexec.event"
+
 #define CMDEXEC_MAX_QUEUE_DEPTH (200)
 #define CMDEXEC_MAX_QUEUE_SIZE_BYTES (2*1024*1024)
 
@@ -83,6 +86,15 @@ extern int   g_cmdexec_log_buf_size;
 extern int   g_cmdexec_log_drop_count;
 extern bool  cmdexec_log_enabled;
 
+// Safe string copy that guarantees null termination
+static inline void safe_strncpy(char *dest, const char *src, size_t dest_size) {
+    if (!dest || !src || dest_size == 0) {
+        return;
+    }
+    strncpy(dest, src, dest_size - 1);
+    dest[dest_size - 1] = '\0';
+}
+
 // Define `command_func`
 typedef void (*command_func)(json_t *root);
 
@@ -97,12 +109,14 @@ void handle_reboot(json_t *root);
 void handle_device_delete(json_t *root);
 void handle_device_upgrade(json_t *root);
 
-int cmdexec_send_event_to_cloud(event_type_t type, event_status_t status, char *data, char *id);
+
+int check_and_send_fw_upgrade_status(void);
+int cmdexec_send_event_to_cloud(event_type_t type, event_status_t status, const char *data, const char *id);
 bool cmdexec_mqtt_init(void);
 bool cmdexec_event_init();
 bool cmdexec_dequeue_timer_init();
 int cmdexec_monitor_config_change();
-bool cmdexec_mqtt_publish(long mlen, void *mbuf, DmMsgType type);
+bool cmdexec_mqtt_publish(size_t mlen, const void *mbuf, DmMsgType type);
 int cmdexec_process_cmd_msg(char* buf);
 bool cmdexec_queue_msg_process();
 bool cmdexec_process_msg(cmdexec_item_t *qi);

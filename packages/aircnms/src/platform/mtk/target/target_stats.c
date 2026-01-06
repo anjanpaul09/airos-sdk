@@ -139,6 +139,17 @@ bool target_info_clients_get(const uint8_t *macaddr, const char *ifname,
     // Copy MAC address
     memcpy(client_info->macaddr, macaddr, 6);
     
+    // Set timestamps
+    if (is_connect) {
+        client_info->start_time = timestamp_ms;
+        client_info->end_time = 0;
+    } else {
+        client_info->start_time = 0; // Unknown on disconnect
+        client_info->end_time = timestamp_ms;
+        return true; //return on disconnect
+    }
+    
+    
     // Determine interface name to use (will be set from ioctl if available)
     const char *use_ifname = ifname ? ifname : "unknown";
     char ioctl_ifname[12] = {0};
@@ -296,14 +307,6 @@ bool target_info_clients_get(const uint8_t *macaddr, const char *ifname,
         client_info->channel = 0;
     }
     
-    // Set timestamps
-    if (is_connect) {
-        client_info->start_time = timestamp_ms;
-        client_info->end_time = 0;
-    } else {
-        client_info->start_time = 0; // Unknown on disconnect
-        client_info->end_time = timestamp_ms;
-    }
     
     return true;
 }
