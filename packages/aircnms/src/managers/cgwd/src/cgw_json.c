@@ -492,13 +492,12 @@ bool cgw_parse_event_newjson(event_msg_t *event, char *data)
     json_t *event_root = json_object();
     
     if ( event->type == EVENT_TYPE_UPGRADE ) {
-        json_object_set_new(root, "type", json_string("device_upgrading_data"));
+        json_object_set_new(root, "type", json_string("firmware_upgrade"));
     } else if ( event->type == EVENT_TYPE_ALARM ) {
         json_object_set_new(root, "type", json_string("device_alarm"));
     } else if ( event->type == EVENT_TYPE_CMD ) {
         json_object_set_new(root, "type", json_string("web_cli"));
     }
-    json_object_set_new(root, "cmd", json_string(""));
     json_object_set_new(root, "id", json_string(event->cloud_id));
     json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
@@ -506,16 +505,20 @@ bool cgw_parse_event_newjson(event_msg_t *event, char *data)
     json_object_set_new(root, "tms", json_integer(current_time_ms()));
     
     if ( event->type == EVENT_TYPE_UPGRADE ) {
+        json_t *status_root = json_object();
+        json_object_set_new(root, "cmd", json_string("firmware_upgrade"));
         if ( event->status == EVENT_STATUS_DOWNLOADED ) {
-            json_object_set_new(event_root, "cmd_reply", json_string("Downloaded"));
+            json_object_set_new(status_root, "status", json_string("Downloaded"));
         } else if ( event->status == EVENT_STATUS_UPGRADING ) {
-            json_object_set_new(event_root, "cmd_reply", json_string("Upgrading"));
+            json_object_set_new(status_root, "status", json_string("Upgrading"));
         }  else if ( event->status == EVENT_STATUS_FAILED ) {
-            json_object_set_new(event_root, "cmd_reply", json_string("Failed"));
+            json_object_set_new(status_root, "status", json_string("Failed"));
         }  else if ( event->status == EVENT_STATUS_UPGRADED ) {
-            json_object_set_new(event_root, "cmd_reply", json_string("Success"));
+            json_object_set_new(status_root, "status", json_string("Success"));
         }
+        json_object_set_new(event_root, "cmd_reply", status_root);
     } else if ( event->type == EVENT_TYPE_CMD ) {
+        json_object_set_new(root, "cmd", json_string(""));
         json_object_set_new(event_root, "cmd_reply", json_string(event->data));
     } 
     json_object_set_new(root, "result", event_root);

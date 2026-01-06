@@ -243,7 +243,6 @@ void cgw_get_stats_topic_aircnms(stats_topic_t *stats_topic);
 // Device state management functions
 bool cgw_check_valid_device_id(void);
 bool cgw_device_discovery_request(void);
-bool cgw_set_online_status(void);
 
 // Utility functions
 int cmd_buf(const char *command, char *buffer, size_t buffer_size);

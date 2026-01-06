@@ -459,7 +459,7 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
         
         // Basic validation
         if (qi->size < sizeof(info_event_type_t) + sizeof(uint64_t)) {
-            LOG(ERR, "ANJAN-DEBUG Info event too small: size=%zu", qi->size);
+            LOG(ERR, "Info event too small: size=%zu", qi->size);
             return false;
         }
 
@@ -520,11 +520,11 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
 
         if (ret) {
             size_t msglen = strlen(data);
-            LOG(INFO, "ANJAN-DEBUG NETINFO->CLOUD: msgtype=info_event type=%d msglen=%zu qos=%d topic=%s",
+            LOG(INFO, "NETINFO->CLOUD: msgtype=info_event type=%d msglen=%zu qos=%d topic=%s",
                 type, msglen, qos, topic);
             ret = cgw_publish_json_qos(data, topic, qos, false);
         } else {
-            LOG(ERR, "ANJAN-DEBUG Failed to parse info event JSON for type=%d", type);
+            LOG(ERR, "Failed to parse info event JSON for type=%d", type);
         }
 
         return ret;
@@ -544,6 +544,7 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
         sprintf(topic, "dev/to/cloud/%s/%s/event", air_dev.device_id, air_dev.serial_num);
         topic[sizeof(topic) - 1] = '\0';
     
+        LOG(INFO, "CGWD->CLOUD: msgtype=%s topic=%s ","event" , topic);
         ret = cgw_publish_json(data, topic);
         return ret;
     } else {

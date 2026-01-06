@@ -15,16 +15,14 @@
 #include "cgw_state_mgr.h"
 #include "log.h"
 
-static volatile sig_atomic_t g_running = 1;
+static ev_signal signal_watcher;
 static struct ev_loop *g_loop = NULL;
 
-static void signal_handler(int sig)
-{
-    (void)sig;
-    g_running = 0;
-    if (g_loop) {
-        ev_break(g_loop, EVBREAK_ALL);
-    }
+static void sigterm_cb(struct ev_loop *loop, ev_signal *w, int revents) {
+    LOG(INFO, "Received SIGTERM, shutting down...");
+
+    air_set_online_status(0);
+    ev_break(loop, EVBREAK_ALL);
 }
 
 int main(int argc, char *argv[])
@@ -32,18 +30,14 @@ int main(int argc, char *argv[])
     int ret = 0;
     (void)argc;
     (void)argv;
-
-    struct sigaction sa;
-    sa.sa_handler = signal_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    
-    sigaction(SIGINT, &sa, NULL);
-    sigaction(SIGTERM, &sa, NULL);
-    signal(SIGPIPE, SIG_IGN); // Ignore SIGPIPE to prevent crashes
     
     g_loop = EV_DEFAULT;
+
+    ev_signal_init(&signal_watcher, sigterm_cb, SIGTERM);
+    ev_signal_start(g_loop, &signal_watcher);
+
     log_open("CGWD", 0);
+    air_set_online_status(0);
 
     if (!cgw_params_init()) {
         LOG(ERR, "Failed to initialize gateway parameters");
@@ -69,33 +63,8 @@ int main(int argc, char *argv[])
         goto cleanup_ubus;
     }
 
-#if 0
-    printf("Ankit:1 \n");
-    if (!cgw_mqtt_init()) {
-        LOG(ERR, "Failed to initialize MQTT");
-        ret = -1;
-        goto cleanup_device_state;
-    }
-    printf("Ankit:2 \n");
-
-    cgw_queue_init();
-    printf("Ankit:3 \n");
-    
-    if (!cgw_mqtt_start_worker()) {
-        LOG(ERR, "Failed to start MQTT worker");
-        ret = -1;
-        goto cleanup_mqtt;
-    }
-    printf("Ankit:4 \n");
-#endif
-    
     ev_run(g_loop, 0);
     
-//cleanup_mqtt:
-  //  cgw_mqtt_stop_worker();
-  //  cgw_mqtt_stop();
-//cleanup_device_state:
-  //  device_state_deinit();
 cleanup_ubus:
     cgw_ubus_service_cleanup();
 cleanup_ubus_rx:

@@ -130,7 +130,7 @@ static void *vif_info_timer_thread(void *arg)
                     g_vif_info_cache_valid = true;
                     pthread_mutex_unlock(&g_vif_info_mutex);
 
-                    LOG(INFO, "Sent delayed VIF info event: n_radio=%d n_vif=%d n_ethernet=%d",
+                    LOG(INFO, "Sent VIF info event: n_radio=%d n_vif=%d n_ethernet=%d",
                         info_to_send.n_radio, info_to_send.n_vif, info_to_send.n_ethernet);
                 } else {
                     LOG(ERR, "Failed to send delayed VIF info event");

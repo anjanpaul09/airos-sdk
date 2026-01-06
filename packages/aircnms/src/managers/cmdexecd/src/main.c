@@ -1,21 +1,22 @@
 #include <stdio.h>
-#include <cmdexec.h>
+#include "cmdexec.h"
 #include "log.h"
 
 int main()
 {
+    log_open("CMDEXECD",0);
     // Initialize unixcomm server for async message handling
     if (!cmdexec_ubus_tx_service_init()) {
         LOG(ERR, "CMDEXEC: Failed to initialize ubus server");
         return -1;
     }
 
-    if (check_fw_upgrade_status()) {
-        LOG(INFO, "%s: CMDEXEC fw upgrade status sending", __func__);
-        cmdexec_send_event_to_cloud(UPGRADE, UPGRADED, NULL, NULL);
-        set_fw_upgrade_status_to_aircnms(UPGRADED);
+    int ret = check_and_send_fw_upgrade_status();
+    if (ret != 0) {
+        LOG(ERR, "Upgrade status reporting failed: %d", ret);
+        return -1;
     }
-    
+
     if (!cmdexec_ubus_rx_service_init()) {
         LOG(ERR, "CMDEXEC: Failed to initialize ubus server");
         return -1;
@@ -25,7 +26,7 @@ int main()
 
     cmdexec_dequeue_timer_init();
 
-    printf("Ankit: cmdexec running \n");
+    LOG(INFO, "CMDEXEC: running");
     ev_run(EV_DEFAULT, 0);
 
     ev_default_destroy();

@@ -43,6 +43,8 @@ typedef struct {
     char cloud_id[128];
 } event_info;
 
+bool air_set_online_status(int status);
+int air_check_online_status();
 int set_fw_id_to_aircnms(char *fw_id);
 int check_fw_upgrade_status(void);
 int set_fw_upgrade_status_to_aircnms(event_status status);

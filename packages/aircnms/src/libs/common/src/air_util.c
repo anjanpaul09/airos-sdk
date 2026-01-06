@@ -539,3 +539,47 @@ int check_fw_upgrade_status()
     return status;
 }
 
+bool air_set_online_status(int status)
+{
+    int rc;
+    char cmd[256];
+
+    memset(cmd, 0, sizeof(cmd));
+    int ret = snprintf(cmd, sizeof(cmd), "uci set aircnms.@aircnms[0].online=%d", status);
+    if (ret < 0 || ret >= (int)sizeof(cmd)) {
+        LOG(ERR, "Command buffer overflow for online status (ret=%d)", ret);
+        return false;
+    }
+    rc = system(cmd);
+    if (rc != 0) {
+        LOG(ERR, "Failed to set online status: command returned %d", rc);
+        return false;
+    }
+    rc = system("uci commit aircnms");
+    if (rc != 0) {
+        LOG(ERR, "Failed to commit UCI changes: command returned %d", rc);
+        return false;
+    }
+
+    return true;
+}
+
+int air_check_online_status()
+{
+    char buf[UCI_BUF_LEN];
+    size_t len;
+    int status = 0;
+
+    memset(buf, 0, sizeof(buf));
+    cmd_buf("uci get aircnms.@aircnms[0].online", buf, (size_t)UCI_BUF_LEN);
+
+    len = strlen(buf);
+    if (len == 0) {
+        LOGI("%s: No uci found", __func__);
+        return 0; 
+    }
+
+    status = atoi(buf);
+
+    return status;
+}
