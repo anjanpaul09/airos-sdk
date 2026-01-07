@@ -162,6 +162,8 @@ define Package/aircnms/install
 	$(INSTALL_BIN) ./files/airnetconfd $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/aircmdexecd $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/airnetevd $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/airledinit $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/led_state.sh $(1)/usr/sbin
 
 ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK)
 	$(INSTALL_BIN) ./files/airinit_mtk $(1)/etc/init.d/airinit
