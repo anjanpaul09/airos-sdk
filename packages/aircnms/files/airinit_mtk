@@ -1,60 +1,56 @@
 #!/bin/sh /etc/rc.common
 
+USE_PROCD=1
+
 START=96
-STOP=10
+STOP=01
 
-TARGET_DEVICE_ID="XXXXXXXXXX"
+NAME=airinit
 
-# Function to extract and format the last two bytes of the MAC address
-get_mac_suffix() {
-    local iface=$1
-    local mac_address=$(cat /sys/class/net/$iface/address)
-    local mac_suffix=$(echo $mac_address | awk -F':' '{print toupper($5$6)}')
-    echo $mac_suffix
+LED_SCRIPT=/usr/sbin/air_led_state.sh
+SSID_SCRIPT=/usr/sbin/air_ssid_check.sh
+
+start_service() {
+
+	# -------------------------
+	# Check scripts
+	# -------------------------
+	for s in "$LED_SCRIPT" "$SSID_SCRIPT"; do
+		if [ ! -x "$s" ]; then
+			logger -t "$NAME" "Script $s not found or not executable"
+			return 1
+		fi
+	done
+
+	logger -t "$NAME" "Starting LED daemon and SSID config"
+
+	# ==================================================
+	# Instance 1: LED daemon (long running)
+	# ==================================================
+	procd_open_instance
+	procd_set_param command "$LED_SCRIPT"
+	procd_set_param respawn 3600 5 5
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_close_instance
+
+
+	# ==================================================
+	# Instance 2: SSID config (one-shot)
+	# ==================================================
+	procd_open_instance
+	procd_set_param command "$SSID_SCRIPT"
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_close_instance
 }
 
-# Function to check device ID from /etc/config/aircnms
-check_device_id() {
-    local device_id=$(uci get aircnms.@aircnms[0].device_id 2>/dev/null)
-    if [ "$device_id" = "$TARGET_DEVICE_ID" ]; then
-        return 0 # Match found
-    else
-        return 1 # No match
-    fi
+stop_service() {
+
+	logger -t "$NAME" "Stopping services"
+
+	# Turn off LEDs (only affects LED script logic)
+	for led in system wlan2g wlan5g; do
+		[ -w "/sys/class/leds/$led/brightness" ] && echo 0 > "/sys/class/leds/$led/brightness"
+	done
 }
-
-start() {
-
-    # Check if the device_id is present or not
-    if ! check_device_id; then
-        echo "Device ID does not match. Default SSID configuration skipped."
-        return 1
-    fi
-
-    sleep 3
-
-    # Set SSID for wlan0
-    local mac_suffix_phy0=$(get_mac_suffix phy0-ap0)
-    local new_ssid_phy0="AIR-2G-$mac_suffix_phy0"
-    uci set wireless.wlan1.ssid="$new_ssid_phy0"
-    uci set wireless.wlan1.network="nat_network"
-
-    # Set SSID for wlan1
-    local mac_suffix_phy1=$(get_mac_suffix phy1-ap0)
-    local new_ssid_phy1="AIR-5G-$mac_suffix_phy1"
-    uci set wireless.wlan2.ssid="$new_ssid_phy1"
-    uci set wireless.wlan2.network="nat_network"
-
-    # Commit changes
-    uci commit wireless
-
-    # Restart Wi-Fi to apply changes
-    wifi
-}
-
-stop() {
-    # No specific stop actions needed for this script
-    return 0
-}
-
-

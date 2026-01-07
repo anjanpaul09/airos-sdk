@@ -11,6 +11,16 @@
 
 // --- helpers ---
 
+static bool is_number(const char *s)
+{
+    if (!s || !*s) return false;
+    for (; *s; s++) {
+        if (*s < '0' || *s > '9')
+            return false;
+    }
+    return true;
+}
+
 void get_encryption_type(char *encrypt_type, const char *encryption)
 {
 
@@ -287,103 +297,51 @@ bool sanitize_and_validate_primary_radio_settings(const char *band,
 
     return true;
 }
-#if 0
-static int get_best_channel(const char *band, const char *htmode)
-{
-    for (size_t i = 0; i < ARRAY_SIZE(wifi_htmode_table); i++) {
-        const wifi_htmode_map_t *entry = &wifi_htmode_table[i];
-
-        if (strcmp(entry->band, band) == 0 && strcmp(entry->htmode, htmode) == 0) {
-            if (entry->channel_count > 0)
-                return entry->channels[0]; // pick the first valid one
-        }
-    }
-    // fallback defaults
-    return (strcmp(band, "5GHz") == 0) ? 36 : 1;
-}
-
-// Case-insensitive string compare (for htmode)
-static bool strieq(const char *a, const char *b)
-{
-    if (!a || !b) return false;
-    while (*a && *b) {
-        if (tolower((unsigned char)*a) != tolower((unsigned char)*b))
-            return false;
-        a++; b++;
-    }
-    return *a == *b;
-}
-
-bool is_valid_channel(const char *band, const char *htmode, int channel)
-{
-
-    printf("Checking validity: band=%s htmode=%s channel=%d\n",
-            band, htmode, channel);
-
-    // Match band + htmode + channel
-    for (size_t i = 0; i < ARRAY_SIZE(wifi_htmode_table); i++) {
-        const wifi_htmode_map_t *entry = &wifi_htmode_table[i];
-        if (strcmp(entry->band, band) == 0 && strieq(entry->htmode, htmode)) {
-            for (int j = 0; j < entry->channel_count; j++) {
-                if (entry->channels[j] == channel)
-                    return true;
-            }
-        }
-    }
-
-    printf("Channel %d is NOT valid for %s (%s)\n", channel, band, htmode);
-    return false;
-}
-#endif
 
 bool sanitize_and_validate_secondary_radio_settings(const char* radio_name, const char *band,
                                                     struct airpro_mgr_wlan_radio_params *params)
 {
     //char htmode[32] = {0};
     //char cmd[128];
-
     if (!band || !params) return false;
 
-    int ch = atoi(params->channel);
-    int txp = atoi(params->txpower);
+    const char *ch_str  = params->channel;
+    const char *txp_str = params->txpower;
+
+    /* ---------- TX POWER ---------- */
+    int txp = atoi(txp_str);   // txpower is always numeric
 
     if (strcmp(band, "2.4GHz") == 0) {
         if (txp < 0 || txp > 30) {
             printf("Invalid 2.4GHz txpower=%d → default 20\n", txp);
             strcpy(params->txpower, "20");
         }
-    } else if (strcmp(band, "5GHz") == 0) {
-        if (ch < 36 || ch > 165) {
-            printf("Invalid 5GHz channel=%d → default 36\n", ch);
-            strcpy(params->channel, "36");
+    } 
+    else if (strcmp(band, "5GHz") == 0) {
+
+        /* ---------- CHANNEL ---------- */
+        if (strcmp(ch_str, "auto") == 0) {
+            /* valid, do nothing */
         }
+        else if (is_number(ch_str)) {
+            int ch = atoi(ch_str);
+            if (ch < 36 || ch > 165) {
+                printf("Invalid 5GHz channel=%d → default 36\n", ch);
+                strcpy(params->channel, "36");
+            }
+        }
+        else {
+            /* garbage value */
+            printf("Invalid 5GHz channel=%s → default auto\n", ch_str);
+            strcpy(params->channel, "auto");
+        }
+
+        /* ---------- TX POWER ---------- */
         if (txp < 0 || txp > 30) {
             printf("Invalid 5GHz txpower=%d → default 23\n", txp);
             strcpy(params->txpower, "23");
         }
     }
-#if 0
-    memset(cmd, 0, sizeof(cmd));
-    // Read current htmode
-    snprintf(cmd, sizeof(cmd), "uci get wireless.%s.htmode 2>/dev/null", radio_name);
-
-    if (execute_uci_command(cmd, htmode, sizeof(htmode)) != 0 || strlen(htmode) == 0) {
-        fprintf(stderr, "Failed to read htmode for %s\n", radio_name);
-        return false;
-    }
-    htmode[strcspn(htmode, "\n")] = 0;
-
-    bool valid = is_valid_channel(band, htmode, ch);
-    int final_channel = ch;
-
-    if (!valid) {
-        printf("Channel %d not valid for %s %s, selecting best channel...\n",
-                ch, band, htmode);
-        final_channel = get_best_channel(band, htmode);
-        printf("Selected fallback channel: %d\n", final_channel);
-    }
-    sprintf(params->channel, "%d", final_channel);
-#endif
 
     return true;
 }

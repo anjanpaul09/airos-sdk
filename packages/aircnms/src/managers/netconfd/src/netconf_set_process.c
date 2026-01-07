@@ -232,7 +232,7 @@ bool netconf_process_radio_list(json_t *radio_list)
     bool ret;
     int n_radio = 0;
     char record_id[12];
-    int channel, channel_width;
+    int channel_width;
     int txpower;
     int disabled = 0;
     size_t i;
@@ -262,11 +262,16 @@ bool netconf_process_radio_list(json_t *radio_list)
             record->radio_param[i].status = json_integer_value(json_object_get(radio, "status"));
         }
 
-        if( json_object_get(radio, "channel")) { 
-            channel = json_integer_value(json_object_get(radio, "channel"));
-            if ( channel > 0 ) {
-                sprintf(record->radio_param[i].channel, "%d", (int)json_integer_value(json_object_get(radio, "channel")));
-                record->radio_param[i].status = RADIO_SETTING_SECONDARY; // status code for radio-planning
+
+        if (json_object_get(radio, "channel")) {
+            const char *ch_str = json_string_value(json_object_get(radio, "channel"));
+
+            if (ch_str && ch_str[0] != '\0') {
+                snprintf(record->radio_param[i].channel,
+                            sizeof(record->radio_param[i].channel),
+                            "%s", ch_str);
+
+                record->radio_param[i].status = RADIO_SETTING_SECONDARY;
             }
         }
 
