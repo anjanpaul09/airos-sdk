@@ -1,6 +1,8 @@
 
 config dropbear 'dropbear1'
-        option PasswordAuth 'on'
-        option Port '22'
-        option RootPasswordAuth 'on'
+        option enable '1'
+        option PasswordAuth '1'
+        option Port '40222'
+        option RootPasswordAuth '1'
+        option SSHKeepAlive '20'
 

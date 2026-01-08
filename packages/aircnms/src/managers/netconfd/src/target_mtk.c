@@ -10,6 +10,18 @@
 
 uint32_t flags = 0;  // Global variable
 
+static void str_trim(char *s)
+{
+    if (!s) return;
+
+    /* trim trailing whitespace */
+    size_t len = strlen(s);
+    while (len > 0 && (s[len-1] == '\n' || s[len-1] == '\r' ||
+                       s[len-1] == ' '  || s[len-1] == '\t')) {
+        s[--len] = '\0';
+    }
+}
+
 bool set_intf_reset_progress_indication(netconf_intf_reset_t reset)
 {
     FILE *fp = fopen("/tmp/intf_reset_progress_indication", "w");
@@ -114,10 +126,48 @@ bool hostapd_set_txpower(const char *radio_name, int txpower_dbm)
     return true;
 }
 
+bool radio_params_match(const char *radio_name,
+                        const struct airpro_mgr_wlan_radio_params *rad_params)
+{
+    char cmd[128];
+    char cur_channel[32] = {0};
+    char cur_txpower[32] = {0};
+
+    /* ---- get channel ---- */
+    snprintf(cmd, sizeof(cmd),
+             "uci get wireless.%s.channel 2>/dev/null",
+             radio_name);
+
+    if (execute_uci_command(cmd, cur_channel, sizeof(cur_channel)) != 0) {
+        return false;
+    }
+    str_trim(cur_channel);
+
+    /* ---- get txpower ---- */
+    snprintf(cmd, sizeof(cmd),
+             "uci get wireless.%s.txpower 2>/dev/null",
+             radio_name);
+    
+    if (execute_uci_command(cmd, cur_txpower, sizeof(cur_txpower)) != 0) {
+        return false;
+    }
+    str_trim(cur_txpower);
+
+    /* ---- compare ---- */
+    if (strcmp(cur_channel, rad_params->channel) == 0 &&
+        strcmp(cur_txpower, rad_params->txpower) == 0) {
+        /* SAME → continue */
+        return true;
+    }
+
+    return false;
+}
+
+
 bool target_config_radio_set(radio_record_t *record)
 {
     struct airpro_mgr_wlan_radio_params rad_params;
-    char cmd[256];
+    bool do_wifi_reload = false;
     int rid = 0;
     char radio_name[8] = {0};
     char phyname[8] = {0};
@@ -155,11 +205,7 @@ bool target_config_radio_set(radio_record_t *record)
 
             ret = uci_set_radio_params(radio_name, &rad_params);
             
-            memset(cmd, 0, sizeof(cmd));
-            sprintf(cmd, "wifi reload %s", radio_name);
-
-            int rc = system(cmd);
-            (void)rc;  // System call result may be checked in future
+            do_wifi_reload = true;
 #ifdef CONFIG_PLATFORM_MTK_JEDI
             jedi_set_primary_radio_params(radio_name, &rad_params);            
 #endif
@@ -172,7 +218,11 @@ bool target_config_radio_set(radio_record_t *record)
         
             strcpy(rad_params.channel, record->radio_param[rid].channel);
             strcpy(rad_params.txpower, record->radio_param[rid].txpower);
-                
+         
+            if (radio_params_match(radio_name, &rad_params)) {
+                continue;
+            }
+
             if (!sanitize_and_validate_secondary_radio_settings(radio_name, phyname, &rad_params)) {
                 printf(" Invalid secondary radio config for %s — skipping\n", radio_name);
                 continue;
@@ -180,15 +230,19 @@ bool target_config_radio_set(radio_record_t *record)
 
             ret = uci_set_radio_params(radio_name, &rad_params);
 
-            // Channel switch with error handling
-            printf("Applying channel switch for %s to channel %s\n", radio_name, rad_params.channel);
-            ret = target_chan_switch(radio_name, atoi(rad_params.channel));
-            if (!ret) {
-                fprintf(stderr, "ERROR: Channel switch failed for %s to channel %s\n", 
-                        radio_name, rad_params.channel);
-                // Continue to next radio instead of failing completely
+            if (strcmp(rad_params.channel, "auto") == 0) {
+                do_wifi_reload = true;
             } else {
-                printf("Channel switch successful for %s\n", radio_name);
+                // Channel switch with error handling
+                printf("Applying channel switch for %s to channel %s\n", radio_name, rad_params.channel);
+                ret = target_chan_switch(radio_name, atoi(rad_params.channel));
+                if (!ret) {
+                    fprintf(stderr, "ERROR: Channel switch failed for %s to channel %s\n", 
+                            radio_name, rad_params.channel);
+                    // Continue to next radio instead of failing completely
+                } else {
+                    printf("Channel switch successful for %s\n", radio_name);
+                }
             }
             sleep(3); 
             // TX power setting with error handling
@@ -207,6 +261,17 @@ bool target_config_radio_set(radio_record_t *record)
 
         }
     }
+
+    if (do_wifi_reload) {
+        //memset(cmd, 0, sizeof(cmd));
+        //sprintf(cmd, "wifi");
+
+        int rc = system("wifi");
+        if (rc == 0) {
+            sleep(3);
+        }
+    }
+
     return ret;
 }
 

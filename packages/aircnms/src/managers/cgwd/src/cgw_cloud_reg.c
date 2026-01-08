@@ -41,6 +41,32 @@ void remove_substring(char *str, const char *sub)
     }
 }
 
+int mac_to_colon_format(const char *in, char *out, size_t out_len)
+{
+    if (!in || !out) return -1;
+
+    // Must be exactly 12 hex chars
+    if (strlen(in) != 12) return -1;
+
+    // Need space for "xx:xx:xx:xx:xx:xx" + '\0' = 18
+    if (out_len < 18) return -1;
+
+    for (int i = 0, j = 0; i < 12; i += 2) {
+        // Validate hex chars
+        if (!isxdigit(in[i]) || !isxdigit(in[i+1]))
+            return -1;
+
+        out[j++] = toupper(in[i]);
+        out[j++] = toupper(in[i+1]);
+
+        if (i < 10)
+            out[j++] = ':';
+    }
+
+    out[17] = '\0';
+    return 0;
+}
+
 bool cgw_process_initial_data(char *data)
 {
     char cmd[512];
@@ -286,6 +312,7 @@ char *parse_device_info_to_json_string(struct DeviceInfo device)
     char ipaddr[32] = {0};
     char timezone[64] = {0};
     char uci_value[32] = {0};
+    char mac_out[18];
     //char cmd[128] = {0};
     os_ipaddr_t ip;
 
@@ -301,7 +328,11 @@ char *parse_device_info_to_json_string(struct DeviceInfo device)
 
     // Basic device info
     json_object_set_new(json, "serial_number", json_string(device.serial_number));
-    json_object_set_new(json, "mac", json_string(device.mac_address));
+    if (mac_to_colon_format(device.mac_address, mac_out, sizeof(mac_out)) == 0) {    
+        json_object_set_new(json, "mac", json_string(mac_out));
+    } else {
+        json_object_set_new(json, "mac", json_string(device.mac_address));
+    }
     json_object_set_new(json, "fw_info", json_string(fw_version));
     json_object_set_new(json, "hw_name", json_string("MTK7621"));
     json_object_set_new(json, "hw_version", json_string("1.0"));
