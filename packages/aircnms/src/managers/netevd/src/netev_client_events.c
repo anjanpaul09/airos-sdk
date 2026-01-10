@@ -49,7 +49,7 @@ void netev_handle_client_connect(const uint8_t *macaddr, const char *ifname)
     uint64_t timestamp_ms = get_timestamp_ms();
     //usleep(3000*1000); 
     struct timespec ts = {
-        .tv_sec = 3,
+        .tv_sec = 5,
         .tv_nsec = 0
     };
     nanosleep(&ts, NULL);
@@ -67,9 +67,9 @@ void netev_handle_client_connect(const uint8_t *macaddr, const char *ifname)
     client_info.is_connected = true;
     
     // Send client info event
-    LOG(INFO, "Client connected: MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s",
+    LOG(INFO, "Client connected: MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s ip=%s",
         macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5], 
-        ifname ? ifname : "unknown");
+        ifname ? ifname : "unknown", client_info.ipaddr);
     
     if (!netev_send_client_info_event(&client_info, timestamp_ms)) {
         LOG(ERR, "Failed to send client connect info event");

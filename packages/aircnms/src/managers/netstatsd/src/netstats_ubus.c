@@ -76,6 +76,15 @@ static int call_ubus_method(const char *object, const char *method, struct blob_
  * --------------------------------------------------- */
 void netstats_publish_stats(netstats_item_t *qi)
 {
+    int online_status;
+    
+    // Check if we're online before attempting
+    online_status = air_check_online_status();
+    if (!online_status) {
+        LOG(INFO, "AIRCNMS status is offline, Netstatsd Skipping stats");
+        return;
+    }
+
     if (!qi || !qi->buf || qi->size == 0) {
         LOG(ERR, "Invalid netstats_item_t in netstats_publish_stats");
         return;

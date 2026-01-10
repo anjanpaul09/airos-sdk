@@ -3,6 +3,19 @@
 #include "dpp_types.h"
 #include <jansson.h>
 
+int current_roaming_status = false;
+
+uint16_t mobility_domain_from_string(const char *s)
+{
+    uint32_t hash = 5381;
+    int c;
+
+    while ((c = *s++))
+        hash = ((hash << 5) + hash) + c;   // djb2
+
+    return (uint16_t)(hash & 0xFFFF);
+}
+
 void netconf_apply_jedi_conf()
 {
 #define UCI_BUF_LEN 256
@@ -87,6 +100,17 @@ bool netconf_process_vif_list(json_t *vif_list)
             const char *value = json_string_value(attr_value);
             if (value != NULL) {
                 strcpy(record->vif_param[i].key, value);
+            }
+        }
+        
+        attr_value = json_object_get(vif, "mobilityDomain");
+        if (attr_value != NULL && json_is_string(attr_value)) {
+            const char *value = json_string_value(attr_value);
+            if (value != NULL) {
+                uint16_t md = mobility_domain_from_string(value);
+                if (md == 0x0000)
+                    md = 0x0001;
+                snprintf(record->vif_param[i].mobility_id, sizeof(record->vif_param[i].mobility_id), "%04x", md);
             }
         }
 
@@ -456,6 +480,19 @@ int netconf_process_nat_config(json_t *nat_config)
     }
 
     ret = netconf_handle_nat_config(&config);
+
+    json_t *roaming = json_object_get(nat_config, "l2Roaming");
+    if (!roaming || json_is_null(roaming)) {
+        printf("l2Roaming is NULL\n");
+    } else {
+
+        int new_roaming_status = json_boolean_value(roaming);
+        if (new_roaming_status != current_roaming_status) {
+            ret = target_set_roaming_status(new_roaming_status);
+            current_roaming_status = new_roaming_status;
+        }
+    }
+
     return ret;
 }
 
@@ -468,20 +505,20 @@ int netconf_process_set_msg(char* buf)
         fprintf(stderr, "Error parsing JSON: %s\n", error.text);
         return false;
     }
-    
+ 
     json_t *nat_config = json_object_get(root, "natConfig");      
     if (nat_config) {
         ret = netconf_process_nat_config(nat_config);
     }
 
-    json_t *radio_list = json_object_get(json_object_get(root, "radio"), "radioList");
-    if (radio_list && json_is_array(radio_list)) {
-        ret = netconf_process_radio_list(radio_list);
-    }
-
     json_t *vif_list = json_object_get(json_object_get(root, "vif"), "vifList");      
     if (vif_list && json_is_array(vif_list)) {
         ret = netconf_process_vif_list(vif_list);
+    }
+    
+    json_t *radio_list = json_object_get(json_object_get(root, "radio"), "radioList");
+    if (radio_list && json_is_array(radio_list)) {
+        ret = netconf_process_radio_list(radio_list);
     }
 
     json_decref(root);

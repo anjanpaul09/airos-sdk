@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include "netev.h"
 
 /* Publish info event to cgwd */
 void netev_publish_info_event(void *buf, size_t size);

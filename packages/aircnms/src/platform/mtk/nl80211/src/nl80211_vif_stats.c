@@ -41,6 +41,27 @@ int iface_count;
 /******************************************************************************
  *  VIF definitions
  *****************************************************************************/
+int get_channel_from_cmd(const char *iface)
+{
+    char cmd[256], buf[64];
+    FILE *fp;
+
+    snprintf(cmd, sizeof(cmd),
+        "iwinfo %s info | sed -n 's/.*Channel: \\([0-9]\\+\\).*/\\1/p'",
+        iface);
+
+    fp = popen(cmd, "r");
+    if (!fp)
+        return -1;
+
+    if (!fgets(buf, sizeof(buf), fp)) {
+        pclose(fp);
+        return -1;
+    }
+
+    pclose(fp);
+    return atoi(buf);
+}
 
 static int nl80211_parse_wiface(struct nl_msg *msg, void *arg) 
 {
@@ -294,11 +315,7 @@ int get_channel_utilization(const char *band, uint8_t channel)
 
 bool nl80211_stats_radio_get(vif_record_t *record)
 {
-#define UCI_BUF_LEN 256
-    char buf[UCI_BUF_LEN];
-    size_t len;
     char phyname[8];
-    char param[4];
 
     record->stats.n_radio = 2;
     /* Info fields (band, channel, txpower) are now handled by netevd */
@@ -309,17 +326,11 @@ bool nl80211_stats_radio_get(vif_record_t *record)
 
     strcpy(record->stats.radio[0].band, "BAND2G");
     
-    memset(buf, 0, sizeof(buf));
-    memset(param, 0, sizeof(param));
-    (void)cmd_buf("uci get wireless.wifi1.channel", buf, (size_t)UCI_BUF_LEN);
-    len = strlen(buf);
-    if (len == 0)
-    {
-        LOGI("%s: No uci found", __func__);
-        return false;
-    }
-    sscanf(buf, "%s", param);
-    uint8_t channel_2g = atoi(param);
+    uint8_t ch = get_channel_from_cmd("phy0-ap0");
+    if (!ch) {
+        ch = 6;
+    } 
+    uint8_t channel_2g = ch;
 
     // Fill stats - channel utilization
     record->stats.radio[0].channel_utilization = get_channel_utilization("BAND2G", channel_2g);
@@ -330,18 +341,12 @@ bool nl80211_stats_radio_get(vif_record_t *record)
 
     strcpy(record->stats.radio[1].band, "BAND5G");
 
-    memset(buf, 0, sizeof(buf));
-    memset(param, 0, sizeof(param));
-    (void)cmd_buf("uci get wireless.wifi0.channel", buf, (size_t)UCI_BUF_LEN);
-    len = strlen(buf);
-    if (len == 0)
-    {
-        LOGI("%s: No uci found", __func__);
-        return false;
-    }
-    sscanf(buf, "%s", param);
-    uint8_t channel_5g = atoi(param);
-
+    ch = get_channel_from_cmd("phy1-ap0");
+    if (!ch) {
+        ch = 36;
+    } 
+    uint8_t channel_5g = ch;
+    
     // Fill stats - channel utilization
     record->stats.radio[1].channel_utilization = get_channel_utilization("BAND5G", channel_5g);
     
