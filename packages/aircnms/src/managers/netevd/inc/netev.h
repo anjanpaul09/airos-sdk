@@ -5,6 +5,7 @@
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
 #include <stdbool.h>
+#include "air_util.h"
 #include "log.h"
 
 struct nl80211_state {

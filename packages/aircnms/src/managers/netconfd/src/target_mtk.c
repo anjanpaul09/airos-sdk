@@ -294,6 +294,7 @@ bool target_config_vif_set(vif_record_t *record)
             strlcpy(vif_params.record_id, record->vif_param[vid].record_id, sizeof(vif_params.record_id));
             
             strlcpy(vif_params.ssid, record->vif_param[vid].ssid, sizeof(vif_params.ssid));
+            strlcpy(vif_params.mobility_id, record->vif_param[vid].mobility_id, sizeof(vif_params.mobility_id));
             
             strlcpy(vif_params.key, record->vif_param[vid].key, sizeof(vif_params.key));
         
@@ -427,7 +428,7 @@ bool target_config_vif_set(vif_record_t *record)
             strlcpy(vif_params.record_id, record->vif_param[vid].record_id, sizeof(vif_params.record_id));
             
             strlcpy(vif_params.ssid, record->vif_param[vid].ssid, sizeof(vif_params.ssid));
-            
+            strlcpy(vif_params.mobility_id, record->vif_param[vid].mobility_id, sizeof(vif_params.mobility_id));
             strlcpy(vif_params.key, record->vif_param[vid].key, sizeof(vif_params.key));
         
             get_encryption_type(vif_params.encryption, record->vif_param[vid].encryption);
@@ -532,4 +533,26 @@ bool target_config_vif_set(vif_record_t *record)
     }
 
     return true;
+}
+
+int target_set_roaming_status(int status)
+{
+    char wireless_section[9][16] = { "wlan1", "wlan2", "wlan3", "wlan4",
+                                     "wlan5", "wlan6", "wlan7", "wlan8"};
+
+    char cmd[256] = {0};
+    int ret;
+
+    for (int i = 0; i < 8; i++) {
+        sprintf(cmd, "uci set wireless.%s.ieee80211r=%d", wireless_section[i], status);
+        ret = system(cmd);
+        sprintf(cmd, "uci set wireless.%s.ft_psk_generate_local=%d", wireless_section[i], status);
+        ret = system(cmd);
+        sprintf(cmd, "uci set wireless.%s.ft_over_ds=0", wireless_section[i]);
+        ret = system(cmd);
+    }
+    system("uci commit wireless");
+    system("wifi");
+
+    return ret;
 }

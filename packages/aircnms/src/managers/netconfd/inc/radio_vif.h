@@ -35,6 +35,7 @@ struct airpro_mgr_wlan_vap_params {
     bool is_wlan_downrate;
     int  wlan_downrate;
     char enable[8];
+    char mobility_id[12];
     char is_deleted[8];
     char qos_enable[12];
     char forward_type[32];

@@ -141,6 +141,7 @@ bool sanitize_and_validate_vif_params(struct airpro_mgr_wlan_vap_params *p)
 
     // Sanitize all strings first
     sanitize_string(clean.record_id, p->record_id, sizeof(clean.record_id));
+    sanitize_string(clean.mobility_id, p->mobility_id, sizeof(clean.mobility_id));
     sanitize_string(clean.ssid, p->ssid, sizeof(clean.ssid));
     sanitize_string(clean.key, p->key, sizeof(clean.key));
     sanitize_string(clean.encryption, p->encryption, sizeof(clean.encryption));

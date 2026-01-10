@@ -202,6 +202,7 @@ int uci_set_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_pa
         status += strlen(vap_params->network) ? uciSet(pkg, sec, "network", vap_params->network) : 0;
         status += strlen(vap_params->opmode) ? uciSet(pkg, sec, "mode", vap_params->opmode) : 0;
         status += strlen(vap_params->ssid) ? uciSet(pkg, sec, "ssid", vap_params->ssid) : 0;
+        status += strlen(vap_params->mobility_id) ? uciSet(pkg, sec, "mobility_domain", vap_params->mobility_id) : 0;
         status += strlen(vap_params->vlan_id) ? uciSet(pkg, sec, "vlan", vap_params->vlan_id) : 0;
         status += strlen(vap_params->hide_ssid) ? uciSet(pkg, sec, "hidden", vap_params->hide_ssid) : 0;
         status += strlen(vap_params->isolate) ? uciSet(pkg, sec, "isolate", vap_params->isolate) : 0;

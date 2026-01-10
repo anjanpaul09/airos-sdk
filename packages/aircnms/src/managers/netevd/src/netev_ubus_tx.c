@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "netev.h"
 #include "log.h"
 #include "info_events.h"
 
@@ -54,6 +55,15 @@ static int call_ubus_method(const char *object, const char *method, struct blob_
 /* Publish info event to cgwd via netinfo method */
 void netev_publish_info_event(void *buf, size_t size)
 {
+    int online_status;
+    
+    // Check if we're online before attempting
+    online_status = air_check_online_status();
+    if (!online_status) {
+        LOG(INFO, "AIRCNMS status is offline, Netevd Skipping info");
+        return;
+    }
+
     if (!buf || size == 0) {
         LOG(ERR, "Invalid parameters in netev_publish_info_event");
         return;

@@ -15,6 +15,7 @@
 #include "memutil.h"
 
 #include "os_nif.h"
+#include "air_util.h"
 
 #include "stats_report.h"
 

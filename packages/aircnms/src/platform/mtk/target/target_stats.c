@@ -50,6 +50,7 @@ bool nl80211_stats_vap_get(vif_record_t *record);
 bool nl80211_stats_radio_get(vif_record_t *record);
 bool get_all_ethernet_stats(vif_record_t *record);
 bool get_all_ethernet_info(vif_info_event_t *vif_info);
+int get_channel_from_cmd(const char *iface);
 
 
 #define MODULE_ID LOG_MODULE_ID_TARGET
@@ -357,14 +358,12 @@ bool target_info_vif_get(vif_info_event_t *vif_info)
     snprintf(vif_info->radio[0].band, sizeof(vif_info->radio[0].band), "BAND2G");
     memset(buf, 0, sizeof(buf));
     memset(param, 0, sizeof(param));
-    (void)cmd_buf("uci get wireless.wifi1.channel", buf, sizeof(buf));
-    len = strlen(buf);
-    if (len > 0) {
-        sscanf(buf, "%s", param);
-        vif_info->radio[0].channel = atoi(param);
-    } else {
-        vif_info->radio[0].channel = 6; // default
-    }
+    
+    uint8_t ch = get_channel_from_cmd("phy0-ap0");
+    if (!ch) {
+        ch = 6;
+    } 
+    vif_info->radio[0].channel = ch;
     
     memset(buf, 0, sizeof(buf));
     memset(param, 0, sizeof(param));
@@ -379,16 +378,11 @@ bool target_info_vif_get(vif_info_event_t *vif_info)
     
     // 5G Radio
     snprintf(vif_info->radio[1].band, sizeof(vif_info->radio[1].band), "BAND5G");
-    memset(buf, 0, sizeof(buf));
-    memset(param, 0, sizeof(param));
-    (void)cmd_buf("uci get wireless.wifi0.channel", buf, sizeof(buf));
-    len = strlen(buf);
-    if (len > 0) {
-        sscanf(buf, "%s", param);
-        vif_info->radio[1].channel = atoi(param);
-    } else {
-        vif_info->radio[1].channel = 36; // default
-    }
+    ch = get_channel_from_cmd("phy1-ap0");
+    if (!ch) {
+        ch = 36;
+    } 
+    vif_info->radio[1].channel = ch;
     
     memset(buf, 0, sizeof(buf));
     memset(param, 0, sizeof(param));

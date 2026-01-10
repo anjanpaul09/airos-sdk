@@ -201,6 +201,7 @@ int netconf_process_acl_msg(char *buf);
 int netconf_process_user_rl_msg(char *buf);
 bool target_config_vif_set(vif_record_t *record);
 bool target_config_radio_set(radio_record_t *record);
+int target_set_roaming_status(int status);
 int netconf_handle_add_blacklist(char *mac);
 int netconf_handle_remove_blacklist(char *mac);
 int netconf_handle_add_whitelist(char *mac);
