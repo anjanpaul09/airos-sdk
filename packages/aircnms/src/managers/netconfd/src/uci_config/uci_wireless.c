@@ -215,6 +215,7 @@ int uci_set_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_pa
         status += strlen(vap_params->secret_key) ? uciSet(pkg, sec, "key", vap_params->secret_key) : 0;
         status += strlen(vap_params->disabled) ? uciSet(pkg, sec, "disabled", vap_params->disabled) : 0;
         status += strlen(vap_params->macfilter) ? uciSet(pkg, sec, "macfilter", vap_params->macfilter) : 0;
+        status += strlen(vap_params->ft_psk_generate_local) ? uciSet(pkg, sec, "ft_psk_generate_local", vap_params->ft_psk_generate_local) : 0;
         if (status != SUCCESS)
             break;
         uciCommit((char *)pkg);        

@@ -49,6 +49,7 @@ struct airpro_mgr_wlan_vap_params {
     int  status; // cloud: 1=add, 2=edit, 3=del
     char device[8];
     char disabled[8];
+    char ft_psk_generate_local[8];
     char prior5g[4];
 };
 
