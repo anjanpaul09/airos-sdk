@@ -154,6 +154,7 @@ bool sanitize_and_validate_vif_params(struct airpro_mgr_wlan_vap_params *p)
     sanitize_string(clean.auth_port, p->auth_port, sizeof(clean.auth_port));
     sanitize_string(clean.acct_port, p->acct_port, sizeof(clean.acct_port));
     sanitize_string(clean.secret_key, p->secret_key, sizeof(clean.secret_key));
+    sanitize_string(clean.ft_psk_generate_local, p->ft_psk_generate_local, sizeof(clean.ft_psk_generate_local));
 
     bool valid = true;
 

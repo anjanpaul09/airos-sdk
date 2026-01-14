@@ -337,6 +337,19 @@ bool target_config_vif_set(vif_record_t *record)
                     rc = system(cmd);
             }
 
+            //TODO: check roming configuration IMP***
+            const char *enc = vif_params.encryption;
+            int ft_local = 0;
+
+            /* Enable only for WPA2-PSK based modes */
+            if (!strcmp(enc, "psk") ||
+                !strcmp(enc, "psk2") ||
+                !strcmp(enc, "psk-mixed")) {
+                ft_local = 1;
+            }
+
+           snprintf(vif_params.ft_psk_generate_local, sizeof(vif_params.ft_psk_generate_local), "%d",ft_local);
+
 #ifdef CONFIG_PLATFORM_MTK 
             if( strcmp(vif_params.forward_type, "Bridge") == 0) {
                 int vlan = atoi(record->vif_param[vid].vlan_id);
