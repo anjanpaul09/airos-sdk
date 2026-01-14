@@ -160,6 +160,7 @@ int uci_set_radio_params(char *radio_name, struct airpro_mgr_wlan_radio_params *
         status += strlen(radio_params->max_sta) ? uciSet(pkg, sec, "max_sta", radio_params->max_sta) : 0;
         status += strlen(radio_params->txpower) ? uciSet(pkg, sec, "txpower", radio_params->txpower) : 0;
         status += strlen(radio_params->user_limit) ? uciSet(pkg, sec, "user_limit", radio_params->user_limit) : 0;
+        status += strlen(radio_params->noscan) ? uciSet(pkg, sec, "noscan", radio_params->noscan) : 0;
         if (status)
             break;
         else

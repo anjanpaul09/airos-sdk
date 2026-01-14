@@ -11,6 +11,7 @@ config wifi-device 'wifi1'
         option beacon_int '100'
         option short_gi_20 '1'
         option rts '2347'
+        option noscan '1'
 
 config wifi-device 'wifi0'
 	    option type 'mac80211'

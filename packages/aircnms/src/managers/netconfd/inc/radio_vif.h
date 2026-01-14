@@ -56,6 +56,7 @@ struct airpro_mgr_wlan_vap_params {
 struct airpro_mgr_wlan_radio_params {
     char channel[8];
     char disabled[8];
+    char noscan[8];
     char txpower[8];
     char mode[16];
     char country[8];
