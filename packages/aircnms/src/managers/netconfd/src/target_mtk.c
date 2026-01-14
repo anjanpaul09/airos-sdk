@@ -203,6 +203,14 @@ bool target_config_radio_set(radio_record_t *record)
                 continue;
             }
 
+            if (strcmp(phyname, "2.4GHz") == 0) {
+                if (strcmp(rad_params.channel_width, "20") == 0) {
+                    snprintf(rad_params.noscan, sizeof(rad_params.noscan), "%d", 0);
+                } else if (strcmp(rad_params.channel_width, "40") == 0) {
+                    snprintf(rad_params.noscan, sizeof(rad_params.noscan), "%d", 1);
+                }
+            }
+
             ret = uci_set_radio_params(radio_name, &rad_params);
             
             do_wifi_reload = true;
@@ -482,7 +490,20 @@ bool target_config_vif_set(vif_record_t *record)
                     sprintf(cmd, "uci del wireless.%s.acct_server", vif_name);
                     rc = system(cmd);
             }
-            
+
+            //TODO: check roming configuration IMP***
+            const char *enc = vif_params.encryption;
+            int ft_local = 0;
+
+            /* Enable only for WPA2-PSK based modes */
+            if (!strcmp(enc, "psk") ||
+                !strcmp(enc, "psk2") ||
+                !strcmp(enc, "psk-mixed")) {
+                ft_local = 1;
+            }
+
+           snprintf(vif_params.ft_psk_generate_local, sizeof(vif_params.ft_psk_generate_local), "%d",ft_local);
+
 #ifdef CONFIG_PLATFORM_MTK 
             if( strcmp(record->vif_param[vid].forward_type, "Bridge") == 0) {
                 int vlan = atoi(record->vif_param[vid].vlan_id);
@@ -559,10 +580,10 @@ int target_set_roaming_status(int status)
     for (int i = 0; i < 8; i++) {
         sprintf(cmd, "uci set wireless.%s.ieee80211r=%d", wireless_section[i], status);
         ret = system(cmd);
-        sprintf(cmd, "uci set wireless.%s.ft_psk_generate_local=%d", wireless_section[i], status);
-        ret = system(cmd);
-        sprintf(cmd, "uci set wireless.%s.ft_over_ds=0", wireless_section[i]);
-        ret = system(cmd);
+        //sprintf(cmd, "uci set wireless.%s.ft_psk_generate_local=%d", wireless_section[i], status);
+        //ret = system(cmd);
+        //sprintf(cmd, "uci set wireless.%s.ft_over_ds=0", wireless_section[i]);
+        //ret = system(cmd);
     }
     system("uci commit wireless");
     system("wifi");
