@@ -65,298 +65,374 @@ void netconf_apply_jedi_conf()
     }
 }
 
+/* ---------- Safe JSON helpers ---------- */
+
+static const char *json_get_str(json_t *obj, const char *key)
+{
+    json_t *v = json_object_get(obj, key);
+    if (!v || !json_is_string(v))
+        return "";
+    return json_string_value(v);
+}
+
+static int json_get_bool(json_t *obj, const char *key, int def)
+{
+    json_t *v = json_object_get(obj, key);
+    if (!v || !json_is_boolean(v))
+        return def;
+    return json_boolean_value(v);
+}
+
+static int json_get_int(json_t *obj, const char *key, int def)
+{
+    json_t *v = json_object_get(obj, key);
+    if (!v || !json_is_integer(v))
+        return def;
+    return (int)json_integer_value(v);
+}
+
 bool netconf_process_vif_list(json_t *vif_list)
 {
     bool ret;
-    int n_vif = 0;
-    //char record_id[12];
-    int hidden;
     size_t i;
-    vif_record_t *record = (vif_record_t *)malloc(sizeof(vif_record_t));
-    
-    // FIX: Add null check for malloc
-    if (!record) {
-        LOG(ERR, "Failed to allocate memory for vif_record_t");
+    int n_vif = 0;
+
+    if (!vif_list || !json_is_array(vif_list)) {
+        LOG(ERR, "vif_list is NULL or not an array");
         return false;
     }
-    
-    memset(record, 0, sizeof(vif_record_t));
+
+    vif_record_t *record = calloc(1, sizeof(vif_record_t));
+    if (!record) {
+        LOG(ERR, "Failed to allocate vif_record_t");
+        return false;
+    }
+
+    size_t max_vif = sizeof(record->vif_param) /
+                     sizeof(record->vif_param[0]);
+
     json_t *vif;
-    json_t *attr_value;
     json_array_foreach(vif_list, i, vif) {
-        
-        strcpy(record->vif_param[i].record_id, json_string_value(json_object_get(vif, "recordId")));
 
-        hidden = json_boolean_value(json_object_get(vif, "isHidden"));
+        if (i >= max_vif) {
+            LOG(ERR, "Too many VIF entries (%zu), max=%zu", i, max_vif);
+            break;
+        }
+
+        if (!json_is_object(vif)) {
+            LOG(ERR, "vif[%zu] is not an object", i);
+            continue;
+        }
+
+        /* ---------- Strings (safe) ---------- */
+        strcpy(record->vif_param[i].record_id,
+               json_get_str(vif, "recordId"));
+
+        strcpy(record->vif_param[i].ssid,
+               json_get_str(vif, "ssid"));
+
+        strcpy(record->vif_param[i].encryption,
+               json_get_str(vif, "encryption"));
+
+        strcpy(record->vif_param[i].forward_type,
+               json_get_str(vif, "forwardType"));
+
+        strcpy(record->vif_param[i].key,
+               json_get_str(vif, "key"));
+
+        strcpy(record->vif_param[i].device,
+               json_get_str(vif, "radioType"));
+
+        strcpy(record->vif_param[i].auth_url,
+               json_get_str(vif, "authUrl"));
+
+        /* ---------- Booleans ---------- */
+        int hidden = json_get_bool(vif, "isHidden", 0);
         sprintf(record->vif_param[i].hide_ssid, "%d", hidden);
-               
-        strcpy(record->vif_param[i].ssid, json_string_value(json_object_get(vif, "ssid")));
 
-        strcpy(record->vif_param[i].encryption, json_string_value(json_object_get(vif, "encryption")));
-        strcpy(record->vif_param[i].forward_type, json_string_value(json_object_get(vif, "forwardType")));
-        
-        attr_value = json_object_get(vif, "key");
-        if (attr_value != NULL && json_is_string(attr_value)) {
-            const char *value = json_string_value(attr_value);
-            if (value != NULL) {
-                strcpy(record->vif_param[i].key, value);
-            }
-        }
-        
-        attr_value = json_object_get(vif, "mobilityDomain");
-        if (attr_value != NULL && json_is_string(attr_value)) {
-            const char *value = json_string_value(attr_value);
-            if (value != NULL) {
-                uint16_t md = mobility_domain_from_string(value);
-                if (md == 0x0000)
-                    md = 0x0001;
-                snprintf(record->vif_param[i].mobility_id, sizeof(record->vif_param[i].mobility_id), "%04x", md);
-            }
+        int enable = json_get_bool(vif, "enable", 0);
+        sprintf(record->vif_param[i].enable, "%d", enable);
+
+        int auth = json_get_bool(vif, "isAuth", 0);
+        record->vif_param[i].is_auth = auth;
+
+        /* ---------- Integers ---------- */
+        int vlan_id = json_get_int(vif, "vlanId", 0);
+        sprintf(record->vif_param[i].vlan_id, "%d", vlan_id);
+
+        record->vif_param[i].status =
+            json_get_int(vif, "status", 0);
+
+        /* ---------- Mobility Domain ---------- */
+        const char *md_str = json_get_str(vif, "mobilityDomain");
+        if (md_str[0] != '\0') {
+            uint16_t md = mobility_domain_from_string(md_str);
+            if (md == 0x0000)
+                md = 0x0001;
+            snprintf(record->vif_param[i].mobility_id,
+                     sizeof(record->vif_param[i].mobility_id),
+                     "%04x", md);
+        } else {
+            strcpy(record->vif_param[i].mobility_id, "0001");
         }
 
-        if (strncmp(record->vif_param[i].encryption, "wpa2-enterprise", 15) == 0
-                || strncmp(record->vif_param[i].encryption, "wpa3-enterprise", 15) == 0) {
-        
-            attr_value = json_object_get(vif, "serverName");
-            if (attr_value != NULL && json_is_string(attr_value)) {
-                const char *value = json_string_value(attr_value);
-                if (value != NULL) {
-                    strcpy(record->vif_param[i].server_name, value);
-                } 
-            }
-            
-            attr_value = json_object_get(vif, "serverIp");
-            if (attr_value != NULL && json_is_string(attr_value)) {
-                const char *value = json_string_value(attr_value);
-                if (value != NULL) {
-                    strcpy(record->vif_param[i].server_ip, value);
-                } 
-            }
-   
-            attr_value = json_object_get(vif, "authPort");
-            if (json_is_integer(attr_value)) {
+        /* ---------- Enterprise only ---------- */
+        if (strncmp(record->vif_param[i].encryption,
+                    "wpa2-enterprise", 15) == 0 ||
+            strncmp(record->vif_param[i].encryption,
+                    "wpa3-enterprise", 15) == 0) {
+
+            strcpy(record->vif_param[i].server_name,
+                   json_get_str(vif, "serverName"));
+
+            strcpy(record->vif_param[i].server_ip,
+                   json_get_str(vif, "serverIp"));
+
+            json_t *j;
+
+            j = json_object_get(vif, "authPort");
+            if (json_is_integer(j)) {
                 snprintf(record->vif_param[i].auth_port,
                          sizeof(record->vif_param[i].auth_port),
-                         "%lld",
-                         json_integer_value(attr_value));
+                         "%lld", json_integer_value(j));
             }
 
-            attr_value = json_object_get(vif, "accountPort");
-            if (json_is_integer(attr_value)) {
+            j = json_object_get(vif, "accountPort");
+            if (json_is_integer(j)) {
                 snprintf(record->vif_param[i].acct_port,
                          sizeof(record->vif_param[i].acct_port),
-                         "%lld",
-                         json_integer_value(attr_value));
+                         "%lld", json_integer_value(j));
             }
 
-            attr_value = json_object_get(vif, "communicateKey");
-            if (attr_value != NULL && json_is_string(attr_value)) {
-                const char *value = json_string_value(attr_value);
-                if (value != NULL) {
-                    strcpy(record->vif_param[i].secret_key, value);
-                } 
-            }
+            strcpy(record->vif_param[i].secret_key,
+                   json_get_str(vif, "communicateKey"));
         }
 
+        /* ---------- Rates ---------- */
         record->vif_param[i].is_uprate = false;
-        attr_value = json_object_get(vif, "uprate");
-        if (attr_value != NULL && json_is_string(attr_value)) {
-            const char *value = json_string_value(attr_value);
-            if (value != NULL && strlen(value) > 0) {
-                int uprate = atoi(value);
-                if (uprate >= 0) {
-                    record->vif_param[i].is_uprate = true;
-                    record->vif_param[i].uprate = uprate;
-                }
+        const char *upr = json_get_str(vif, "uprate");
+        if (upr[0]) {
+            int v = atoi(upr);
+            if (v >= 0) {
+                record->vif_param[i].is_uprate = true;
+                record->vif_param[i].uprate = v;
             }
         }
 
         record->vif_param[i].is_downrate = false;
-        attr_value = json_object_get(vif, "downrate");
-        if (attr_value != NULL && json_is_string(attr_value)) {
-            const char *value = json_string_value(attr_value);
-            if (value != NULL && strlen(value) > 0) {
-                int downrate = atoi(value);
-                if (downrate >= 0) {
-                    record->vif_param[i].is_downrate = true;
-                    record->vif_param[i].downrate = downrate;
-                }
+        const char *dnr = json_get_str(vif, "downrate");
+        if (dnr[0]) {
+            int v = atoi(dnr);
+            if (v >= 0) {
+                record->vif_param[i].is_downrate = true;
+                record->vif_param[i].downrate = v;
             }
         }
 
         record->vif_param[i].is_wlan_uprate = false;
-        attr_value = json_object_get(vif, "wlanUprate");
-        if (attr_value != NULL && json_is_string(attr_value)) {
-            const char *value = json_string_value(attr_value);
-            if (value != NULL && strlen(value) > 0) {
-                int uprate = atoi(value);
-                if (uprate >= 0) {
-                    record->vif_param[i].is_wlan_uprate = true;
-                    record->vif_param[i].wlan_uprate = uprate;
-                }
+        const char *wu = json_get_str(vif, "wlanUprate");
+        if (wu[0]) {
+            int v = atoi(wu);
+            if (v >= 0) {
+                record->vif_param[i].is_wlan_uprate = true;
+                record->vif_param[i].wlan_uprate = v;
             }
         }
 
         record->vif_param[i].is_wlan_downrate = false;
-        attr_value = json_object_get(vif, "wlanDownrate");
-        if (attr_value != NULL && json_is_string(attr_value)) {
-            const char *value = json_string_value(attr_value);
-            if (value != NULL && strlen(value) > 0) {
-                int downrate = atoi(value);
-                if (downrate >= 0) {
-                    record->vif_param[i].is_wlan_downrate = true;
-                    record->vif_param[i].wlan_downrate = downrate;
-                }
+        const char *wd = json_get_str(vif, "wlanDownrate");
+        if (wd[0]) {
+            int v = atoi(wd);
+            if (v >= 0) {
+                record->vif_param[i].is_wlan_downrate = true;
+                record->vif_param[i].wlan_downrate = v;
             }
         }
-        
-        int auth = json_boolean_value(json_object_get(vif, "isAuth"));
-        record->vif_param[i].is_auth = auth;
-
-        attr_value = json_object_get(vif, "authUrl");
-        if (attr_value != NULL && json_is_string(attr_value)) {
-            const char *value = json_string_value(attr_value);
-            if (value != NULL) {
-                strcpy(record->vif_param[i].auth_url, value);
-            } 
-        }
-
-        int enable = json_boolean_value(json_object_get(vif, "enable"));
-        sprintf(record->vif_param[i].enable, "%d", enable);
-
-        int vlan_id = json_integer_value(json_object_get(vif, "vlanId"));
-        sprintf(record->vif_param[i].vlan_id, "%d", vlan_id);
-        
-        strcpy(record->vif_param[i].device, json_string_value(json_object_get(vif, "radioType")));
-
-        record->vif_param[i].status = json_integer_value(json_object_get(vif, "status"));
 
         n_vif++;
     }
+
     record->n_vif = n_vif;
-    
-    // Log parameters before setting
+
+    /* ---------- Logging ---------- */
     LOG(INFO, "SET_VIF params n_vif=%d", n_vif);
-    for (int j = 0; j < n_vif && j < sizeof(record->vif_param)/sizeof(record->vif_param[0]); j++) {
-        LOG(INFO, "SET_VIF[%d] recordId=%s ssid=%s encryption=%s status=%d enable=%s vlanId=%s device=%s", 
-            j, record->vif_param[j].record_id, record->vif_param[j].ssid, 
-            record->vif_param[j].encryption, record->vif_param[j].status,
-            record->vif_param[j].enable, record->vif_param[j].vlan_id, 
+    for (int j = 0; j < n_vif; j++) {
+        LOG(INFO,
+            "SET_VIF[%d] recordId=%s ssid=%s enc=%s status=%d enable=%s vlanId=%s device=%s",
+            j,
+            record->vif_param[j].record_id,
+            record->vif_param[j].ssid,
+            record->vif_param[j].encryption,
+            record->vif_param[j].status,
+            record->vif_param[j].enable,
+            record->vif_param[j].vlan_id,
             record->vif_param[j].device);
     }
-    
+
     ret = target_config_vif_set(record);
     free(record);
     return ret;
 }
 
-
 bool netconf_process_radio_list(json_t *radio_list)
 {
     bool ret;
     int n_radio = 0;
-    char record_id[12];
-    int channel_width;
-    int txpower;
-    int disabled = 0;
     size_t i;
-    radio_record_t *record = (radio_record_t *)malloc(sizeof(radio_record_t));
-    
-    // FIX: Add null check for malloc
+
+    radio_record_t *record = (radio_record_t *)calloc(1, sizeof(radio_record_t));
     if (!record) {
         LOG(ERR, "Failed to allocate memory for radio_record_t");
         return false;
     }
-    
+
+    if (!radio_list || !json_is_array(radio_list)) {
+        LOG(ERR, "radio_list is NULL or not array");
+        free(record);
+        return false;
+    }
+
+    size_t max_radio = sizeof(record->radio_param) /
+                       sizeof(record->radio_param[0]);
+
     json_t *radio;
     json_array_foreach(radio_list, i, radio) {
-        
-        memset(&record_id, 0, sizeof(record_id));
-        if( json_object_get(radio, "radioType") ) {
-            strcpy(record->radio_param[i].radio_type, json_string_value(json_object_get(radio, "radioType")));
-            if( strcmp(record->radio_param[i].radio_type, "2.4GHz") == 0){
-                strcpy(record_id, "wifi1");
-            } else if( strcmp(record->radio_param[i].radio_type, "5GHz") == 0 ){
-                strcpy(record_id, "wifi0");
-            }
-            strcpy(record->radio_param[i].record_id, record_id);
+
+        if (i >= max_radio) {
+            LOG(ERR, "Too many radio entries (%zu), max=%zu", i, max_radio);
+            break;
         }
 
-        if( json_object_get(radio, "status")) { 
-            record->radio_param[i].status = json_integer_value(json_object_get(radio, "status"));
+        if (!json_is_object(radio))
+            continue;
+
+        /* ---------------- radioType ---------------- */
+        json_t *j_radioType = json_object_get(radio, "radioType");
+        if (j_radioType && json_is_string(j_radioType)) {
+            const char *rtype = json_string_value(j_radioType);
+
+            snprintf(record->radio_param[i].radio_type,
+                     sizeof(record->radio_param[i].radio_type),
+                     "%s", rtype);
+
+            if (strcmp(rtype, "2.4GHz") == 0)
+                snprintf(record->radio_param[i].record_id,
+                         sizeof(record->radio_param[i].record_id),
+                         "wifi1");
+            else if (strcmp(rtype, "5GHz") == 0)
+                snprintf(record->radio_param[i].record_id,
+                         sizeof(record->radio_param[i].record_id),
+                         "wifi0");
         }
 
+        /* ---------------- status ---------------- */
+        json_t *j_status = json_object_get(radio, "status");
+        if (j_status && json_is_integer(j_status))
+            record->radio_param[i].status = json_integer_value(j_status);
 
-        if (json_object_get(radio, "channel")) {
-            const char *ch_str = json_string_value(json_object_get(radio, "channel"));
-
-            if (ch_str && ch_str[0] != '\0') {
+        /* ---------------- channel ---------------- */
+        json_t *j_channel = json_object_get(radio, "channel");
+        if (j_channel && json_is_string(j_channel)) {
+            const char *ch = json_string_value(j_channel);
+            if (ch && ch[0]) {
                 snprintf(record->radio_param[i].channel,
-                            sizeof(record->radio_param[i].channel),
-                            "%s", ch_str);
-
+                         sizeof(record->radio_param[i].channel),
+                         "%s", ch);
                 record->radio_param[i].status = RADIO_SETTING_SECONDARY;
             }
         }
 
-        if( json_object_get(radio, "txpower")) {
-            json_t *j_txpower = json_object_get(radio, "txpower");
-            if (j_txpower && !json_is_null(j_txpower)) {
-                txpower = atoi(json_string_value(json_object_get(radio, "txpower")));
-                if ( txpower > 0 ) {
-                    strcpy(record->radio_param[i].txpower, json_string_value(json_object_get(radio, "txpower")));
-                    record->radio_param[i].status = RADIO_SETTING_SECONDARY;
-                }
+        /* ---------------- txpower ---------------- */
+        json_t *j_txp = json_object_get(radio, "txpower");
+        if (j_txp && json_is_string(j_txp)) {
+            const char *txp = json_string_value(j_txp);
+            int txpower = atoi(txp);
+            if (txpower > 0) {
+                snprintf(record->radio_param[i].txpower,
+                         sizeof(record->radio_param[i].txpower),
+                         "%s", txp);
+                record->radio_param[i].status = RADIO_SETTING_SECONDARY;
             }
         }
-        
-        if( json_object_get(radio, "disabled")) { 
-            const char *disabled_str = json_string_value(json_object_get(radio, "disabled"));
 
-            if (disabled_str && strcmp(disabled_str, "True") == 0) {
-                disabled = 0;  
-            } else if (disabled_str && strcmp(disabled_str, "False") == 0) {
-                disabled = 1;  
+        /* ---------------- disabled ---------------- */
+        int disabled = 0;
+        json_t *j_disabled = json_object_get(radio, "disabled");
+
+        if (j_disabled) {
+            if (json_is_boolean(j_disabled)) {
+                disabled = json_boolean_value(j_disabled) ? 1 : 0;
+            } else if (json_is_string(j_disabled)) {
+                const char *ds = json_string_value(j_disabled);
+                if (ds && (!strcasecmp(ds, "true") || !strcmp(ds, "1")))
+                    disabled = 1;
             }
-            sprintf(record->radio_param[i].disabled, "%d", disabled);    
         }
 
-        if( json_object_get(radio, "country")) { 
-            strcpy(record->radio_param[i].country, json_string_value(json_object_get(radio, "country")));
+        snprintf(record->radio_param[i].disabled,
+                 sizeof(record->radio_param[i].disabled),
+                 "%d", disabled);
+
+        /* ---------------- country ---------------- */
+        json_t *j_country = json_object_get(radio, "country");
+        if (j_country && json_is_string(j_country)) {
+            snprintf(record->radio_param[i].country,
+                     sizeof(record->radio_param[i].country),
+                     "%s", json_string_value(j_country));
         }
 
-        if( json_object_get(radio, "channelWidth")) { 
-            channel_width = json_integer_value(json_object_get(radio, "channelWidth"));
-            sprintf(record->radio_param[i].channel_width, "%d", channel_width);
+        /* ---------------- channelWidth ---------------- */
+        json_t *j_cw = json_object_get(radio, "channelWidth");
+        if (j_cw && json_is_integer(j_cw)) {
+            int cw = json_integer_value(j_cw);
+            if (cw < 0) cw = 0;
+            if (cw > 9999) cw = 9999;
+
+            snprintf(record->radio_param[i].channel_width,
+                     sizeof(record->radio_param[i].channel_width),
+                     "%d", cw);
         }
 
-        if( json_object_get(radio, "userlimit")) { 
-            strcpy(record->radio_param[i].user_limit, json_string_value(json_object_get(radio, "userlimit")));
+        /* ---------------- userlimit ---------------- */
+        json_t *j_ul = json_object_get(radio, "userlimit");
+        if (j_ul && json_is_string(j_ul)) {
+            snprintf(record->radio_param[i].user_limit,
+                     sizeof(record->radio_param[i].user_limit),
+                     "%s", json_string_value(j_ul));
         }
 
-        if( json_object_get(radio, "hwmode")) { 
-            strcpy(record->radio_param[i].hwmode, json_string_value(json_object_get(radio, "hwmode")));
+        /* ---------------- hwmode ---------------- */
+        json_t *j_hw = json_object_get(radio, "hwmode");
+        if (j_hw && json_is_string(j_hw)) {
+            snprintf(record->radio_param[i].hwmode,
+                     sizeof(record->radio_param[i].hwmode),
+                     "%s", json_string_value(j_hw));
         }
 
         n_radio++;
     }
+
     record->n_radio = n_radio;
-    
-    // Log parameters before setting
+
+    /* ---------------- logging ---------------- */
     LOG(INFO, "SET_RADIO params n_radio=%d", n_radio);
-    for (int j = 0; j < n_radio && j < sizeof(record->radio_param)/sizeof(record->radio_param[0]); j++) {
-        LOG(INFO, "SET_RADIO[%d] recordId=%s radioType=%s channel=%s txpower=%s disabled=%s country=%s channelWidth=%s", 
-            j, record->radio_param[j].record_id, record->radio_param[j].radio_type,
-            record->radio_param[j].channel, record->radio_param[j].txpower,
-            record->radio_param[j].disabled, record->radio_param[j].country,
+    for (int j = 0; j < n_radio; j++) {
+        LOG(INFO,
+            "SET_RADIO[%d] recordId=%s radioType=%s channel=%s txpower=%s disabled=%s country=%s channelWidth=%s",
+            j,
+            record->radio_param[j].record_id,
+            record->radio_param[j].radio_type,
+            record->radio_param[j].channel,
+            record->radio_param[j].txpower,
+            record->radio_param[j].disabled,
+            record->radio_param[j].country,
             record->radio_param[j].channel_width);
     }
-    
+
     ret = target_config_radio_set(record);
     free(record);
     return ret;
 }
-
 
 bool netconf_process_blacklist(json_t *blackList)
 {
