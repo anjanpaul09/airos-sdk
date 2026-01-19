@@ -305,7 +305,7 @@ bool netconf_process_radio_list(json_t *radio_list)
 
         if (!json_is_object(radio))
             continue;
-
+        
         /* ---------------- radioType ---------------- */
         json_t *j_radioType = json_object_get(radio, "radioType");
         if (j_radioType && json_is_string(j_radioType)) {
@@ -356,16 +356,20 @@ bool netconf_process_radio_list(json_t *radio_list)
         }
 
         /* ---------------- disabled ---------------- */
-        int disabled = 0;
+        int disabled = 1;   /* default = enabled */
+
         json_t *j_disabled = json_object_get(radio, "disabled");
 
         if (j_disabled) {
             if (json_is_boolean(j_disabled)) {
-                disabled = json_boolean_value(j_disabled) ? 1 : 0;
-            } else if (json_is_string(j_disabled)) {
-                const char *ds = json_string_value(j_disabled);
-                if (ds && (!strcasecmp(ds, "true") || !strcmp(ds, "1")))
-                    disabled = 1;
+            /* invert boolean */
+            disabled = json_boolean_value(j_disabled) ? 0 : 1;
+        } else if (json_is_string(j_disabled)) {
+            const char *ds = json_string_value(j_disabled);
+            if (ds && (!strcasecmp(ds, "true") || !strcmp(ds, "1")))
+                disabled = 0;   /* inverted */
+            else
+                disabled = 1;
             }
         }
 
