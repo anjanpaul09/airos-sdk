@@ -38,15 +38,20 @@ int main()
     }
 
 	/* start hostapd event listener (non-fatal if not present) */
-	hostapd_events_start(NULL);
+    ret = hostapd_events_start(NULL);
+    if (ret) {
+        LOG(ERR, "Failed to initialize hostapd_events_start: %d", ret);
+        goto cleanup;
+    }
+
 
     ev_run(EV_DEFAULT, 0);
 
-    hostapd_events_stop();
 
 cleanup:
 	/* Cleanup */
-        nl80211_cleanup();
+    hostapd_events_stop();
+    nl80211_cleanup();
 	netev_ubus_tx_service_cleanup();
 	
 	return ret;

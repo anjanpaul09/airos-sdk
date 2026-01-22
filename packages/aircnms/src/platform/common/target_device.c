@@ -12,7 +12,7 @@
 
 #include "util.h"
 #include "log.h"
-#include "report.h"
+#include "stats_report.h"
 //#include "osp_power.h"
 #include "memutil.h"
 

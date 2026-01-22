@@ -7,7 +7,7 @@
 # =============================================================================
 # USER INPUT - MODIFY THESE PATHS AS NEEDED
 # =============================================================================
-SDK_DIR=/home/anjan/projects/airpro/mtk/mt7621/24.10/openwrt
+SDK_DIR=/home/user/projects/airpro/MTK/ax820/test24/openwrt
 OUTPUT_DIR=${PWD}/releases
 # =============================================================================
 # SCRIPT EXECUTION
@@ -84,6 +84,8 @@ elif [ "$BOARD_NAME" = "mt76" ]; then
     rm -rf ${BUILD_DIR}/target-mipsel_24kc_musl/linux-ramips_mt7621/airdpi
     rm -rf ${SDK_DIR}/packages/feeds/aircnms
     rm -rf ${SDK_DIR}/packages/feeds/airdpi
+    
+    echo "${IMAGE_NAME}" > base-files/platform/mt7621/etc/version
     cp -rf packages/aircnms $SDK_DIR/package/feeds/
     cp -rf packages/airdpi $SDK_DIR/package/feeds/
     cp -rf patches/mt7621/owrt-24.10/mac80211/999-airdpi-ops.patch $SDK_DIR/package/kernel/mac80211/patches/subsys/

@@ -1,8 +1,11 @@
+#include <pthread.h>
 #include <linux/nl80211.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <net/if.h>
 #include <netev.h>
+
+pthread_mutex_t nl_sock_lock = PTHREAD_MUTEX_INITIALIZER;
 
 struct nl_sock *nl_sock_global = NULL;
 int nl80211_id = -1;
@@ -147,6 +150,9 @@ static int iface_list_other_cb(struct nl_msg *msg, void *arg)
 // -------------------------------
 bool sta_exists_on_any_iface(const char *mac_str)
 {
+    if (!mac_str)
+        return false;
+
     unsigned char mac[6];
     if (!mac_str_to_bytes(mac_str, mac)) {
         fprintf(stderr, "Invalid MAC string: %s\n", mac_str);
@@ -165,29 +171,53 @@ bool sta_exists_on_any_iface(const char *mac_str)
         .result = false
     };
 
-    // Build dump command: GET_INTERFACE dump
-    genlmsg_put(msg, 0, 0, nl80211_id, 0,
-                NLM_F_DUMP,
-                NL80211_CMD_GET_INTERFACE, 0);
+    pthread_mutex_lock(&nl_sock_lock);
 
-    nl_socket_modify_cb(nl_sock_global, NL_CB_VALID, NL_CB_CUSTOM,
-                        iface_list_cb, &ctx);
+    /* Clone existing callbacks */
+    struct nl_cb *old_cb = nl_cb_clone(nl_socket_get_cb(nl_sock_global));
+    struct nl_cb *cb = nl_cb_alloc(NL_CB_DEFAULT);
+    if (!old_cb || !cb)
+        goto out_unlock;
 
-    nl_send_auto(nl_sock_global, msg);
-    nl_recvmsgs_default(nl_sock_global);
+    nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, iface_list_cb, &ctx);
 
+    nl_socket_set_cb(nl_sock_global, cb);
+
+    if (!genlmsg_put(msg, 0, 0, nl80211_id, 0,
+                     NLM_F_DUMP,
+                     NL80211_CMD_GET_INTERFACE, 0))
+        goto out_restore;
+
+    if (nl_send_auto(nl_sock_global, msg) < 0)
+        goto out_restore;
+
+    if (nl_recvmsgs_default(nl_sock_global) < 0)
+        goto out_restore;
+
+out_restore:
+    nl_socket_set_cb(nl_sock_global, old_cb);
+    nl_cb_put(cb);
+    nl_cb_put(old_cb);
+
+out_unlock:
+    pthread_mutex_unlock(&nl_sock_lock);
     nlmsg_free(msg);
-
     return ctx.result;
 }
+
 
 // PUBLIC FUNCTION
 // -------------------------------
 // Returns true  → STA is connected on OTHER interfaces (excluding exclude_ifname)
 // Returns false → STA not connected on other interfaces (or error)
 // -------------------------------
-bool sta_exists_on_other_iface(const char *mac_str, const char *exclude_ifname)
+
+bool sta_exists_on_other_iface(const char *mac_str,
+                               const char *exclude_ifname)
 {
+    if (!mac_str || !exclude_ifname || exclude_ifname[0] == '\0')
+        return false;
+
     unsigned char mac[6];
     if (!mac_str_to_bytes(mac_str, mac)) {
         fprintf(stderr, "Invalid MAC string: %s\n", mac_str);
@@ -204,19 +234,38 @@ bool sta_exists_on_other_iface(const char *mac_str, const char *exclude_ifname)
         .result = false
     };
 
-    // Build dump command: GET_INTERFACE dump
-    genlmsg_put(msg, 0, 0, nl80211_id, 0,
-                NLM_F_DUMP,
-                NL80211_CMD_GET_INTERFACE, 0);
+    pthread_mutex_lock(&nl_sock_lock);
 
-    nl_socket_modify_cb(nl_sock_global, NL_CB_VALID, NL_CB_CUSTOM,
-                        iface_list_other_cb, &ctx);
+    /* Clone existing callbacks */
+    struct nl_cb *old_cb = nl_cb_clone(nl_socket_get_cb(nl_sock_global));
+    struct nl_cb *cb = nl_cb_alloc(NL_CB_DEFAULT);
+    if (!old_cb || !cb)
+        goto out_unlock;
 
-    nl_send_auto(nl_sock_global, msg);
-    nl_recvmsgs_default(nl_sock_global);
+    nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM,
+              iface_list_other_cb, &ctx);
 
+    nl_socket_set_cb(nl_sock_global, cb);
+
+    if (!genlmsg_put(msg, 0, 0, nl80211_id, 0,
+                     NLM_F_DUMP,
+                     NL80211_CMD_GET_INTERFACE, 0))
+        goto out_restore;
+
+    if (nl_send_auto(nl_sock_global, msg) < 0)
+        goto out_restore;
+
+    if (nl_recvmsgs_default(nl_sock_global) < 0)
+        goto out_restore;
+
+out_restore:
+    nl_socket_set_cb(nl_sock_global, old_cb);
+    nl_cb_put(cb);
+    nl_cb_put(old_cb);
+
+out_unlock:
+    pthread_mutex_unlock(&nl_sock_lock);
     nlmsg_free(msg);
-
     return ctx.result;
 }
 
