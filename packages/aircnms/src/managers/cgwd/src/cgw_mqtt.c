@@ -509,8 +509,8 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
                 memcpy(&device, ptr, sizeof(device));
 
                 ret = cgw_parse_device_info_json(&device, data, timestamp_ms);
-                strncpy(topic, stats_topic.device, sizeof(topic) - 1);
-                topic[sizeof(topic) - 1] = '\0';
+                sprintf(topic, "dev/to/cloud/%s/%s/event", air_dev.device_id, air_dev.serial_num);
+
                 break;
             }
             default:
