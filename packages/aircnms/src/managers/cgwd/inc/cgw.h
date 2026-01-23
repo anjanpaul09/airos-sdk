@@ -219,6 +219,7 @@ void mqtt_telog_init(struct ev_loop *ev);
 void mqtt_telog_fini(void);
 
 int cgw_check_debug_status();
+int mac_to_colon_format(const char *in, char *out, size_t out_len);
 
 
 bool cgw_parse_device_newjson(device_report_data_t *device, char *data);

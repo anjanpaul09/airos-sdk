@@ -346,6 +346,15 @@ struct wlan_sta *sta_table_lookup(uint8_t *macaddr, int dir, uint8_t ifindex)
     LIST_FOREACH(sta, &coplane->wlan_client.wlan_coplane_sta_hash[hash], ws_hash) {
         if (IEEE80211_ADDR_EQ(sta->src_mac, macaddr)) {
             sta_found = 1;
+            
+            // INTERNAL ROAMING DETECTION: Update wlan_id if client moved to different interface
+            if (sta->wlan_id != ifindex) {
+                printk("AIRDPI: client interface roaming detected: MAC=%02x:%02x:%02x:%02x:%02x:%02x "
+                       "from wlan-id=%d to wlan-id=%d\n",
+                       macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5],
+                       sta->wlan_id, ifindex);
+                sta->wlan_id = ifindex;
+            }
             return sta;
         }
     }
