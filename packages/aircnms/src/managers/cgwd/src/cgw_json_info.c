@@ -199,6 +199,7 @@ bool cgw_parse_device_info_json(device_info_event_t *device_info, char *data, ui
         return false;
     }
 
+    char mac_out[18];
     // Add root level fields
     json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id)); // TODO: Get from air_dev
     json_object_set_new(root, "deviceId", json_string(air_dev.device_id));
@@ -209,7 +210,11 @@ bool cgw_parse_device_info_json(device_info_event_t *device_info, char *data, ui
     // Add data object
     json_t *data_obj = json_object();
     json_object_set_new(data_obj, "serialNum", json_string(air_dev.serial_num));
-    json_object_set_new(data_obj, "macAddr", json_string(air_dev.macaddr));
+    if (mac_to_colon_format(air_dev.macaddr, mac_out, sizeof(mac_out)) == 0) {    
+        json_object_set_new(data_obj, "macAddr", json_string(mac_out));
+    } else {
+        json_object_set_new(data_obj, "macAddr", json_string(air_dev.macaddr));
+    }
     json_object_set_new(data_obj, "deviceType", json_string("Access Point"));
     json_object_set_new(data_obj, "model", json_string("MT7621"));
     json_object_set_new(data_obj, "firmwareVersion", json_string(device_info->firmwareVersion));
