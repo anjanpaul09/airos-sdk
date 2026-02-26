@@ -49,6 +49,9 @@ int airdpi_sta_add(const u8 *macaddr, const char *ifname)
     vap_id = IFNAME_HASH(ifname);
     se = sta_table_lookup((uint8_t *)macaddr, PACKET_INGRESS, vap_id);
 
+    /* Notify userspace via Generic Netlink */
+    airdpi_genl_notify_sta(macaddr, ifname, AIRDPI_CMD_STA_ADD);
+
     return 0;
 }
 EXPORT_SYMBOL_GPL(airdpi_sta_add);
@@ -83,8 +86,12 @@ int airdpi_sta_del(const u8 *macaddr, const char *ifname)
            macaddr[5]);
   }
 
-    if (rc_reg == 0 || rc_coplane == 0)
+
+    if (rc_reg == 0 || rc_coplane == 0) {
+        /* Notify userspace via Generic Netlink */
+        airdpi_genl_notify_sta(macaddr, ifname, AIRDPI_CMD_STA_DEL);
         return 0;
+    }
 
     return -ENOENT;
 }

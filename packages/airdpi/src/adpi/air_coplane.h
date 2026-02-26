@@ -39,6 +39,28 @@
 #define NETLINK_USER 31
 #endif
 
+/* Generic Netlink Definitions */
+#define AIRDPI_GENL_NAME "AIRDPI"
+#define AIRDPI_GENL_VERSION 1
+
+enum {
+    AIRDPI_ATTR_UNSPEC,
+    AIRDPI_ATTR_MAC,
+    AIRDPI_ATTR_IFNAME,
+    __AIRDPI_ATTR_MAX,
+};
+#define AIRDPI_ATTR_MAX (__AIRDPI_ATTR_MAX - 1)
+
+enum {
+    AIRDPI_CMD_UNSPEC,
+    AIRDPI_CMD_STA_ADD,
+    AIRDPI_CMD_STA_DEL,
+    __AIRDPI_CMD_MAX,
+};
+#define AIRDPI_CMD_MAX (__AIRDPI_CMD_MAX - 1)
+
+int airdpi_genl_notify_sta(const u8 *mac, const char *ifname, int cmd);
+
 /* Rate limit directions (moved from air_vif.h) */
 enum {
     AIR_RL_DIR_UPLINK,

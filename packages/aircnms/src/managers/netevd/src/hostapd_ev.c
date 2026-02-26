@@ -195,6 +195,7 @@ static bool is_config_change_event(const char *event) {
     return false;
 }
 
+#if 0
 static bool mac_str_to_bin(const char *mac_str, uint8_t *mac_bin) {
     unsigned int mac_values[6];
 
@@ -265,6 +266,7 @@ static bool extract_ifname(const char *event, char *ifname_out, size_t ifname_le
     ifname_out[chars_copied] = '\0';
     return (chars_copied > 0);
 }
+#endif
 
 /* Extract interface name from socket path (e.g., /var/run/hostapd/wlan0 -> wlan0) */
 static void extract_ifname_from_path(const char *path, char *ifname, size_t ifname_len) {
@@ -635,7 +637,7 @@ static void hostapd_ev_cb(EV_P_ ev_io *w, int revents) {
 
         buf[len] = '\0';
         printf("hostapd_ev: %s: %s\n", cw->path, buf);
-
+#if 0
         /* Parse and queue events for worker threads */
         if (strstr(buf, "AP-STA-CONNECTED")) {
             event_task_t task = { .type = EVENT_CONNECT };
@@ -664,7 +666,8 @@ static void hostapd_ev_cb(EV_P_ ev_io *w, int revents) {
                 queue_event(&task);
             }
         }
-        else if (is_config_change_event(buf)) {
+#endif
+        if (is_config_change_event(buf)) {
             event_task_t task = { .type = EVENT_CONFIG };
             strncpy(task.raw_event, buf, sizeof(task.raw_event) - 1);
             printf("hostapd_ev: Queueing config change event\n");
@@ -674,6 +677,27 @@ static void hostapd_ev_cb(EV_P_ ev_io *w, int revents) {
 }
 
 /* ========== Public API ========== */
+
+void add_event_to_queue(uint8_t *mac, const char *ifname, int event_type)
+{
+
+    event_task_t task;
+
+    if (event_type == 1) {
+        task.type = EVENT_CONNECT;
+    } else if (event_type == 0) {
+        task.type = EVENT_DISCONNECT;
+    } else {
+        return; // invalid type
+    }
+
+    memcpy(task.mac, mac, 6);
+    
+    strncpy(task.ifname, ifname, sizeof(task.ifname));
+    task.ifname[sizeof(task.ifname) - 1] = '\0';            
+
+    queue_event(&task);
+}
 
 int hostapd_events_start(const char *ctrl_dir) {
     const char *dir = ctrl_dir ? ctrl_dir : HOSTAPD_CTRL_DIR;
