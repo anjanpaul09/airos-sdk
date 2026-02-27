@@ -10,6 +10,7 @@ UNIT_SRC += src/netev_vif_info.c
 UNIT_SRC += src/netev_device_info.c
 UNIT_SRC += src/netev_client_cap.c
 UNIT_SRC += src/nl_client_check.c
+UNIT_SRC += src/airdpi_genl.c
 
 # Platform target code for VIF info
 ifeq ($(BOARD_TYPE), BOARD_TYPE_MTK)

@@ -3,6 +3,7 @@
 #include "netev_ubus_tx.h"
 #include "netev_vif_info.h"
 #include "netev_device_info.h"
+#include "airdpi_genl.h"
 #include "log.h"
 #include "dhcp_fp.h"
 
@@ -44,12 +45,16 @@ int main()
         goto cleanup;
     }
 
+    /* Start AIRDPI Generic Netlink listener (non-fatal) */
+    if (airdpi_genl_init(loop) < 0)
+        LOG(WARN, "AIRDPI genl listener not started (module not loaded?)");
 
     ev_run(EV_DEFAULT, 0);
 
 
 cleanup:
 	/* Cleanup */
+    airdpi_genl_cleanup(loop);
     hostapd_events_stop();
     nl80211_cleanup();
 	netev_ubus_tx_service_cleanup();

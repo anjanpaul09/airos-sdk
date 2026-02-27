@@ -1,81 +1,85 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/netlink.h>
+#include <net/genetlink.h>
 #include <linux/skbuff.h>
-#include <linux/init.h>
-#include <linux/version.h>
-#include <net/sock.h>
-
+#include <linux/netlink.h>
 #include "air_coplane.h"
 
-static struct sock *nl_sk = NULL;
-int pid = 0;
+static const struct nla_policy airdpi_genl_policy[AIRDPI_ATTR_MAX + 1] = {
+	[AIRDPI_ATTR_MAC]    = { .type = NLA_BINARY, .len = ETH_ALEN },
+	[AIRDPI_ATTR_IFNAME] = { .type = NLA_NUL_STRING, .len = IFNAMSIZ },
+};
 
-static int send_netlink_msg(int pid, char *msg) 
+static const struct genl_multicast_group airdpi_mcgrps[] = {
+	{ .name = "events" },
+};
+
+static struct genl_family airdpi_gnl_family = {
+	.name    = AIRDPI_GENL_NAME,
+	.version = AIRDPI_GENL_VERSION,
+	.maxattr = AIRDPI_ATTR_MAX,
+	.policy  = airdpi_genl_policy,
+	.module  = THIS_MODULE,
+	.mcgrps  = airdpi_mcgrps,
+	.n_mcgrps = ARRAY_SIZE(airdpi_mcgrps),
+};
+
+int airdpi_genl_notify_sta(const u8 *mac, const char *ifname, int cmd)
 {
-    struct sk_buff *skb;
-    struct nlmsghdr *nlh;
-    int msg_size = strlen(msg) + 1;
-    int res;
+	struct sk_buff *skb;
+	void *msg_head;
+	int res;
 
-    if (!pid) {
-        pr_err("Netlink: Invalid PID\n");
-        return -1;
-    }
+	if (!mac || !ifname)
+		return -EINVAL;
 
-    skb = nlmsg_new(msg_size, GFP_KERNEL);
-    if (!skb) {
-        pr_err("Netlink: Failed to allocate skb\n");
-        return -1;
-    }
+	skb = genlmsg_new(NLMSG_GOODSIZE, GFP_ATOMIC);
+	if (!skb)
+		return -ENOMEM;
 
-    nlh = nlmsg_put(skb, 0, 0, NLMSG_DONE, msg_size, 0);
-    strncpy(nlmsg_data(nlh), msg, msg_size);
+	msg_head = genlmsg_put(skb, 0, 0, &airdpi_gnl_family, 0, cmd);
+	if (!msg_head) {
+		nlmsg_free(skb);
+		return -ENOMEM;
+	}
 
-    res = netlink_unicast(nl_sk, skb, pid, MSG_DONTWAIT);
-    
-    if (res < 0)
-        pr_err("Netlink: Failed to send message to user-space\n");
+	if (nla_put(skb, AIRDPI_ATTR_MAC, ETH_ALEN, mac) ||
+	    nla_put_string(skb, AIRDPI_ATTR_IFNAME, ifname)) {
+		genlmsg_cancel(skb, msg_head);
+		nlmsg_free(skb);
+		return -EMSGSIZE;
+	}
 
-    return res;
+	genlmsg_end(skb, msg_head);
+
+	/* Broadcast to all listeners on the "events" multicast group (index 0) */
+	res = genlmsg_multicast(&airdpi_gnl_family, skb, 0, 0, GFP_ATOMIC);
+	if (res == -ESRCH) {
+		/* No listeners — not an error */
+		return 0;
+	}
+
+	return res;
+}
+EXPORT_SYMBOL_GPL(airdpi_genl_notify_sta);
+
+int netlink_init(void)
+{
+	int res;
+
+	res = genl_register_family(&airdpi_gnl_family);
+	if (res != 0) {
+		pr_err("AIRDPI: Failed to register Generic Netlink family: %d\n", res);
+		return res;
+	}
+
+	pr_info("AIRDPI: Generic Netlink family '%s' registered (id=%d)\n",
+		AIRDPI_GENL_NAME, airdpi_gnl_family.id);
+	return 0;
 }
 
-int send_nl_event(char *msg)
+void netlink_exit(void)
 {
-    return send_netlink_msg(pid, msg);
-}
-
-static void netlink_recv_msg(struct sk_buff *skb) 
-{
-    struct nlmsghdr *nlh;
-
-    nlh = (struct nlmsghdr *)skb->data;
-    pid = nlh->nlmsg_pid;  // User-space process ID
-
-    pr_info("Netlink: Received message from user-space: %s\n", (char *)nlmsg_data(nlh));
-
-    // **Send an event back to user-space**
-    send_netlink_msg(pid, "Event: Kernel message received!");
-}
-
-int netlink_init(void) 
-{
-    struct netlink_kernel_cfg cfg = {
-        .input = netlink_recv_msg,
-    };
-
-    nl_sk = netlink_kernel_create(&init_net, NETLINK_USER, &cfg);
-    if (!nl_sk) {
-        pr_err("Netlink: Failed to create socket\n");
-        return -ENOMEM;
-    }
-
-    printk("Netlink: Kernel module loaded\n");
-    return 0;
-}
-
-void netlink_exit(void) 
-{
-    netlink_kernel_release(nl_sk);
-    printk("Netlink: Kernel module unloaded\n");
+	genl_unregister_family(&airdpi_gnl_family);
+	pr_info("AIRDPI: Generic Netlink family '%s' unregistered\n", AIRDPI_GENL_NAME);
 }

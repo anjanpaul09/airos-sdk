@@ -24,6 +24,8 @@ int air_vif_node_sysctl_register(void);
 int air_vif_node_sysctl_unregister(void);
 void packet_counter_reset(struct timer_list *t);
 int netlink_init(void);
+void netlink_exit(void);
+
 
 /* kprobes removed: use ops/API callbacks instead */
 
@@ -213,7 +215,7 @@ int airdpi_module_init(void)
         return -EINVAL;
     }
 
-    //netlink_init();
+    netlink_init();
 
     printk("air coplane init %p\n", coplane);
     
@@ -253,7 +255,7 @@ int airdpi_module_exit(void)
 
     /* no separate vif allocation anymore */
     kfree(coplane);
-    //netlink_exit();
+    netlink_exit();
 
     printk("air coplane deinit\n");
 
