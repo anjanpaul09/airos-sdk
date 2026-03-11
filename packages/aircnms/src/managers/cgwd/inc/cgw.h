@@ -266,6 +266,12 @@ void cgw_ubus_rx_service_cleanup(void);
 
 // Message handling functions
 bool cgw_send_msg_to_cm(char *payload, long payloadlen, char *topic);
+int cgw_send_msg_to_dm(char *payload, long payloadlen, char *topic);
 void cgw_mqtt_signal_new_item(void);
+
+//device registration Check
+void cgw_start_device_reg_monitor();
+void cgw_check_cloud_reg_status();
+void cgw_stop_device_reg_monitor();
 
 #endif /* CGW_H_INCLUDED */

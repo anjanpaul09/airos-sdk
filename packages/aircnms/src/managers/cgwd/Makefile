@@ -11,6 +11,7 @@ UNIT_SRC += src/cgw_msgrx.c
 UNIT_SRC += src/cgw_json.c
 UNIT_SRC += src/cgw_json_info.c
 UNIT_SRC += src/cgw_ubus_tx.c
+UNIT_SRC += src/cgw_cloud_regcheck.c
 
 
 UNIT_CFLAGS += -I../../include/

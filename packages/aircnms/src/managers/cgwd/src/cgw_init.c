@@ -195,7 +195,7 @@ bool cgw_check_valid_device_id()
     
     // Validate device_id format: should be exactly 10 digits and not all X's
     if (len != 10) {
-        LOG(ERR, "%s: Invalid device_id length: expected 10, got %zu", __func__, len);
+        LOG(INFO, "%s: Invalid device_id length: expected 10, got %zu", __func__, len);
         return false;
     }
 
@@ -207,14 +207,14 @@ bool cgw_check_valid_device_id()
         }
     }
     if (all_same && (buf[0] == 'X' || buf[0] == '0' || buf[0] == '-' || buf[0] == '_')) {
-        LOG(ERR, "%s: device_id appears to be placeholder value", __func__);
+        LOG(INFO, "%s: device_id appears to be placeholder value", __func__);
         return false;
     }
 
     // Validate all characters are digits
     for (size_t i = 0; i < len; i++) {
         if (!isdigit((unsigned char)buf[i])) {
-            LOG(ERR, "%s: device_id contains non-digit characters", __func__);
+            LOG(INFO, "%s: device_id contains non-digit characters", __func__);
             return false;
         }
     }
