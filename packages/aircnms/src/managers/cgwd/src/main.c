@@ -57,6 +57,8 @@ int main(int argc, char *argv[])
         goto cleanup_ubus_rx;
     }
 
+    cgw_start_device_reg_monitor();
+    
     if (!device_state_init()) {
         LOG(ERR, "Failed to initialize device state");
         ret = -1;
@@ -75,6 +77,7 @@ cleanup:
     ws_cleanup();
     cgw_mqtt_stop_worker();
     cgw_mqtt_stop();
+    cgw_stop_device_reg_monitor();
     LOG(INFO, "CGWD shutting down");
     return ret;
 }

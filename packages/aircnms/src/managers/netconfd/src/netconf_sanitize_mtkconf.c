@@ -50,17 +50,19 @@ void get_encryption_type(char *encrypt_type, const char *encryption)
 static void sanitize_string(char *dst, const char *src, size_t maxlen)
 {
     size_t j = 0;
+
+    if (!dst || maxlen == 0)
+        return;
+
     if (!src) {
         dst[0] = '\0';
         return;
     }
 
     for (size_t i = 0; src[i] != '\0' && j < maxlen - 1; i++) {
-        if (IS_VALID_CHAR(src[i]))
-            dst[j++] = src[i];
-        else
-            dst[j++] = '_';
+        dst[j++] = src[i];
     }
+
     dst[j] = '\0';
 }
 
@@ -103,6 +105,7 @@ static bool is_valid_vlan_id(const char *vlan_str)
     return vlan >= 0 && vlan <= 4094;
 }
 
+#if 0
 static bool is_valid_ssid(const char *ssid)
 {
     size_t len = strlen(ssid);
@@ -129,6 +132,45 @@ static bool is_valid_key(const char *key, const char *encryption)
         }
         return true;
     }
+    return false;
+}
+#endif
+
+static bool is_valid_ssid(const char *ssid)
+{
+    if (!ssid)
+        return false;
+
+    size_t len = strlen(ssid);
+
+    return (len > 0 && len <= 32);
+}
+
+
+static bool is_valid_key(const char *key, const char *encryption)
+{
+    if (!encryption)
+        return false;
+
+    if (strcmp(encryption, "none") == 0)
+        return (!key || strlen(key) == 0);
+
+    if (!key)
+        return false;
+
+    size_t len = strlen(key);
+
+    if (len >= 8 && len <= 63)
+        return true;
+
+    if (len == 64) {
+        for (size_t i = 0; i < len; i++) {
+            if (!isxdigit((unsigned char)key[i]))
+                return false;
+        }
+        return true;
+    }
+
     return false;
 }
 
