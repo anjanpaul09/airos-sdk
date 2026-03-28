@@ -38,6 +38,8 @@ int main()
 
     netconf_dequeue_timer_init();
 
+    netconf_wifischedule_init(loop);
+
     ev_run(loop, 0);
         
     target_close(TARGET_INIT_MGR_SM, loop);

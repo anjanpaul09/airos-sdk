@@ -1,6 +1,14 @@
 #include <stdbool.h>
 
 #define ENCRYPT_TYPE_MAX_LEN 16
+#define MAX_SCHEDULE_DAYS    7
+
+typedef struct {
+    char day[16];    /* monday, tuesday, ... */
+    char start[8];   /* HH:MM */
+    char end[8];     /* HH:MM */
+    bool enabled;
+} vif_schedule_entry_t;
 
 enum {
     AIR_DIR_UPLINK,
@@ -51,6 +59,9 @@ struct airpro_mgr_wlan_vap_params {
     char disabled[8];
     char ft_psk_generate_local[8];
     char prior5g[4];
+    bool is_schedule;
+    int  n_schedule;                              /* valid entries in schedule[] */
+    vif_schedule_entry_t schedule[MAX_SCHEDULE_DAYS];
 };
 
 struct airpro_mgr_wlan_radio_params {

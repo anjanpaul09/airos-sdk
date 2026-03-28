@@ -249,6 +249,42 @@ bool netconf_process_vif_list(json_t *vif_list)
             }
         }
 
+        /* ---------- Schedule ---------- */
+        record->vif_param[i].is_schedule = false;
+        record->vif_param[i].n_schedule  = 0;
+
+        int is_schedule = json_get_bool(vif, "isSchedule", 0);
+        if (is_schedule) {
+            json_t *sched_arr = json_object_get(vif, "schedule");
+            if (sched_arr && json_is_array(sched_arr)) {
+                size_t s, n_sched = 0;
+                json_t *entry;
+                json_array_foreach(sched_arr, s, entry) {
+                    if (s >= MAX_SCHEDULE_DAYS)
+                        break;
+                    if (!json_is_object(entry))
+                        continue;
+
+                    const char *day   = json_get_str(entry, "day");
+                    const char *start = json_get_str(entry, "start");
+                    const char *end   = json_get_str(entry, "end");
+                    int         en    = json_get_bool(entry, "enabled", 0);
+
+                    strncpy(record->vif_param[i].schedule[s].day,
+                            day, sizeof(record->vif_param[i].schedule[s].day) - 1);
+                    strncpy(record->vif_param[i].schedule[s].start,
+                            start, sizeof(record->vif_param[i].schedule[s].start) - 1);
+                    strncpy(record->vif_param[i].schedule[s].end,
+                            end, sizeof(record->vif_param[i].schedule[s].end) - 1);
+                    record->vif_param[i].schedule[s].enabled = (bool)en;
+                    n_sched++;
+                }
+                record->vif_param[i].is_schedule = true;
+                record->vif_param[i].n_schedule  = (int)n_sched;
+                LOG(INFO, "VIF[%zu] isSchedule=true n_schedule=%zu", i, n_sched);
+            }
+        }
+
         n_vif++;
     }
 

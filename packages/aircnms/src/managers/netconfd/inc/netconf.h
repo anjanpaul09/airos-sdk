@@ -232,5 +232,9 @@ void get_encryption_type(char *encrypt_type, const char *encryption);
 
 bool target_chan_switch(const char *radio_name, int channel);
 const char *get_config_file(const char *iface); 
-int map_interface_to_index(const char *iface); 
+int map_interface_to_index(const char *iface);
+
+/* WiFi schedule daemon */
+void netconf_wifischedule_init(struct ev_loop *loop);
+
 #endif /* NETCONF_H_INCLUDED */
