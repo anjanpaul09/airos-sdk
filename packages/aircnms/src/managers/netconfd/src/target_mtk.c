@@ -283,6 +283,98 @@ bool target_config_radio_set(radio_record_t *record)
     return ret;
 }
 
+/* Day-name → 3-letter UCI abbreviation */
+static const char *day_abbr(const char *day)
+{
+    if (!day || !day[0]) return "";
+    if (strncasecmp(day, "mon", 3) == 0) return "mon";
+    if (strncasecmp(day, "tue", 3) == 0) return "tue";
+    if (strncasecmp(day, "wed", 3) == 0) return "wed";
+    if (strncasecmp(day, "thu", 3) == 0) return "thu";
+    if (strncasecmp(day, "fri", 3) == 0) return "fri";
+    if (strncasecmp(day, "sat", 3) == 0) return "sat";
+    if (strncasecmp(day, "sun", 3) == 0) return "sun";
+    return day;   /* passthrough for already-abbrev'd values */
+}
+
+/*
+ * target_set_vif_schedule - write schedule entries to /etc/config/wifi-schedule
+ *
+ * UCI format per entry: '<day>,<enabled>,<start>,<end>'
+ *   e.g. 'mon,1,08:00,18:00'
+ *
+ * Only called when vif_param.is_schedule == true.
+ */
+static void target_set_vif_schedule(const char *vif_name,
+                                    const struct airpro_mgr_wlan_vap_params *p)
+{
+    char cmd[256];
+    int rc;
+    int d;
+
+    if (!vif_name || !p || !p->is_schedule)
+        return;
+
+    /* 1. Ensure section exists, set flag, and start with clean schedule array */
+    snprintf(cmd, sizeof(cmd),
+             "uci -c /etc/config set wifi-schedule.%s=ssid_schedule;"
+             "uci -c /etc/config set wifi-schedule.%s.is_schedule=1;"
+             "uci -c /etc/config del wifi-schedule.%s.schedule 2>/dev/null",
+             vif_name, vif_name, vif_name);
+    rc = system(cmd);
+    (void)rc;
+
+    /* 2. Add one list entry per schedule slot */
+    for (d = 0; d < p->n_schedule; d++) {
+        const vif_schedule_entry_t *e = &p->schedule[d];
+        const char *abbr  = day_abbr(e->day);
+        int         en    = e->enabled ? 1 : 0;
+        const char *start = e->start[0] ? e->start : "00:00";
+        const char *end   = e->end[0]   ? e->end   : "00:00";
+
+        snprintf(cmd, sizeof(cmd),
+                 "uci -c /etc/config add_list wifi-schedule.%s.schedule='%s,%d,%s,%s'",
+                 vif_name, abbr, en, start, end);
+        rc = system(cmd);
+        if (rc != 0)
+            LOG(ERR, "wifi-schedule: failed to set %s day=%s", vif_name, abbr);
+    }
+
+    /* 3. Commit */
+    rc = system("uci -c /etc/config commit wifi-schedule");
+    if (rc != 0)
+        LOG(ERR, "wifi-schedule: uci commit failed for %s", vif_name);
+    else
+        LOG(INFO, "wifi-schedule: updated %s (%d entries)", vif_name, p->n_schedule);
+}
+
+/*
+ * target_disable_vif_schedule - mark schedule as disabled (is_schedule=0)
+ * in /etc/config/wifi-schedule, leaving the schedule arrays intact. The daemon
+ * will read this flag and skip managing this interface.
+ */
+static void target_disable_vif_schedule(const char *vif_name)
+{
+    char cmd[256];
+    int rc;
+
+    if (!vif_name)
+        return;
+
+    /* Set the is_schedule flag to 0 */
+    snprintf(cmd, sizeof(cmd),
+             "uci -c /etc/config set wifi-schedule.%s.is_schedule=0",
+             vif_name);
+    rc = system(cmd);
+    (void)rc;
+
+    rc = system("uci -c /etc/config commit wifi-schedule");
+    if (rc != 0)
+        LOG(ERR, "wifi-schedule: commit failed while disabling %s", vif_name);
+    else
+        LOG(INFO, "wifi-schedule: disabled scheduling flag for %s", vif_name);
+}
+
 bool target_config_vif_set(vif_record_t *record)
 {
     struct airpro_mgr_wlan_vap_params vif_params;
@@ -417,6 +509,10 @@ bool target_config_vif_set(vif_record_t *record)
             //netconf_handle_captive_portal(vif_name, &vif_params);
 #endif
 
+            /* ---------- Schedule (ADD) ---------- */
+            if (record->vif_param[vid].is_schedule)
+                target_set_vif_schedule(vif_name, &record->vif_param[vid]);
+
         } else if( record->vif_param[vid].status == VIF_DISABLE ) {
             //DISABLE 2
             memset(vif_name, 0, sizeof(vif_name));
@@ -439,6 +535,9 @@ bool target_config_vif_set(vif_record_t *record)
 #ifdef CONFIG_PLATFORM_MTK_JEDI
             jedi_del_vap_params(vif_name, &vif_params);            
 #endif
+
+            /* ---------- Schedule (DISABLE) ---------- */
+            target_disable_vif_schedule(vif_name);
         
         } else if( record->vif_param[vid].status == VIF_MODIFY ) {
             //MODIFY 3
@@ -562,6 +661,10 @@ bool target_config_vif_set(vif_record_t *record)
             //CAPTIVE PORTAL
             //netconf_handle_captive_portal(vif_name, &vif_params);
 #endif
+
+            /* ---------- Schedule (MODIFY) ---------- */
+            if (record->vif_param[vid].is_schedule)
+                target_set_vif_schedule(vif_name, &record->vif_param[vid]);
 
         }
     }
