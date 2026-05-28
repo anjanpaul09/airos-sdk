@@ -19,6 +19,7 @@ UNIT_CFLAGS += -Iinc/
 UNIT_CFLAGS += -Isrc/
 UNIT_CFLAGS += -I../../libs/ds/inc
 UNIT_CFLAGS += -I../../libs/log/inc
+UNIT_CFLAGS += -I../../libs/eventd/inc
 UNIT_CFLAGS += -I../../libs/common/inc
 UNIT_CFLAGS += -I../../libs/mosqev/inc
 UNIT_CFLAGS += -I../../libs/unixcomm/inc
@@ -41,6 +42,7 @@ UNIT_LDFLAGS += -lunixcomm
 UNIT_LDFLAGS += -lpthread
 UNIT_LDFLAGS += -lwebsockets
 UNIT_LDFLAGS += -lubus -lubox -ljson-c -lblobmsg_json
+UNIT_LDFLAGS += -leventd
 
 ifeq ($(UNIT_TEST_FLAG), UNIT_TEST_ENABLE)
 UNIT_CFLAGS += -DCONFIG_UNIT_TEST_ENABLE

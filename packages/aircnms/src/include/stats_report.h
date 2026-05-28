@@ -88,9 +88,30 @@ typedef struct {
 
 /* Radio Info (static configuration) */
 typedef struct {
-    char band[8];           // Band (e.g., "BAND2G", "BAND5G")
-    uint8_t channel;        // Channel number
-    uint8_t txpower;        // TX power
+    /*
+     * Interface name
+     * Example:
+     *   phy0-ap0
+     *   phy1-ap0
+     */
+    char ifname[16];
+
+    /*
+     * Physical radio
+     * Example:
+     *   phy0
+     *   phy1
+     */
+    char phy[16];
+
+    /*
+     * BAND2G / BAND5G / BAND6G
+     */
+    char band[8];
+
+    uint8_t channel;
+
+    uint8_t txpower;
 } radio_info_t;
 
 /* Radio Stats (dynamic metrics) */
@@ -101,8 +122,28 @@ typedef struct {
 
 /* VIF Info (static configuration) */
 typedef struct {
-    char radio[8];         // Radio band (e.g., "BAND2G", "BAND5G")
-    char ssid[SSID_MAX_LEN]; // SSID name
+    /*
+     * Interface name
+     * Example:
+     *   wlan0
+     *   phy0-ap0
+     */
+    char ifname[16];
+
+    /*
+     * Parent PHY
+     */
+    char phy[16];
+
+    /*
+     * BAND2G / BAND5G / BAND6G
+     */
+    char band[8];
+
+    /*
+     * SSID
+     */
+    char ssid[SSID_MAX_LEN];
 } vif_info_t;
 
 /* VIF Stats (dynamic metrics) */

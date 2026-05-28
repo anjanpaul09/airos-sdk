@@ -140,7 +140,7 @@ bool cgw_parse_vif_info_json(vif_info_event_t *vif_info, char *data, uint64_t ti
     json_t *vif_info_array = json_array();
     for (int i = 0; i < vif_info->n_vif; i++) {
         json_t *vif_item = json_object();
-        json_object_set_new(vif_item, "radio", json_string(vif_info->vif[i].radio));
+        json_object_set_new(vif_item, "radio", json_string(vif_info->vif[i].band));
         json_object_set_new(vif_item, "ssid", json_string(vif_info->vif[i].ssid));
         json_array_append_new(vif_info_array, vif_item);
     }
