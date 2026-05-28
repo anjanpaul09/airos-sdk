@@ -12,6 +12,7 @@ define Build/Prepare
 	cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/build/hostapd/src/common/wpa_ctrl.o $(STAGING_DIR)/usr/lib/
 	cp $(BUILD_DIR)/hostapd-wpad-full-openssl/hostapd-*/src/common/wpa_ctrl.h $(STAGING_DIR)/usr/include/
 endef
+
 AIRCNMS_DEPS += libnl libev hostapd jansson libmosquitto zlib libprotobuf-c libuci libcurl kmod-airdpi libubus libubox libjson-c libwebsockets-openssl libblobmsg-json libpcap
 AIRCNMS_DEPS := $(foreach X,$(AIRCNMS_DEPS),+$(X))
 
@@ -69,6 +70,7 @@ ifneq ($(DEVELOPER)$(CONFIG_PACKAGE_aircnms),)
 	BUILD_LIBLOG:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/log $(MAKE_PACKAGE_ARGS)
 	BUILD_LIBMOSQEV:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/mosqev $(MAKE_PACKAGE_ARGS)
 	BUILD_LIBUNIXCOMM:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/unixcomm $(MAKE_PACKAGE_ARGS)
+	BUILD_LIBEVENTD:= $(MAKE) -C $(PKG_BUILD_DIR)/libs/eventd $(MAKE_PACKAGE_ARGS)
 	# ############################## LIB ENDS #######################################
 
 ifeq ($(TARGET_BOARD_TYPE), BOARD_TYPE_MTK)
@@ -78,8 +80,9 @@ endif
 	BUILD_MGRNETSTATSD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/netstatsd $(MAKE_PACKAGE_ARGS)
 	BUILD_MGRNETCONFD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/netconfd $(MAKE_PACKAGE_ARGS)
 	BUILD_MGRCMDEXECD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/cmdexecd $(MAKE_PACKAGE_ARGS)
-	BUILD_MGRNETEVD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/netevd $(MAKE_PACKAGE_ARGS)
+	BUILD_MGRSTAMOND:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/stamond $(MAKE_PACKAGE_ARGS)
 	BUILD_MGR_ACLD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/acld $(MAKE_PACKAGE_ARGS)
+	BUILD_MGR_EVENTD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/eventd $(MAKE_PACKAGE_ARGS)
 	#BUILD_AIRCLI:= $(MAKE) -C $(PKG_BUILD_DIR)/tools/airubusd $(MAKE_PACKAGE_ARGS)
 endif
 
@@ -113,6 +116,12 @@ define Build/Compile
 	$(CP) $(PKG_BUILD_DIR)/libs/unixcomm/libunixcomm.so.1.0.0 $(STAGING_DIR)/usr/lib
 	rm -rf $(STAGING_DIR)/usr/lib/libunixcomm.so
 	( cd $(STAGING_DIR)/usr/lib/ ; ln -s libunixcomm.so.1.0.0 libunixcomm.so )
+
+	$(BUILD_LIBEVENTD)
+	$(CP) $(PKG_BUILD_DIR)/libs/eventd/libeventd.so.1.0.0 $(STAGING_DIR)/usr/lib
+	rm -rf $(STAGING_DIR)/usr/lib/libeventd.so
+	( cd $(STAGING_DIR)/usr/lib/ ; ln -s libeventd.so.1.0.0 libeventd.so )
+	$(CP) $(PKG_BUILD_DIR)/libs/eventd/inc/libeventd.h $(STAGING_DIR)/usr/include/
 	
 	#$(BUILD_LIBUBUSIPC)
 	#$(CP) $(PKG_BUILD_DIR)/libs/ubus-ipc/libubus-ipc.so.1.0.0 $(STAGING_DIR)/usr/lib
@@ -142,8 +151,9 @@ endif
 	$(BUILD_MGRNETSTATSD)
 	$(BUILD_MGRNETCONFD)
 	$(BUILD_MGRCMDEXECD)
-	$(BUILD_MGRNETEVD)
+	$(BUILD_MGRSTAMOND)
 	$(BUILD_MGR_ACLD)
+	$(BUILD_MGR_EVENTD)
 	#$(BUILD_AIRCLI)
 endef
 
@@ -161,7 +171,8 @@ define Package/aircnms/install
 	$(INSTALL_BIN) ./files/airnetstatsd $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/airnetconfd $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/aircmdexecd $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/airnetevd $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/airstamond $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/aireventd $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/air_ssid_check.sh $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/air_led_state.sh $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/air_setmac_ssid.sh $(1)/usr/sbin/
@@ -198,6 +209,10 @@ endif
 	rm -rf $(1)/usr/lib/libunixcomm.so
 	( cd $(1)/usr/lib/ ; ln -s libunixcomm.so.1.0.0 libunixcomm.so )
 
+	$(CP) $(PKG_BUILD_DIR)/libs/eventd/libeventd.so.1.0.0 $(1)/usr/lib
+	rm -rf $(1)/usr/lib/libeventd.so
+	( cd $(1)/usr/lib/ ; ln -s libeventd.so.1.0.0 libeventd.so )
+
 	#$(CP) $(PKG_BUILD_DIR)/libs/datapipeline/libdatapipeline.so.1.0.0 $(1)/usr/lib
 	#rm -rf $(1)/usr/lib/libdatapipeline.so
 	#( cd $(1)/usr/lib/ ; ln -s libdatapipeline.so.1.0.0 libdatapipeline.so )
@@ -220,8 +235,9 @@ endif
 	$(CP) $(PKG_BUILD_DIR)/managers/netstatsd/netstatsd $(1)/usr/sbin/air-netstatsd
 	$(CP) $(PKG_BUILD_DIR)/managers/netconfd/netconfd $(1)/usr/sbin/air-netconfd
 	$(CP) $(PKG_BUILD_DIR)/managers/cmdexecd/cmdexecd $(1)/usr/sbin/air-cmdexecd
-	$(CP) $(PKG_BUILD_DIR)/managers/netevd/netevd $(1)/usr/sbin/air-netevd
+	$(CP) $(PKG_BUILD_DIR)/managers/stamond/stamond $(1)/usr/sbin/air-stamond
 	$(CP) $(PKG_BUILD_DIR)/managers/acld/acld $(1)/usr/sbin/air-acld
+	$(CP) $(PKG_BUILD_DIR)/managers/eventd/eventd $(1)/usr/sbin/air-eventd
 	#$(CP) $(PKG_BUILD_DIR)/tools/airubusd/airubusd $(1)/usr/sbin
 
 endef

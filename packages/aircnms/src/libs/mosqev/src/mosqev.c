@@ -13,7 +13,7 @@
  * ===========================================================================
  */
 #define MOSQEV_TIMER_POLL  0.2  /**< Timer poll in seconds -- float */
-#define MOSQEV_KEEPALIVE   5  /**< Keep alive timer, see the keep-alive parameter to mosquitto_connect() */
+#define MOSQEV_KEEPALIVE   30  /**< Keep alive timer, see the keep-alive parameter to mosquitto_connect() */
 
 #define MODULE_ID LOG_MODULE_ID_MQTT
 
@@ -169,6 +169,12 @@ bool mosqev_init(mosqev_t *self, const char *cid, struct ev_loop *ev, void *data
 	 */
 	self->me_mosq = mosquitto_new(cid, false, self);  //to get persistent config
 	//self->me_mosq = mosquitto_new(cid, true, self);
+	int tcp_nodelay = 1;
+
+	mosquitto_opts_set(
+			self->me_mosq,
+			MOSQ_OPT_TCP_NODELAY,
+			&tcp_nodelay);
 	if (self->me_mosq == NULL)
 	{
 		LOG(ERR, "Error initializing Mosquitto instance: CID: %s", cid);
@@ -339,6 +345,11 @@ bool mosqev_connect(mosqev_t *self, char *host, int port)
 		return false;
 	}
 	self->me_connecting = true;
+	mosquitto_reconnect_delay_set(
+        self->me_mosq,
+        2,
+        10,
+        true);
 
 	/* Start watching the connection */
 	if (!mosqev_watcher_start(self))
@@ -419,7 +430,7 @@ bool mosqev_publish(mosqev_t *self,
 		return false;
 	}
 
-	mosquitto_loop(self->me_mosq, 0, 1);
+	//mosquitto_loop(self->me_mosq, 0, 1);
 
 	/* Start monitoring WRITE events if data is still pending to be sent */
 	if (mosquitto_want_write(self->me_mosq))

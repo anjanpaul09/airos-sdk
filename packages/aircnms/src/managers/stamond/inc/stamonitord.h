@@ -1,0 +1,28 @@
+#ifndef STAMONITORD_H
+#define STAMONITORD_H
+
+#include <netlink/netlink.h>
+#include <netlink/genl/genl.h>
+#include <netlink/genl/ctrl.h>
+#include <stdbool.h>
+#include "air_util.h"
+#include "log.h"
+
+struct nl80211_state {
+	struct nl_sock *nl_sock;
+	int nl80211_id;
+};
+
+//int nl80211_init(struct nl80211_state *state);
+//int listen_events(struct nl80211_state *state, const int n_waits, const __u32 *waits);
+
+/* hostapd event listener */
+int hostapd_events_start(const char *ctrl_dir);
+void hostapd_events_stop(void);
+bool sta_exists_on_any_iface(const char *mac_str);
+bool sta_exists_on_other_iface(const char *mac_str, const char *exclude_ifname);
+void add_event_to_queue(uint8_t *mac, const char *ifname, int event_type);
+void stamonitord_cleanup_vif_timer(void);
+
+#endif /* STAMONITORD_H */
+

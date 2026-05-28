@@ -41,26 +41,53 @@ int iface_count;
 /******************************************************************************
  *  VIF definitions
  *****************************************************************************/
-int get_channel_from_cmd(const char *iface)
+
+int
+get_channel_from_cmd(
+    const char *iface)
 {
-    char cmd[256], buf[64];
     FILE *fp;
 
-    snprintf(cmd, sizeof(cmd),
-        "iwinfo %s info | sed -n 's/.*Channel: \\([0-9]\\+\\).*/\\1/p'",
+    char cmd[256];
+
+    char buf[64];
+
+    int channel;
+
+    if (!iface || iface[0] == '\0')
+        return -1;
+
+    snprintf(
+        cmd,
+        sizeof(cmd),
+        "iwinfo %s info 2>/dev/null | "
+        "sed -n 's/.*Channel: \\([0-9]\\+\\).*/\\1/p'",
         iface);
 
     fp = popen(cmd, "r");
+
     if (!fp)
         return -1;
 
-    if (!fgets(buf, sizeof(buf), fp)) {
+    memset(buf, 0, sizeof(buf));
+
+    if (!fgets(buf,
+               sizeof(buf),
+               fp))
+    {
         pclose(fp);
+
         return -1;
     }
 
     pclose(fp);
-    return atoi(buf);
+
+    channel = atoi(buf);
+
+    if (channel <= 0)
+        return -1;
+
+    return channel;
 }
 
 static int nl80211_parse_wiface(struct nl_msg *msg, void *arg) 

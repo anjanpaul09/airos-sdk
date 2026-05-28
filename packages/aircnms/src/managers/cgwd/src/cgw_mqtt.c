@@ -22,6 +22,8 @@ static ev_async g_queue_async;
 
 static bool g_mqtt_worker_running = false;
 static bool g_mqtt_connected = false;
+static pthread_mutex_t mqtt_lock = PTHREAD_MUTEX_INITIALIZER;
+
 
 // Forward declarations for info event JSON parsing functions
 bool cgw_parse_client_info_json(client_info_event_t *client_info, char *data, uint64_t timestamp_ms);
@@ -194,7 +196,20 @@ bool cgw_publish_json_qos(char *data, char *topic, int qos, bool retain)
     LOG(DEBUG, "MQTT: Publishing %zu bytes to topic-%s qos=%d retain=%d | Time since last publish: %" PRIu64 " ms", 
         mlen, topic, qos, retain, time_diff);
 
-    ret = mosqev_publish(mqtt, NULL, topic, mlen, mbuf, qos, retain);
+    //ret = mosqev_publish(mqtt, NULL, topic, mlen, mbuf, qos, retain);
+
+    pthread_mutex_lock(&mqtt_lock);
+
+    ret = mosqev_publish(
+            mqtt,
+            NULL,
+            topic,
+            mlen,
+            mbuf,
+            qos,
+            retain);
+
+    pthread_mutex_unlock(&mqtt_lock);
 
     if(ret == false) {
         //cgw_mqtt_reconnect();
@@ -513,6 +528,67 @@ bool cgw_send_event_cloud(cgw_item_t *qi)
 
                 break;
             }
+            case INFO_EVENT_CLIENT_HISTORY:
+            {
+                client_history_event_t hdr;
+
+                if ((size_t)(ptr - (uint8_t *)qi->buf) +
+                    sizeof(hdr) > qi->size) {
+
+                    LOG(ERR,
+                        "History event header truncated");
+
+                    return false;
+                }
+
+                memcpy(&hdr, ptr, sizeof(hdr));
+
+                ptr += sizeof(hdr);
+
+                if (hdr.len == 0) {
+
+                    LOG(ERR,
+                        "Invalid history json length");
+
+                    return false;
+                }
+
+                if ((size_t)(ptr - (uint8_t *)qi->buf) +
+                    hdr.len > qi->size) {
+
+                    LOG(ERR,
+                        "History JSON exceeds message size");
+
+                    return false;
+                }
+
+                if (hdr.len >= sizeof(data)) {
+
+                    LOG(ERR,
+                        "History JSON too large: %u",
+                        hdr.len);
+
+                    return false;
+                }
+
+                memcpy(data, ptr, hdr.len);
+
+                data[hdr.len] = '\0';
+
+                snprintf(topic,
+                        sizeof(topic),
+                        "dev/to/cloud/%s/%s/website_usage",
+                        air_dev.device_id,
+                        air_dev.serial_num);
+
+                topic[sizeof(topic) - 1] = '\0';
+
+                qos = 1;
+
+                ret = true;
+
+                break;
+            }
             default:
                 LOG(ERR, "Unknown info event type: %d", type);
                 return false;
@@ -678,12 +754,23 @@ static void cgw_mqtt_on_disconnect(mosqev_t *self, void *data, int rc)
 {
     (void)self;
     (void)data;
-    
+
+    g_mqtt_connected = false;
+
+    LOG(ERR,
+        "[MQTT] disconnected rc=%d err=%s",
+        rc,
+        mosquitto_strerror(rc));
+
     if (rc == 0) {
-        LOG(INFO, "[MQTT] Disconnect callback: rc=%d (graceful - will message NOT sent by broker)", rc);
+        LOG(INFO,
+            "[MQTT] Graceful disconnect");
     } else {
-        LOG(INFO, "[MQTT] Disconnect callback: rc=%d (unexpected - will message WILL be sent by broker)", rc);
+        LOG(INFO,
+            "[MQTT] Unexpected disconnect - broker will send WILL");
     }
+
+    cgw_restart_mqtt_worker();
 }
 
 void cgw_restart_mqtt_worker(void)
@@ -899,6 +986,21 @@ void uci_get_mqtt_params()
     return;
 }
 
+static void cgw_mqtt_log_cbk(
+        mosqev_t *self,
+        void *data,
+        int level,
+        const char *msg)
+{
+    (void)self;
+    (void)data;
+
+    //LOG(INFO,
+     //  "[MOSQ][%d] %s",
+       // level,
+        //msg);
+}
+
 bool cgw_mqtt_init(void)
 {
     char cID[64];
@@ -920,6 +1022,7 @@ bool cgw_mqtt_init(void)
         LOGE("initializing MQTT library.\n");
         goto error;
     }
+    mosqev_log_cbk_set(&cgw_mqtt, cgw_mqtt_log_cbk);
 
     build_status_payload_to_buf("Offline", offline_payload, sizeof(offline_payload));
     
