@@ -1,8 +1,7 @@
 UNIT_SRC += src/main.c
 #UNIT_SRC += src/nlev.c
 #UNIT_SRC += src/nl.c
-UNIT_SRC += src/hostapd_ev.c
-#UNIT_SRC += src/wpa_ctrl.c
+UNIT_SRC += src/hostapd_ubus_monitor.c
 UNIT_SRC += src/wpa_os_shim.c
 UNIT_SRC += src/stamonitord_info_events.c
 UNIT_SRC += src/stamonitord_ubus_tx.c
