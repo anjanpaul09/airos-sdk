@@ -39,7 +39,6 @@
 
 #include "stats_report.h"
 #include "info_events.h"
-#include "airdpi/air_ioctl.h"
 //Anjan
 #include "MT7621.h"
 
@@ -55,7 +54,6 @@ int get_channel_from_cmd(const char *iface);
 
 #define MODULE_ID LOG_MODULE_ID_TARGET
 
-//bool nl80211_stats_vif_get(dpp_vif_record_t *record);
 /******************************************************************************
  *  INTERFACE definitions
  *****************************************************************************/
@@ -151,94 +149,13 @@ bool target_info_clients_get(const uint8_t *macaddr, const char *ifname,
     }
     
     
-    // Determine interface name to use (will be set from ioctl if available)
+    snprintf(client_info->hostname, HOSTNAME_MAX_LEN, "unknown");
+    snprintf(client_info->ipaddr, IPADDR_MAX_LEN, "0.0.0.0");
+    snprintf(client_info->osinfo, sizeof(client_info->osinfo), "unknown");
+    snprintf(client_info->client_type, sizeof(client_info->client_type), "wireless");
+
+    // Determine interface name to use.
     const char *use_ifname = ifname ? ifname : "unknown";
-    char ioctl_ifname[12] = {0};
-    
-    // Get client info from airdpi ioctl
-    struct adpi_sta_data sta;
-    memset(&sta, 0, sizeof(sta));
-    memcpy(sta.macaddr, macaddr, 6);
-    sta.result_valid = 0;
-    
-    int fd = open("/dev/air", O_RDWR);
-    if (fd < 0) {
-        LOG(ERR, "Failed to open /dev/air: %s", strerror(errno));
-        // Fallback to defaults
-        snprintf(client_info->hostname, HOSTNAME_MAX_LEN, "unknown");
-        snprintf(client_info->ipaddr, IPADDR_MAX_LEN, "0.0.0.0");
-        snprintf(client_info->osinfo, sizeof(client_info->osinfo), "unknown");
-        snprintf(client_info->client_type, sizeof(client_info->client_type), "wireless");
-        
-    } else {
-        if (ioctl(fd, IOCTL_ADPI_GET_STA_DATA, &sta) < 0) {
-            LOG(ERR, "IOCTL_ADPI_GET_STA_DATA failed: %s", strerror(errno));
-            close(fd);
-            // Fallback to defaults
-            snprintf(client_info->hostname, HOSTNAME_MAX_LEN, "unknown");
-            snprintf(client_info->ipaddr, IPADDR_MAX_LEN, "0.0.0.0");
-            snprintf(client_info->osinfo, sizeof(client_info->osinfo), "unknown");
-            snprintf(client_info->client_type, sizeof(client_info->client_type), "wireless");
-            
-        } else {
-            close(fd);
-            
-            if (sta.result_valid) {
-                struct sta_info *info = &sta.info;
-                
-                // Copy hostname
-                strncpy(client_info->hostname, info->hostname, HOSTNAME_MAX_LEN - 1);
-                client_info->hostname[HOSTNAME_MAX_LEN - 1] = '\0';
-                
-                // Convert IP from uint32_t to string
-                struct in_addr addr;
-                addr.s_addr = info->ip;
-                const char *ip_str = inet_ntoa(addr);
-                if (ip_str) {
-                    strncpy(client_info->ipaddr, ip_str, IPADDR_MAX_LEN - 1);
-                    client_info->ipaddr[IPADDR_MAX_LEN - 1] = '\0';
-                } else {
-                    snprintf(client_info->ipaddr, IPADDR_MAX_LEN, "0.0.0.0");
-                }
-                
-                // Copy OS info
-                strncpy(client_info->osinfo, info->os_name, sizeof(client_info->osinfo) - 1);
-                client_info->osinfo[sizeof(client_info->osinfo) - 1] = '\0';
-                
-                // Set client type based on is_wireless
-                if (info->is_wireless) {
-                    snprintf(client_info->client_type, sizeof(client_info->client_type), "wireless");
-                } else {
-                    snprintf(client_info->client_type, sizeof(client_info->client_type), "wired");
-                }
-                
-                // Use ifname from ioctl if available, otherwise use passed parameter
-                if (info->ifname[0] != '\0') {
-                    strncpy(ioctl_ifname, info->ifname, sizeof(ioctl_ifname) - 1);
-                    ioctl_ifname[sizeof(ioctl_ifname) - 1] = '\0';
-                    use_ifname = ioctl_ifname;
-                }
-            } else {
-                // Client not found in airdpi
-                snprintf(client_info->hostname, HOSTNAME_MAX_LEN, "unknown");
-                snprintf(client_info->ipaddr, IPADDR_MAX_LEN, "0.0.0.0");
-                snprintf(client_info->osinfo, sizeof(client_info->osinfo), "unknown");
-                snprintf(client_info->client_type, sizeof(client_info->client_type), "wireless");
-                
-                // Fill default capability
-                memset(&client_info->capability, 0, sizeof(client_capability_t));
-                snprintf(client_info->capability.phy, sizeof(client_info->capability.phy), "unknown");
-                snprintf(client_info->capability.roaming, sizeof(client_info->capability.roaming), "unknown");
-                snprintf(client_info->capability.mcs, sizeof(client_info->capability.mcs), "0");
-                snprintf(client_info->capability.nss, sizeof(client_info->capability.nss), "1");
-                snprintf(client_info->capability.ps, sizeof(client_info->capability.ps), "0");
-                snprintf(client_info->capability.wmm, sizeof(client_info->capability.wmm), "0");
-                snprintf(client_info->capability.mu_mimo, sizeof(client_info->capability.mu_mimo), "0");
-                snprintf(client_info->capability.ofdma, sizeof(client_info->capability.ofdma), "0");
-                snprintf(client_info->capability.bw, sizeof(client_info->capability.bw), "20");
-            }
-        }
-    }
     
     // Get SSID, band, and channel from interface using iw commands
     FILE *fp_cmd;

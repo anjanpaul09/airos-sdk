@@ -16,7 +16,8 @@ typedef struct {
 typedef enum {
     EVENT_TYPE_UPGRADE = 1,
     EVENT_TYPE_ALARM = 2,
-    EVENT_TYPE_CMD = 3
+    EVENT_TYPE_CMD = 3,
+    EVENT_TYPE_ALERT = 4
 } event_type_t;
 
 // Event Status Enumeration
@@ -28,10 +29,23 @@ typedef enum {
     EVENT_STATUS_REBOOT = 5
 } event_status_t;
 
+typedef enum {
+    ALARM_TYPE_CRITICAL = 1,
+    ALARM_TYPE_MAJOR = 2,
+    ALARM_TYPE_WARNING = 3
+} alarm_subtype_t;
+
+typedef enum {
+    ALERT_TYPE_INTERFACE = 1,
+    ALERT_TYPE_SYSTEM = 2
+} alert_subtype_t;
+
 // Event Message Structure
 typedef struct {
     event_type_t type;        // Event type
     event_status_t status;    // Event status
+    alarm_subtype_t alarm_t;
+    alert_subtype_t alert_t;
     char data[MAX_DATA_LEN];  // Additional data
     char reason[MAX_DATA_LEN];// Reason for event
     char cloud_id[MAX_DATA_LEN]; // Cloud ID

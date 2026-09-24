@@ -14,7 +14,12 @@ UNIT_SRC += src/netconf_wifischedule.c
 UNIT_SRC += src/netconf_rate_limit.c
 UNIT_SRC += src/netconf_ubus_rx.c
 UNIT_SRC += src/netconf_checkwifi.c 
-UNIT_SRC += src/netconf_captive_portal.c 
+UNIT_SRC += src/portal_manager.c
+UNIT_SRC += src/portal_db.c
+UNIT_SRC += src/portal_network.c
+UNIT_SRC += src/portal_template.c
+UNIT_SRC += src/portal_chilli.c
+UNIT_SRC += src/portal_utils.c
 UNIT_SRC += src/uci_config/uci_ops.c
 UNIT_SRC += src/uci_config/uci_wireless.c
 ## Remove legacy conn layers; use libunixcomm
@@ -60,7 +65,6 @@ UNIT_CFLAGS += -I../../libs/mosqev/inc
 UNIT_CFLAGS += -I../../libs/unixcomm/inc
 UNIT_CFLAGS += -I../../platform/mtk/nl80211/inc
 UNIT_CFLAGS += -I../../libs/datapipeline/inc
-UNIT_CFLAGS += -I../../../../airdpi/src/adpi
 UNIT_CFLAGS += -Wall -Werror
 
 UNIT_LDFLAGS += -ljansson

@@ -437,13 +437,11 @@ int jedi_set_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_p
         }
     }
     
-    // INTERFACE UPRATE
-    if( vap_params->is_uprate) {
-        air_interface_rate_limit(mapped_interface, vap_params->uprate, AIR_DIR_UPLINK);
-    }
-    //INTERFACE DOWNRATE
-    if( vap_params->is_downrate) {
-        air_interface_rate_limit(mapped_interface, vap_params->downrate, AIR_DIR_DOWNLINK);
+    if (vap_params->is_uprate || vap_params->is_downrate) {
+        air_interface_rate_limit((char *)mapped_interface,
+                                 vap_params->is_uprate ? vap_params->uprate : 0,
+                                 vap_params->is_downrate ? vap_params->downrate : 0,
+                                 "wlan");
     }
             
     return ret;
@@ -661,4 +659,3 @@ int jedi_set_secondary_radio_params(char *radio_name, struct airpro_mgr_wlan_rad
 
     return 0;
 }
-

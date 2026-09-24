@@ -1,0 +1,17 @@
+{
+	"airui-status": {
+		"description": "Grant access to AirUI status backend",
+		"read": {
+			"ubus": {
+				"airui.system": [ "health", "capabilities" ],
+				"airui.status": [ "snapshot", "summary", "overview", "device_status", "clients", "statistics" ],
+				"stamond": [ "client.identity" ]
+			}
+		},
+		"write": {
+			"ubus": {
+				"airui.status": [ "client_disconnect" ]
+			}
+		}
+	}
+}

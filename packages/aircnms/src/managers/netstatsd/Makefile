@@ -53,7 +53,6 @@ UNIT_CFLAGS += -I../../libs/ds/inc
 UNIT_CFLAGS += -I../../libs/log/inc
 UNIT_CFLAGS += -I../../libs/common/inc
 UNIT_CFLAGS += -I../../libs/unixcomm/inc
-UNIT_CFLAGS += -I../../../../airdpi/src/adpi
 UNIT_CFLAGS += -Wall -Werror 
 
 

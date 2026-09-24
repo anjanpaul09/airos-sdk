@@ -44,4 +44,4 @@ $(SHARED_LIB): $(OBJ)
 .c.o:
 	$(CC) $(CFLAGS) $(LOC_INCS) $(LDFLAGS) -c -fpic $< -o $@
 clean:
-	rm -rf *.o $(SLINK) $(SHARED_LIB)
+	rm -f $(OBJ) $(SLINK) $(SHARED_LIB)

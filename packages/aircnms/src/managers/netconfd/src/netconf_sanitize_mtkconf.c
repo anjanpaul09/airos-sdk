@@ -196,7 +196,15 @@ bool sanitize_and_validate_vif_params(struct airpro_mgr_wlan_vap_params *p)
     sanitize_string(clean.auth_port, p->auth_port, sizeof(clean.auth_port));
     sanitize_string(clean.acct_port, p->acct_port, sizeof(clean.acct_port));
     sanitize_string(clean.secret_key, p->secret_key, sizeof(clean.secret_key));
+    sanitize_string(clean.auth_url, p->auth_url, sizeof(clean.auth_url));
+    sanitize_string(clean.portal_id, p->portal_id, sizeof(clean.portal_id));
+    sanitize_string(clean.uam_ip, p->uam_ip, sizeof(clean.uam_ip));
+    sanitize_string(clean.uam_secret, p->uam_secret, sizeof(clean.uam_secret));
+    sanitize_string(clean.nas_id, p->nas_id, sizeof(clean.nas_id));
+    sanitize_string(clean.net_segment_ip, p->net_segment_ip, sizeof(clean.net_segment_ip));
+    sanitize_string(clean.net_mask_ip, p->net_mask_ip, sizeof(clean.net_mask_ip));
     sanitize_string(clean.ft_psk_generate_local, p->ft_psk_generate_local, sizeof(clean.ft_psk_generate_local));
+    clean.is_auth = p->is_auth;
 
     bool valid = true;
 
@@ -389,4 +397,3 @@ bool sanitize_and_validate_secondary_radio_settings(const char* radio_name, cons
 
     return true;
 }
-

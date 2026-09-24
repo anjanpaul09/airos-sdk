@@ -35,8 +35,6 @@ bool nl80211_stats_survey_get(radio_entry_t *radio_cfg,
 
 #define MAX_IFACES 8
 #define IFACE_NAME_LEN 16
-#define PROC_FILE "cat /proc/airpro/stainfo"
-
 int iface_count;
 /******************************************************************************
  *  VIF definitions
@@ -154,27 +152,47 @@ long long str_to_ll(const char *str) {
     return value;
 }
 
-int get_num_sta(char* target_ifname)
+static int nl80211_count_station_cb(struct nl_msg *msg, void *arg)
 {
-    FILE *fp;
-    char line[256], ifname[12];
+    int *count = arg;
+    struct nlmsghdr *nlh = nlmsg_hdr(msg);
+    struct genlmsghdr *gnlh = nlmsg_data(nlh);
+    struct nlattr *tb[NL80211_ATTR_MAX + 1];
+
+    nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+              genlmsg_attrlen(gnlh, 0), NULL);
+
+    if (tb[NL80211_ATTR_MAC] && tb[NL80211_ATTR_STA_INFO])
+        (*count)++;
+
+    return NL_SKIP;
+}
+
+int get_num_sta(const char *target_ifname)
+{
+    struct nl_msg *msg;
+    int ifindex;
     int count = 0;
+    int rc;
 
-    fp = popen(PROC_FILE, "r");
-    if (fp == NULL) {
-        perror("popen");
+    ifindex = if_nametoindex(target_ifname);
+    if (ifindex == 0)
         return -1;
+
+    msg = nlmsg_init(get_nl_sm_global(), NL80211_CMD_GET_STATION, NLM_F_DUMP);
+    if (!msg)
+        return -ENOMEM;
+
+    if (nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex) < 0) {
+        nlmsg_free(msg);
+        return -ENOMEM;
     }
 
-    while (fgets(line, sizeof(line), fp) != NULL) {
-        if (sscanf(line, "%*s %*s %*s %8s", ifname) == 1) {
-            if (strcmp(ifname, target_ifname) == 0) {
-                count++;
-            }
-        }
-    }
+    rc = nlmsg_send_and_recv(get_nl_sm_global(), msg,
+                             nl80211_count_station_cb, &count);
+    if (rc < 0)
+        return rc;
 
-    pclose(fp);
     return count;
 }
 

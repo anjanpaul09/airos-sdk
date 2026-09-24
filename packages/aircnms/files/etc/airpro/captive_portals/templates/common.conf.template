@@ -1,0 +1,13 @@
+swapoctets
+uamport 3990
+domain "mesh-manager.com"
+wwwdir /etc/chilli/www
+wwwbin /etc/chilli/wwwsh
+uamuiport 4990
+locationname "MESHdesk"
+papalwaysok
+lease 3600
+uamanydns
+uamaliasname "login"
+adminupdatefile "/etc/chilli/local.conf"
+mtu 1468

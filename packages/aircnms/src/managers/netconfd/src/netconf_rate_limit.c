@@ -2,13 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <net/if.h>  // For if_nametoindex
-#include "airdpi/air_ioctl.h"
+#include <ctype.h>
+#include <sys/wait.h>
 
 #define MAX_OUTPUT_LEN 1024
+#define TC_RATE_BURST "64kb"
+#define TC_RATE_LATENCY "50ms"
+#define TC_WLAN_UP_PREF 10
 
 const char* get_ifname_from_secname(const char *section) {
     static char ifname[MAX_OUTPUT_LEN];
@@ -42,237 +44,253 @@ const char* get_ifname_from_secname(const char *section) {
     return ifname[0] != '\0' ? ifname : NULL;
 }
 
-unsigned int get_ifindex_from_ifname(const char *ifname) {
-    unsigned int ifindex = if_nametoindex(ifname);
+static bool is_safe_ifname(const char *ifname)
+{
+    if (!ifname || !ifname[0])
+        return false;
 
-    if (ifindex == 0) {
-        // If ifindex is 0, an error occurred (interface not found)
-        perror("if_nametoindex failed");
-        return 0; // Return 0 if the interface was not found
+    for (const unsigned char *p = (const unsigned char *)ifname; *p; p++) {
+        if (!isalnum(*p) && *p != '_' && *p != '-' && *p != '.')
+            return false;
     }
 
-    return ifindex;
+    return true;
 }
 
-int get_ifindex_from_sysfs(const char *ifname) {
-    char path[256];
-    FILE *file;
-    int ifindex = -1;
+static void mac_to_str(const uint8_t *mac, char out[18])
+{
+    snprintf(out, 18, "%02x:%02x:%02x:%02x:%02x:%02x",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+}
 
-    // Construct the sysfs path
-    snprintf(path, sizeof(path), "/sys/class/net/%s/ifindex", ifname);
+static int run_tc_cmd(const char *cmd)
+{
+    int rc;
 
-    // Open the file
-    file = fopen(path, "r");
-    if (!file) {
-        perror("Failed to open ifindex file");
+    printf("netconfd rate-limit: %s\n", cmd);
+    rc = system(cmd);
+    if (rc == -1)
         return -1;
-    }
 
-    // Read the ifindex value
-    if (fscanf(file, "%d", &ifindex) != 1) {
-        perror("Failed to read ifindex value");
-        ifindex = -1;
-    }
+    if (WIFEXITED(rc))
+        return WEXITSTATUS(rc);
 
-    // Close the file
-    fclose(file);
-
-    return ifindex;
+    return -1;
 }
 
-#if 0
-void air_interface_rate_limit(char *vif_name, int rate, int dir, char *type)
+static void tc_delete_qdisc(const char *ifname, const char *qdisc)
 {
-    struct adpi_ratelimit_bucket crb;
+    char cmd[MAX_OUTPUT_LEN];
+
+    snprintf(cmd, sizeof(cmd), "tc qdisc del dev %s %s 2>/dev/null",
+             ifname, qdisc);
+    run_tc_cmd(cmd);
+}
+
+static bool tc_apply_interface_limit(const char *ifname, int uprate, int downrate)
+{
+    char cmd[MAX_OUTPUT_LEN];
+    bool ok = true;
+
+    if (!is_safe_ifname(ifname)) {
+        fprintf(stderr, "Invalid interface name for rate limit\n");
+        return false;
+    }
+
+    if (downrate > 0) {
+        snprintf(cmd, sizeof(cmd),
+                 "tc qdisc replace dev %s root tbf rate %dmbit burst %s latency %s",
+                 ifname, downrate, TC_RATE_BURST, TC_RATE_LATENCY);
+        ok &= (run_tc_cmd(cmd) == 0);
+    } else {
+        tc_delete_qdisc(ifname, "root");
+    }
+
+    if (uprate > 0) {
+        snprintf(cmd, sizeof(cmd), "tc qdisc replace dev %s clsact", ifname);
+        ok &= (run_tc_cmd(cmd) == 0);
+
+        snprintf(cmd, sizeof(cmd),
+                 "tc filter replace dev %s ingress protocol all pref %d flower "
+                 "action police rate %dmbit burst %s conform-exceed drop",
+                 ifname, TC_WLAN_UP_PREF, uprate, TC_RATE_BURST);
+        ok &= (run_tc_cmd(cmd) == 0);
+    } else {
+        snprintf(cmd, sizeof(cmd),
+                 "tc filter del dev %s ingress pref %d 2>/dev/null",
+                 ifname, TC_WLAN_UP_PREF);
+        run_tc_cmd(cmd);
+
+        if (downrate <= 0)
+            tc_delete_qdisc(ifname, "clsact");
+    }
+
+    return ok;
+}
+
+bool air_ifname_rate_limit(char *ifname, int uprate, int downrate)
+{
+    if (!ifname)
+        return false;
+
+    if (!tc_apply_interface_limit(ifname, uprate, downrate)) {
+        fprintf(stderr, "Failed to apply tc rate limit on %s uplink=%d downlink=%d\n",
+                ifname, uprate, downrate);
+        return false;
+    }
+
+    printf("Rate limit set successfully: ifname=%s uplink=%d Mbps downlink=%d Mbps\n",
+           ifname, uprate, downrate);
+    return true;
+}
+
+bool air_interface_rate_limit(char *vif_name, int uprate, int downrate, char *type)
+{
+    const char *ifname;
+
+    if (!vif_name || !type)
+        return false;
+
+    if (strcmp(type, "wlan_per_user") == 0) {
+        printf("netconfd rate-limit: wlan_per_user requires per-client rules; skipping interface section %s\n",
+               vif_name);
+        return true;
+    }
+
+    if (strcmp(type, "wlan") != 0) {
+        fprintf(stderr, "Unknown rate limit type: %s\n", type);
+        return false;
+    }
+
 #ifdef CONFIG_PLATFORM_MTK_JEDI
-    int ifindex = IFNAME_HASH(vif_name);
+    ifname = vif_name;
 #else
-    const char *ifname = get_ifname_from_secname(vif_name);
-    int ifindex = IFNAME_HASH(ifname);
+    ifname = get_ifname_from_secname(vif_name);
 #endif
-    int fd;
 
-    // Populate the adpi_ratelimit_bucket structure
-    memset(&crb, 0, sizeof(crb));
-    crb.wlan_idx = ifindex;
-    crb.bytes_per_sec = rate * 125000;  //mb to bytes
-    if (rate) {
-        crb.size = crb.bytes_per_sec;
-    }
-    crb.direction = dir;
-
-    // Open the device file for the ioctl
-    fd = open("/dev/air", O_RDWR);
-    if (fd < 0) {
-        perror("Failed to open device file");
-        return;
+    if (!ifname) {
+        fprintf(stderr, "Failed to resolve ifname for section %s\n", vif_name);
+        return false;
     }
 
-    if (strcmp(type, "wlan") == 0) {
-        // Call the ioctl
-        if (ioctl(fd, IOCTL_ADPI_RATELIMIT_WLAN, &crb) < 0) {
-            perror("ioctl failed");
-        } else {
-            printf("Rate limit set successfully: ifindex=%d, rate=%d, dir=%d\n", crb.wlan_idx, rate, dir);
-        }
-    } else if (strcmp(type, "wlan_per_user") == 0) {
-        // Call the ioctl
-        if (ioctl(fd, IOCTL_ADPI_RATELIMIT_WLAN_PER_USER, &crb) < 0) {
-            perror("ioctl failed");
-        } else {
-
-            printf("Wlan Per User Rate limit set successfully: ifindex=%d, rate=%d, dir=%d\n", crb.wlan_idx, rate, dir);
-        }
-    }
-
-    // Close the device file
-    close(fd);
+    return air_ifname_rate_limit((char *)ifname, uprate, downrate);
 }
-#endif
 
-// Updated function signature to handle both directions
-void air_interface_rate_limit(char *vif_name, int uprate, int downrate, char *type)
+static unsigned int mac_filter_pref(const uint8_t *mac, unsigned int salt)
 {
-    struct adpi_ratelimit_bucket crb;
-#ifdef CONFIG_PLATFORM_MTK_JEDI
-    int ifindex = IFNAME_HASH(vif_name);
-#else
-    const char *ifname = get_ifname_from_secname(vif_name);
-    int ifindex = IFNAME_HASH(ifname);
-#endif
-    int fd;
+    unsigned int hash = 2166136261u;
 
-    // Populate the adpi_ratelimit_bucket structure
-    memset(&crb, 0, sizeof(crb));
-    crb.wlan_idx = ifindex;
-
-    // Set uplink rate limit (0 means no limit/clear)
-    if (uprate) {
-        crb.uplink_bytes_per_sec = uprate * 125000;  // Mbps to bytes/sec
-        crb.uplink_size = crb.uplink_bytes_per_sec;  // Burst size
-    } else {
-        crb.uplink_bytes_per_sec = 0;  // Clear uplink limit
-        crb.uplink_size = 0;
+    for (int i = 0; i < 6; i++) {
+        hash ^= mac[i];
+        hash *= 16777619u;
     }
 
-    // Set downlink rate limit (0 means no limit/clear)
-    if (downrate) {
-        crb.downlink_bytes_per_sec = downrate * 125000;  // Mbps to bytes/sec
-        crb.downlink_size = crb.downlink_bytes_per_sec;  // Burst size
-    } else {
-        crb.downlink_bytes_per_sec = 0;  // Clear downlink limit
-        crb.downlink_size = 0;
-    }
+    return 1000 + ((hash + salt) % 30000);
+}
 
-    // Open the device file for the ioctl
-    fd = open("/dev/air", O_RDWR);
-    if (fd < 0) {
-        perror("Failed to open device file");
-        return;
-    }
+static bool find_station_ifname(const char *macaddr, char *ifname, size_t ifname_len)
+{
+    FILE *fp;
+    char candidate[64];
 
-    if (strcmp(type, "wlan") == 0) {
-        // Call the ioctl - now handles both directions in single call
-        if (ioctl(fd, IOCTL_ADPI_RATELIMIT_WLAN, &crb) < 0) {
-            perror("ioctl failed");
-        } else {
-            printf("Rate limit set successfully: ifindex=%d, uplink=%d Mbps, downlink=%d Mbps\n",
-                   crb.wlan_idx, uprate, downrate);
-        }
-    } else if (strcmp(type, "wlan_per_user") == 0) {
-        // Call the ioctl
-        if (ioctl(fd, IOCTL_ADPI_RATELIMIT_WLAN_PER_USER, &crb) < 0) {
-            perror("ioctl failed");
-        } else {
-            printf("Wlan Per User Rate limit set successfully: ifindex=%d, uplink=%d Mbps, downlink=%d Mbps\n",
-                   crb.wlan_idx, uprate, downrate);
+    if (!macaddr || !ifname || ifname_len == 0)
+        return false;
+
+    fp = popen("iw dev 2>/dev/null | awk '/Interface/{print $2}'", "r");
+    if (!fp)
+        return false;
+
+    while (fgets(candidate, sizeof(candidate), fp)) {
+        char cmd[MAX_OUTPUT_LEN];
+        int rc;
+        size_t len = strlen(candidate);
+
+        if (len > 0 && candidate[len - 1] == '\n')
+            candidate[len - 1] = '\0';
+
+        if (!is_safe_ifname(candidate))
+            continue;
+
+        snprintf(cmd, sizeof(cmd),
+                 "iw dev %s station get %s >/dev/null 2>&1",
+                 candidate, macaddr);
+        rc = system(cmd);
+        if (rc != -1 && WIFEXITED(rc) && WEXITSTATUS(rc) == 0) {
+            snprintf(ifname, ifname_len, "%s", candidate);
+            pclose(fp);
+            return true;
         }
     }
 
-    // Close the device file
-    close(fd);
+    pclose(fp);
+    return false;
 }
 
-#if 0
-void air_user_rate_limit(uint8_t *mac, int rate, int dir)
+bool air_user_rate_limit(uint8_t *mac, int uprate, int downrate)
 {
-    struct adpi_ratelimit_bucket crb;
-    int fd;
+    char macaddr[18];
+    char ifname[64] = {0};
+    char cmd[MAX_OUTPUT_LEN];
+    unsigned int up_pref;
+    unsigned int down_pref;
+    bool ok = true;
 
-    // Populate the adpi_ratelimit_bucket structure
-    memset(&crb, 0, sizeof(crb));
-    memcpy(crb.macaddr, mac, MAX_MAC_ADDR_LEN);
-    crb.bytes_per_sec = rate * 125000;  //mb to bytes
-    if (rate) {
-        crb.size = crb.bytes_per_sec;
-    }
-    crb.direction = dir;
+    if (!mac)
+        return false;
 
-    // Open the device file for the ioctl
-    fd = open("/dev/air", O_RDWR);
-    if (fd < 0) {
-        perror("Failed to open device file");
-        return;
+    mac_to_str(mac, macaddr);
+
+    if (!find_station_ifname(macaddr, ifname, sizeof(ifname))) {
+        fprintf(stderr, "Failed to find associated interface for client %s\n", macaddr);
+        return false;
     }
 
-    // Call the ioctl
-    if (ioctl(fd, IOCTL_ADPI_RATELIMIT_WLAN_USER, &crb) < 0) {
-        perror("ioctl failed");
+    if (!is_safe_ifname(ifname)) {
+        fprintf(stderr, "Invalid interface name for client %s\n", macaddr);
+        return false;
+    }
+
+    up_pref = mac_filter_pref(mac, 0);
+    down_pref = mac_filter_pref(mac, 1);
+
+    if (uprate > 0 || downrate > 0) {
+        snprintf(cmd, sizeof(cmd), "tc qdisc replace dev %s clsact", ifname);
+        ok &= (run_tc_cmd(cmd) == 0);
+    }
+
+    if (uprate > 0) {
+        snprintf(cmd, sizeof(cmd),
+                 "tc filter replace dev %s ingress protocol all pref %u flower src_mac %s "
+                 "action police rate %dmbit burst %s conform-exceed drop",
+                 ifname, up_pref, macaddr, uprate, TC_RATE_BURST);
+        ok &= (run_tc_cmd(cmd) == 0);
     } else {
-        printf("Rate limit user set successfully: rate=%d, dir=%d\n", rate, dir);
+        snprintf(cmd, sizeof(cmd),
+                 "tc filter del dev %s ingress pref %u 2>/dev/null",
+                 ifname, up_pref);
+        run_tc_cmd(cmd);
     }
 
-    // Close the device file
-    close(fd);
+    if (downrate > 0) {
+        snprintf(cmd, sizeof(cmd),
+                 "tc filter replace dev %s egress protocol all pref %u flower dst_mac %s "
+                 "action police rate %dmbit burst %s conform-exceed drop",
+                 ifname, down_pref, macaddr, downrate, TC_RATE_BURST);
+        ok &= (run_tc_cmd(cmd) == 0);
+    } else {
+        snprintf(cmd, sizeof(cmd),
+                 "tc filter del dev %s egress pref %u 2>/dev/null",
+                 ifname, down_pref);
+        run_tc_cmd(cmd);
+    }
+
+    if (!ok) {
+        fprintf(stderr, "Failed to apply tc user rate limit for %s on %s\n",
+                macaddr, ifname);
+        return false;
+    }
+
+    printf("User rate limit set successfully: mac=%s ifname=%s uplink=%d Mbps downlink=%d Mbps\n",
+           macaddr, ifname, uprate, downrate);
+    return true;
 }
-#endif
-
-void air_user_rate_limit(uint8_t *mac, int uprate, int downrate)
-{
-    struct adpi_ratelimit_bucket crb;
-    int fd;
-
-    // Populate the adpi_ratelimit_bucket structure
-    memset(&crb, 0, sizeof(crb));
-    memcpy(crb.macaddr, mac, MAX_MAC_ADDR_LEN);
-
-    // Set uplink rate limit (0 means no limit/clear)
-    if (uprate) {
-        crb.uplink_bytes_per_sec = uprate * 125000;  // Mbps to bytes/sec
-        crb.uplink_size = crb.uplink_bytes_per_sec;  // Burst size
-    } else {
-        crb.uplink_bytes_per_sec = 0;  // Clear uplink limit
-        crb.uplink_size = 0;
-    }
-
-    // Set downlink rate limit (0 means no limit/clear)
-    if (downrate) {
-        crb.downlink_bytes_per_sec = downrate * 125000;  // Mbps to bytes/sec
-        crb.downlink_size = crb.downlink_bytes_per_sec;  // Burst size
-    } else {
-        crb.downlink_bytes_per_sec = 0;  // Clear downlink limit
-        crb.downlink_size = 0;
-    }
-
-    // Open the device file for the ioctl
-    fd = open("/dev/air", O_RDWR);
-    if (fd < 0) {
-        perror("Failed to open device file");
-        return;
-    }
-
-    // Call the ioctl - now handles both directions in single call
-    if (ioctl(fd, IOCTL_ADPI_RATELIMIT_WLAN_USER, &crb) < 0) {
-        perror("ioctl failed");
-    } else {
-        printf("User rate limit set successfully: mac=%02x:%02x:%02x:%02x:%02x:%02x, "
-               "uplink=%d Mbps, downlink=%d Mbps\n",
-               mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
-               uprate, downrate);
-    }
-
-    // Close the device file
-    close(fd);
-}
-

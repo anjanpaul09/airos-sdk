@@ -1,0 +1,2 @@
+listen-address ${UAM_IP}:8118
+actionsfile ${INSTANCE_DIR}/auth.action

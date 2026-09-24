@@ -1,0 +1,65 @@
+{
+	"airui-network": {
+		"description": "Grant access to the AirUI local network backend",
+		"read": {
+			"ubus": {
+				"airui.mode": [ "controller_status" ],
+				"airui.system": [ "health", "capabilities", "wan_management_config", "apply_status" ],
+				"airui.network": [ "wireless_config", "interface_config" ],
+				"airui.security": [ "access_control_get", "rules", "mac_filter_config" ],
+				"airui.maintenance": [ "config", "device_management_get", "logs", "syslog_get" ],
+				"file": [ "stat" ]
+			},
+			"file": {
+				"/tmp/airui-firmware.bin": [ "read" ]
+			}
+		},
+		"write": {
+			"ubus": {
+				"airui.mode": [ "controller_status", "controller_set" ],
+				"airui.system": [ "health", "capabilities", "wan_management_config", "wan_management_set" ],
+				"airui.network": [
+					"wireless_config",
+					"wireless_set",
+					"wireless_add",
+					"wireless_delete",
+					"interface_config",
+					"interface_validate",
+					"interface_add",
+					"interface_set",
+					"interface_delete",
+					"interface_apply",
+					"interface_map_ssid"
+				],
+				"airui.security": [
+					"access_control_get",
+					"access_control_set",
+					"rules",
+					"rule_add",
+					"rule_set",
+					"rule_delete",
+					"mac_filter_config",
+					"mac_filter_set",
+					"mac_filter_entry_add",
+					"mac_filter_entry_delete"
+				],
+				"airui.maintenance": [
+					"config",
+					"device_management_get",
+					"device_management_set",
+					"logs",
+					"syslog_get",
+					"syslog_set",
+					"firmware_validate",
+					"firmware_upgrade",
+					"reboot",
+					"factory_reset"
+				],
+				"file": [ "write", "remove", "stat" ]
+			},
+			"file": {
+				"/tmp/airui-firmware.bin": [ "write" ]
+			}
+		}
+	}
+}

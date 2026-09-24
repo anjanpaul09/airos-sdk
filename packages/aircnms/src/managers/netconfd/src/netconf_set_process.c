@@ -1,9 +1,11 @@
 #include "log.h"
 #include "netconf.h"
+#include "portal_manager.h"
 #include "dpp_types.h"
 #include <jansson.h>
 
 int current_roaming_status = false;
+static nat_config_t g_last_nat_config;
 
 uint16_t mobility_domain_from_string(const char *s)
 {
@@ -145,6 +147,49 @@ bool netconf_process_vif_list(json_t *vif_list)
 
         strcpy(record->vif_param[i].auth_url,
                json_get_str(vif, "authUrl"));
+        strlcpy(record->vif_param[i].portal_id,
+                json_get_str(vif, "portalId"),
+                sizeof(record->vif_param[i].portal_id));
+        strlcpy(record->vif_param[i].uam_ip,
+                json_get_str(vif, "uamIp"),
+                sizeof(record->vif_param[i].uam_ip));
+        strlcpy(record->vif_param[i].uam_secret,
+                json_get_str(vif, "uamSecret"),
+                sizeof(record->vif_param[i].uam_secret));
+        strlcpy(record->vif_param[i].nas_id,
+                json_get_str(vif, "nasId"),
+                sizeof(record->vif_param[i].nas_id));
+        strlcpy(record->vif_param[i].net_segment_ip,
+                g_last_nat_config.ipaddr,
+                sizeof(record->vif_param[i].net_segment_ip));
+        strlcpy(record->vif_param[i].net_mask_ip,
+                g_last_nat_config.netmask,
+                sizeof(record->vif_param[i].net_mask_ip));
+
+        strlcpy(record->vif_param[i].server_name,
+                json_get_str(vif, "serverName"),
+                sizeof(record->vif_param[i].server_name));
+        strlcpy(record->vif_param[i].server_ip,
+                json_get_str(vif, "serverIp"),
+                sizeof(record->vif_param[i].server_ip));
+        strlcpy(record->vif_param[i].secret_key,
+                json_get_str(vif, "communicateKey"),
+                sizeof(record->vif_param[i].secret_key));
+
+        json_t *j;
+        j = json_object_get(vif, "authPort");
+        if (json_is_integer(j)) {
+            snprintf(record->vif_param[i].auth_port,
+                     sizeof(record->vif_param[i].auth_port),
+                     "%lld", json_integer_value(j));
+        }
+
+        j = json_object_get(vif, "accountPort");
+        if (json_is_integer(j)) {
+            snprintf(record->vif_param[i].acct_port,
+                     sizeof(record->vif_param[i].acct_port),
+                     "%lld", json_integer_value(j));
+        }
 
         /* ---------- Booleans ---------- */
         int hidden = json_get_bool(vif, "isHidden", 0);
@@ -162,6 +207,13 @@ bool netconf_process_vif_list(json_t *vif_list)
 
         record->vif_param[i].status =
             json_get_int(vif, "status", 0);
+
+        if (record->vif_param[i].status == 0 &&
+            record->vif_param[i].is_auth &&
+            record->vif_param[i].portal_id[0] != '\0' &&
+            record->vif_param[i].enable[0] == '1') {
+            record->vif_param[i].status = VIF_MODIFY;
+        }
 
         /* ---------- Mobility Domain ---------- */
         const char *md_str = json_get_str(vif, "mobilityDomain");
@@ -187,8 +239,6 @@ bool netconf_process_vif_list(json_t *vif_list)
 
             strcpy(record->vif_param[i].server_ip,
                    json_get_str(vif, "serverIp"));
-
-            json_t *j;
 
             j = json_object_get(vif, "authPort");
             if (json_is_integer(j)) {
@@ -294,7 +344,7 @@ bool netconf_process_vif_list(json_t *vif_list)
     LOG(INFO, "SET_VIF params n_vif=%d", n_vif);
     for (int j = 0; j < n_vif; j++) {
         LOG(INFO,
-            "SET_VIF[%d] recordId=%s ssid=%s enc=%s status=%d enable=%s vlanId=%s device=%s",
+            "SET_VIF[%d] recordId=%s ssid=%s enc=%s status=%d enable=%s vlanId=%s device=%s is_auth=%d portal_id=%s net=%s/%s radius=%s auth_port=%s acct_port=%s",
             j,
             record->vif_param[j].record_id,
             record->vif_param[j].ssid,
@@ -302,7 +352,14 @@ bool netconf_process_vif_list(json_t *vif_list)
             record->vif_param[j].status,
             record->vif_param[j].enable,
             record->vif_param[j].vlan_id,
-            record->vif_param[j].device);
+            record->vif_param[j].device,
+            record->vif_param[j].is_auth,
+            record->vif_param[j].portal_id,
+            record->vif_param[j].net_segment_ip,
+            record->vif_param[j].net_mask_ip,
+            record->vif_param[j].server_ip,
+            record->vif_param[j].auth_port,
+            record->vif_param[j].acct_port);
     }
 
     ret = target_config_vif_set(record);
@@ -567,10 +624,96 @@ int netconf_process_whitelist(json_t *whiteList)
 
 }
 
-int netconf_process_nat_config(json_t *nat_config)
+static bool netconf_payload_has_captive_vif(json_t *root)
 {
-    int ret;
+    json_t *vif_root;
+    json_t *vif_list;
+    size_t i;
+    json_t *vif;
+
+    if (!root)
+        return false;
+
+    vif_root = json_object_get(root, "vif");
+    vif_list = json_object_get(vif_root, "vifList");
+    if (!json_is_array(vif_list))
+        return false;
+
+    json_array_foreach(vif_list, i, vif) {
+        json_t *is_auth;
+        json_t *portal_id;
+        bool auth_enabled = false;
+
+        if (!json_is_object(vif))
+            continue;
+
+        is_auth = json_object_get(vif, "isAuth");
+        if (json_is_boolean(is_auth))
+            auth_enabled = json_boolean_value(is_auth);
+        else if (json_is_integer(is_auth))
+            auth_enabled = json_integer_value(is_auth) != 0;
+
+        portal_id = json_object_get(vif, "portalId");
+        if (auth_enabled && json_is_string(portal_id) &&
+            json_string_value(portal_id)[0] != '\0')
+            return true;
+    }
+
+    return false;
+}
+
+static bool netconf_payload_has_legacy_nat_vif(json_t *root)
+{
+    json_t *vif_root;
+    json_t *vif_list;
+    size_t i;
+    json_t *vif;
+
+    if (!root)
+        return false;
+
+    vif_root = json_object_get(root, "vif");
+    vif_list = json_object_get(vif_root, "vifList");
+    if (!json_is_array(vif_list))
+        return false;
+
+    json_array_foreach(vif_list, i, vif) {
+        json_t *is_auth;
+        json_t *forward_type;
+        json_t *enable;
+        bool auth_enabled = false;
+        bool vif_enabled = true;
+
+        if (!json_is_object(vif))
+            continue;
+
+        enable = json_object_get(vif, "enable");
+        if (json_is_boolean(enable))
+            vif_enabled = json_boolean_value(enable);
+        else if (json_is_integer(enable))
+            vif_enabled = json_integer_value(enable) != 0;
+
+        is_auth = json_object_get(vif, "isAuth");
+        if (json_is_boolean(is_auth))
+            auth_enabled = json_boolean_value(is_auth);
+        else if (json_is_integer(is_auth))
+            auth_enabled = json_integer_value(is_auth) != 0;
+
+        forward_type = json_object_get(vif, "forwardType");
+        if (vif_enabled && !auth_enabled && json_is_string(forward_type) &&
+            strcmp(json_string_value(forward_type), "NAT") == 0)
+            return true;
+    }
+
+    return false;
+}
+
+int netconf_process_nat_config(json_t *nat_config, bool apply_legacy_nat)
+{
+    int ret = 0;
     nat_config_t config;
+
+    memset(&config, 0, sizeof(config));
 
     json_t *netSegmentIp = json_object_get(nat_config, "netSegmentIp");
     if (!netSegmentIp || json_is_null(netSegmentIp)) {
@@ -595,7 +738,13 @@ int netconf_process_nat_config(json_t *nat_config)
         printf("Error: 'netMaskIp' is not a string\n");
     }
 
-    ret = netconf_handle_nat_config(&config);
+    memcpy(&g_last_nat_config, &config, sizeof(g_last_nat_config));
+    portal_manager_set_network_config(config.ipaddr, config.netmask);
+    if (apply_legacy_nat) {
+        ret = netconf_handle_nat_config(&config);
+    } else {
+        LOG(INFO, "natConfig stored for captive portal; legacy nat_network apply skipped");
+    }
 
     json_t *roaming = json_object_get(nat_config, "l2Roaming");
     if (!roaming || json_is_null(roaming)) {
@@ -614,7 +763,7 @@ int netconf_process_nat_config(json_t *nat_config)
 
 int netconf_process_set_msg(char* buf)
 {
-    int ret;
+    int ret = true;
     json_error_t error;
     json_t *root = json_loads(buf, 0, &error);
     if (!root) {
@@ -622,9 +771,16 @@ int netconf_process_set_msg(char* buf)
         return false;
     }
  
+    bool has_captive_vif = netconf_payload_has_captive_vif(root);
+    bool has_legacy_nat_vif = netconf_payload_has_legacy_nat_vif(root);
     json_t *nat_config = json_object_get(root, "natConfig");      
     if (nat_config) {
-        ret = netconf_process_nat_config(nat_config);
+        if (has_captive_vif && has_legacy_nat_vif) {
+            LOG(WARNING,
+                "natConfig is shared by captive and legacy NAT VIFs; use different subnets or disable legacy NAT to avoid br-nat/chilli IP conflict");
+        }
+        ret = netconf_process_nat_config(nat_config,
+                                         !has_captive_vif || has_legacy_nat_vif);
     }
 
     json_t *vif_list = json_object_get(json_object_get(root, "vif"), "vifList");      

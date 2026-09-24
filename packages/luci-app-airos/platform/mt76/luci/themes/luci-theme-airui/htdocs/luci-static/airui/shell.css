@@ -1,0 +1,54 @@
+/*
+ * Final AirUI shell contract.
+ *
+ * Loaded after legacy theme files so page-level styles cannot repaint the
+ * application canvas or reduce navigation contrast.
+ */
+html,
+body,
+.main,
+.main > .main-right,
+.main-right,
+.main-right > #maincontent,
+#maincontent,
+#maincontent > .container {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	background-image: none !important;
+}
+
+.main > .main-left {
+	background: #ffffff !important;
+}
+
+#maincontent > .container,
+.airdash,
+.status-page {
+	min-width: 0 !important;
+}
+
+.airdash,
+.status-page {
+	width: 100% !important;
+}
+
+body.logged-in .main > .main-left > .nav > li:last-child > a {
+	color: #17084d !important;
+	text-shadow: none !important;
+}
+
+body.logged-in #maincontent :is(
+	.status-page .status-page-hero,
+	.air-settings-page .air-settings-hero,
+	.wireless-page .wireless-ref-head,
+	.mac-filter-page .mac-filter-title
+) h1 {
+	text-decoration: none !important;
+}
+
+.airui-site-footer {
+	width: 100% !important;
+	background: #ffffff !important;
+	color: #7a718d !important;
+	text-align: right !important;
+}

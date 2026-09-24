@@ -17,6 +17,7 @@
 #include "os_socket.h"
 #include "os_backtrace.h"
 #include "netconf.h"
+#include "portal_manager.h"
 #include "target.h"
 
 // Forward declarations
@@ -39,6 +40,8 @@ int main()
     netconf_dequeue_timer_init();
 
     netconf_wifischedule_init(loop);
+
+    portal_manager_init();
 
     ev_run(loop, 0);
         

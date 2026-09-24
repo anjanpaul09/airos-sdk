@@ -1,0 +1,49 @@
+{
+	"admin/status/overview": {
+		"title": "Dashboard",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "status/airui_dashboard_v12"
+		},
+		"depends": {
+			"acl": [ "airui-status" ]
+		}
+	},
+
+	"admin/status/device_status": {
+		"title": "Device Status",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "status/airui_device_status_v12"
+		},
+		"depends": {
+			"acl": [ "airui-status" ]
+		}
+	},
+
+	"admin/status/device_statistics": {
+		"title": "Device Statistics",
+		"order": 3,
+		"action": {
+			"type": "view",
+			"path": "status/airui_device_statistics_v10"
+		},
+		"depends": {
+			"acl": [ "airui-status" ]
+		}
+	},
+
+	"admin/status/clients": {
+		"title": "Clients",
+		"order": 5,
+		"action": {
+			"type": "view",
+			"path": "status/airui_clients_v19"
+		},
+		"depends": {
+			"acl": [ "airui-status" ]
+		}
+	}
+}

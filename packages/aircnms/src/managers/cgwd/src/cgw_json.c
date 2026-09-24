@@ -490,13 +490,16 @@ bool cgw_parse_event_newjson(event_msg_t *event, char *data)
 {
     json_t *root = json_object();
     json_t *event_root = json_object();
+    json_t *data_root = json_object();
     
     if ( event->type == EVENT_TYPE_UPGRADE ) {
         json_object_set_new(root, "type", json_string("firmware_upgrade"));
     } else if ( event->type == EVENT_TYPE_ALARM ) {
-        json_object_set_new(root, "type", json_string("device_alarm"));
+        json_object_set_new(root, "type", json_string("Alarm"));
     } else if ( event->type == EVENT_TYPE_CMD ) {
         json_object_set_new(root, "type", json_string("web_cli"));
+    } else if (event->type == EVENT_TYPE_ALERT) {
+        json_object_set_new(root, "type", json_string("Alerts"));
     }
     json_object_set_new(root, "id", json_string(event->cloud_id));
     json_object_set_new(root, "networkId", json_string(air_dev.netwrk_id));
@@ -520,7 +523,26 @@ bool cgw_parse_event_newjson(event_msg_t *event, char *data)
     } else if ( event->type == EVENT_TYPE_CMD ) {
         json_object_set_new(root, "cmd", json_string(""));
         json_object_set_new(event_root, "cmd_reply", json_string(event->data));
-    } 
+    } else if (event->type == EVENT_TYPE_ALARM) {
+        if (event->alarm_t == ALARM_TYPE_CRITICAL) {
+            json_object_set_new(data_root, "sub-type", json_string("critical"));
+        } else if (event->alarm_t == ALARM_TYPE_MAJOR) {
+            json_object_set_new(data_root, "sub-type", json_string("major"));
+        } else if (event->alarm_t == ALARM_TYPE_WARNING) {
+            json_object_set_new(data_root, "sub-type", json_string("warning"));
+        }
+        json_object_set_new(data_root, "description", json_string(event->data));
+        json_object_set_new(event_root, "cmd_reply", data_root);        
+
+    } else if (event->type == EVENT_TYPE_ALERT) {
+        if (event->alert_t == ALERT_TYPE_INTERFACE) {
+            json_object_set_new(data_root, "sub-type", json_string("interface"));
+        } else if (event->alert_t == ALERT_TYPE_SYSTEM) {
+        
+        }
+        json_object_set_new(data_root, "description", json_string(event->data));
+        json_object_set_new(event_root, "cmd_reply", data_root);        
+    }
     json_object_set_new(root, "result", event_root);
 
 

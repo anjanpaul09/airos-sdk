@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <time.h>
 #include <unistd.h>
+#include <stdint.h>
 #include "netconf.h"
 
 static struct ubus_context *ctx = NULL;
@@ -20,6 +21,83 @@ static ev_io ubus_watcher;
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
+
+enum {
+    RL_INTERFACE,
+    RL_INTERFACE_UPLINK,
+    RL_INTERFACE_DOWNLINK,
+    __RL_INTERFACE_MAX
+};
+
+enum {
+    RL_CLIENT_MAC,
+    RL_CLIENT_UPLINK,
+    RL_CLIENT_DOWNLINK,
+    __RL_CLIENT_MAX
+};
+
+static const struct blobmsg_policy rl_interface_policy[__RL_INTERFACE_MAX] = {
+    [RL_INTERFACE] = { .name = "interface", .type = BLOBMSG_TYPE_STRING },
+    [RL_INTERFACE_UPLINK] = { .name = "uplink", .type = BLOBMSG_TYPE_INT32 },
+    [RL_INTERFACE_DOWNLINK] = { .name = "downlink", .type = BLOBMSG_TYPE_INT32 },
+};
+
+static const struct blobmsg_policy rl_client_policy[__RL_CLIENT_MAX] = {
+    [RL_CLIENT_MAC] = { .name = "mac", .type = BLOBMSG_TYPE_STRING },
+    [RL_CLIENT_UPLINK] = { .name = "uplink", .type = BLOBMSG_TYPE_INT32 },
+    [RL_CLIENT_DOWNLINK] = { .name = "downlink", .type = BLOBMSG_TYPE_INT32 },
+};
+
+static bool parse_macaddr(const char *macstr, uint8_t mac[6])
+{
+    unsigned int octets[6];
+
+    if (!macstr)
+        return false;
+
+    if (sscanf(macstr, "%02x:%02x:%02x:%02x:%02x:%02x",
+               &octets[0], &octets[1], &octets[2],
+               &octets[3], &octets[4], &octets[5]) != 6) {
+        return false;
+    }
+
+    for (int i = 0; i < 6; i++) {
+        if (octets[i] > 0xff)
+            return false;
+        mac[i] = (uint8_t)octets[i];
+    }
+
+    return true;
+}
+
+static int rl_rate_from_attr(struct blob_attr *attr)
+{
+    return attr ? (int)blobmsg_get_u32(attr) : 0;
+}
+
+static int ubus_reply_rate_limit(struct ubus_context *ctx,
+                                 struct ubus_request_data *req,
+                                 bool success,
+                                 const char *target_type,
+                                 const char *target,
+                                 int uplink,
+                                 int downlink,
+                                 const char *message)
+{
+    struct blob_buf b = {0};
+
+    blob_buf_init(&b, 0);
+    blobmsg_add_u8(&b, "success", success);
+    blobmsg_add_string(&b, "targetType", target_type);
+    blobmsg_add_string(&b, "target", target ? target : "");
+    blobmsg_add_u32(&b, "uplink", uplink);
+    blobmsg_add_u32(&b, "downlink", downlink);
+    blobmsg_add_string(&b, "message", message);
+    ubus_send_reply(ctx, req, b.head);
+    blob_buf_free(&b);
+
+    return UBUS_STATUS_OK;
+}
 
 static int ubus_netconf_config_handler(struct ubus_context* ctx, struct ubus_object* obj,
                               struct ubus_request_data* req, const char* method,
@@ -223,6 +301,94 @@ static int ubus_netconf_rl_handler(struct ubus_context* ctx, struct ubus_object*
     return 0;
 }
 
+static int ubus_netconf_rl_interface_handler(struct ubus_context *ctx,
+                                             struct ubus_object *obj,
+                                             struct ubus_request_data *req,
+                                             const char *method,
+                                             struct blob_attr *msg)
+{
+    struct blob_attr *tb[__RL_INTERFACE_MAX];
+    const char *ifname;
+    int uplink;
+    int downlink;
+    bool success;
+
+    (void)obj;
+    (void)method;
+
+    if (!msg)
+        return UBUS_STATUS_INVALID_ARGUMENT;
+
+    blobmsg_parse(rl_interface_policy, __RL_INTERFACE_MAX, tb,
+                  blob_data(msg), blob_len(msg));
+
+    if (!tb[RL_INTERFACE]) {
+        return ubus_reply_rate_limit(ctx, req, false, "interface", "",
+                                     0, 0, "missing interface");
+    }
+
+    ifname = blobmsg_get_string(tb[RL_INTERFACE]);
+    uplink = rl_rate_from_attr(tb[RL_INTERFACE_UPLINK]);
+    downlink = rl_rate_from_attr(tb[RL_INTERFACE_DOWNLINK]);
+
+    if (uplink < 0 || downlink < 0) {
+        return ubus_reply_rate_limit(ctx, req, false, "interface", ifname,
+                                     uplink, downlink, "rate must be >= 0");
+    }
+
+    success = air_ifname_rate_limit((char *)ifname, uplink, downlink);
+    return ubus_reply_rate_limit(ctx, req, success, "interface", ifname,
+                                 uplink, downlink,
+                                 success ? "applied" : "failed");
+}
+
+static int ubus_netconf_rl_client_handler(struct ubus_context *ctx,
+                                          struct ubus_object *obj,
+                                          struct ubus_request_data *req,
+                                          const char *method,
+                                          struct blob_attr *msg)
+{
+    struct blob_attr *tb[__RL_CLIENT_MAX];
+    const char *macstr;
+    uint8_t mac[6];
+    int uplink;
+    int downlink;
+    bool success;
+
+    (void)obj;
+    (void)method;
+
+    if (!msg)
+        return UBUS_STATUS_INVALID_ARGUMENT;
+
+    blobmsg_parse(rl_client_policy, __RL_CLIENT_MAX, tb,
+                  blob_data(msg), blob_len(msg));
+
+    if (!tb[RL_CLIENT_MAC]) {
+        return ubus_reply_rate_limit(ctx, req, false, "client", "",
+                                     0, 0, "missing mac");
+    }
+
+    macstr = blobmsg_get_string(tb[RL_CLIENT_MAC]);
+    uplink = rl_rate_from_attr(tb[RL_CLIENT_UPLINK]);
+    downlink = rl_rate_from_attr(tb[RL_CLIENT_DOWNLINK]);
+
+    if (!parse_macaddr(macstr, mac)) {
+        return ubus_reply_rate_limit(ctx, req, false, "client", macstr,
+                                     uplink, downlink, "invalid mac");
+    }
+
+    if (uplink < 0 || downlink < 0) {
+        return ubus_reply_rate_limit(ctx, req, false, "client", macstr,
+                                     uplink, downlink, "rate must be >= 0");
+    }
+
+    success = air_user_rate_limit(mac, uplink, downlink);
+    return ubus_reply_rate_limit(ctx, req, success, "client", macstr,
+                                 uplink, downlink,
+                                 success ? "applied" : "failed");
+}
+
 
 static void ubus_io_cb(EV_P_ struct ev_io *w, int revents)
 {
@@ -236,6 +402,7 @@ static void ubus_io_cb(EV_P_ struct ev_io *w, int revents)
 bool netconf_ubus_service_init()
 {
     static struct ubus_object obj;
+    static struct ubus_object_type object_type;
 
     loop = EV_DEFAULT;
     ctx = ubus_connect(NULL);
@@ -247,20 +414,33 @@ bool netconf_ubus_service_init()
     printf("Connected to ubus\n");
 
     obj.name = "netconfd";
-    obj.type = &(struct ubus_object_type){.name = "netconfd"};
-    static struct ubus_method methods[4];
+    object_type.name = "netconfd";
+    obj.type = &object_type;
+    static struct ubus_method methods[5];
     methods[0].name = "set.cgwd.conf";            // cloud config
     methods[0].handler = ubus_netconf_config_handler;
     methods[0].policy = NULL;
+    methods[0].n_policy = 0;
     methods[1].name = "set.cgwd.acl";             // acl
     methods[1].handler = ubus_netconf_acl_handler;
     methods[1].policy = NULL;
-    methods[2].name = NULL;
+    methods[1].n_policy = 0;
     methods[2].name = "set.cgwd.rl";              // ratelimit
     methods[2].handler = ubus_netconf_rl_handler;
     methods[2].policy = NULL;
+    methods[2].n_policy = 0;
+    methods[3].name = "rate.limit.interface";
+    methods[3].handler = ubus_netconf_rl_interface_handler;
+    methods[3].policy = rl_interface_policy;
+    methods[3].n_policy = ARRAY_SIZE(rl_interface_policy);
+    methods[4].name = "rate.limit.client";
+    methods[4].handler = ubus_netconf_rl_client_handler;
+    methods[4].policy = rl_client_policy;
+    methods[4].n_policy = ARRAY_SIZE(rl_client_policy);
+    object_type.methods = methods;
+    object_type.n_methods = ARRAY_SIZE(methods);
     obj.methods = methods;
-    obj.n_methods = 3;
+    obj.n_methods = ARRAY_SIZE(methods);
 
     if (ubus_add_object(ctx, &obj) != 0) {
         fprintf(stderr, "Failed to add ubus object\n");
@@ -298,4 +478,3 @@ void netconf_ubus_service_cleanup(void)
         ctx = NULL;
     }
 }
-

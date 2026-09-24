@@ -1,0 +1,586 @@
+/* Reference adoption is intentionally limited to palette and iconography. */
+:root {
+	--airpro-orange: #f58634;
+	--airpro-pink: #fef0e7;
+	--airpro-text: #17084d;
+	--airpro-muted: #827b77;
+	--airpro-success: #15945f;
+}
+
+html,
+body,
+.main,
+.main-right,
+#maincontent,
+#maincontent > .container {
+	background-color: #ffffff !important;
+}
+
+header,
+header > .fill {
+	background-color: #ffffff !important;
+	box-shadow: none !important;
+}
+
+.main > .main-left {
+	background-color: #ffffff !important;
+	box-shadow: none !important;
+}
+
+/* Main navigation uses one consistent outline icon column. */
+.main > .main-left > .nav > li {
+	position: relative !important;
+}
+
+.main > .main-left > .nav > li::before {
+	position: absolute;
+	top: 10px;
+	left: 14px;
+	z-index: 2;
+	width: 20px;
+	height: 20px;
+	content: "";
+	pointer-events: none;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: 20px 20px;
+}
+
+.main > .main-left > .nav > li:nth-child(1)::before { background-image: url(./icons/activity.svg); }
+.main > .main-left > .nav > li:nth-child(2)::before { background-image: url(./icons/network-nav.svg); }
+.main > .main-left > .nav > li:nth-child(3)::before { background-image: url(./icons/settings.svg); }
+.main > .main-left > .nav > li:nth-child(4)::before { background-image: url(./icons/shield-check.svg); }
+.main > .main-left > .nav > li:nth-child(5)::before { background-image: url(./icons/wrench.svg); }
+
+.main > .main-left > .nav > li > a,
+.main > .main-left > .nav > li.slide > .menu {
+	padding-left: 46px !important;
+}
+
+.main > .main-left > .nav > li.slide.active {
+	background: transparent !important;
+}
+
+.main > .main-left > .nav > li.slide.active > .menu {
+	background: #fef0e7 !important;
+	color: #17084d !important;
+}
+
+.main > .main-left > .nav > li.slide > .slide-menu > li.active {
+	background: #f58634 !important;
+}
+
+.main > .main-left > .nav > li.slide > .slide-menu > li.active > a {
+	color: #ffffff !important;
+}
+
+.main > .main-left > .nav > li:last-child::before {
+	background-image: none !important;
+}
+
+.status-good,
+.state-good,
+.status-meta.is-online,
+.is-online,
+.is-serving,
+.is-healthy {
+	color: #15945f !important;
+}
+
+.status-dot.is-active,
+.status-meta.is-online i,
+.state-dot.is-online {
+	background-color: #15945f !important;
+}
+
+/* Page titles stay clean; orange remains reserved for actions and navigation. */
+#maincontent :is(
+	.status-page-hero,
+	.air-settings-hero,
+	.wireless-ref-head,
+	.mac-filter-title,
+	.device-hero,
+	.clients-hero,
+	.stats-hero,
+	.stats-v3-hero
+) h1 {
+	text-decoration: none !important;
+	border-bottom: 0 !important;
+}
+
+#maincontent :is(
+	.status-page-hero,
+	.air-settings-hero,
+	.wireless-ref-head,
+	.mac-filter-title,
+	.device-hero,
+	.clients-hero,
+	.stats-hero,
+	.stats-v3-hero
+) h1::after {
+	display: none !important;
+	content: none !important;
+}
+
+html body.logged-in #maincontent .status-page .status-page-hero h1,
+html body.logged-in #maincontent .air-settings-page .air-settings-hero h1,
+html body.logged-in #maincontent .wireless-page .wireless-ref-head .wireless-ref-title-block h1,
+html body.logged-in #maincontent .mac-filter-page .mac-filter-title h1,
+html body.logged-in #maincontent .device-hero h1,
+html body.logged-in #maincontent .clients-hero h1,
+html body.logged-in #maincontent .stats-hero h1,
+html body.logged-in #maincontent .stats-v3-hero h1 {
+	text-decoration: none !important;
+	text-decoration-line: none !important;
+	-webkit-text-decoration-line: none !important;
+	border-bottom: 0 !important;
+	background-image: none !important;
+}
+
+html body.logged-in #maincontent .status-page .status-page-hero h1::after,
+html body.logged-in #maincontent .air-settings-page .air-settings-hero h1::after,
+html body.logged-in #maincontent .wireless-page .wireless-ref-head .wireless-ref-title-block h1::after,
+html body.logged-in #maincontent .mac-filter-page .mac-filter-title h1::after,
+html body.logged-in #maincontent .device-hero h1::after,
+html body.logged-in #maincontent .clients-hero h1::after,
+html body.logged-in #maincontent .stats-hero h1::after,
+html body.logged-in #maincontent .stats-v3-hero h1::after {
+	display: none !important;
+	width: 0 !important;
+	height: 0 !important;
+	content: none !important;
+	background: none !important;
+}
+
+/* Shared component colors. These rules do not alter page geometry. */
+body.logged-in #maincontent :is(
+	.status-page-hero,
+	.air-settings-hero,
+	.wireless-ref-head,
+	.mac-filter-title,
+	.device-hero,
+	.clients-hero,
+	.stats-hero,
+	.stats-v3-hero
+) {
+	border-radius: 8px !important;
+	background-color: #fef0e7 !important;
+	box-shadow: none !important;
+}
+
+body.logged-in #maincontent :is(
+	.airdash .card,
+	.device-status-card,
+	.device-panel,
+	.client-stat,
+	.client-panel,
+	.stats-metric-card,
+	.stats-resource-card,
+	.stats-live-card,
+	.stats-side-card,
+	.stats-counters-card,
+	.stats-health-strip,
+	.air-card,
+	.air-setting-item,
+	.air-settings-card,
+	.air-settings-section,
+	.air-wan-config-card,
+	.air-mode-card,
+	.air-mode-summary,
+	.air-controller-section,
+	.air-firmware-upgrade,
+	.air-maintenance-group,
+	.network-table,
+	.wireless-ref-panel,
+	.wireless-advanced-panel,
+	.wireless-ref-ssid-shell,
+	.wireless-ref-ssid-body,
+	.wireless-ref-ssid-management,
+	.wireless-advanced-radio,
+	.mac-stat,
+	.mac-panel
+) {
+	border-radius: 8px !important;
+	background-color: #fef0e7 !important;
+	background-image: none !important;
+	box-shadow: none !important;
+}
+
+body.logged-in #maincontent :is(
+	.air-settings-page,
+	.wireless-page,
+	.interface-page,
+	.mac-filter-page
+) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea, .cbi-dropdown) {
+	background-color: #ffffff !important;
+	border: 1px solid #decabd !important;
+	border-radius: 6px !important;
+	box-shadow: none !important;
+}
+
+body.logged-in #maincontent :is(
+	.air-settings-page,
+	.wireless-page,
+	.interface-page,
+	.mac-filter-page
+) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea, .cbi-dropdown):focus {
+	border-color: #f58634 !important;
+	box-shadow: 0 0 0 2px rgba(245, 134, 52, .14) !important;
+	outline: 0 !important;
+}
+
+body.logged-in #maincontent :is(
+	.status-page-refresh,
+	.clients-refresh,
+	.air-refresh,
+	.wireless-save.is-primary,
+	.mac-primary-button,
+	.cbi-button-add,
+	.cbi-button-save,
+	.cbi-button-apply,
+	.cbi-button-positive,
+	button.primary,
+	button.is-primary
+) {
+	border-color: #f58634 !important;
+	border-radius: 8px !important;
+	background-color: #f58634 !important;
+	background-image: none !important;
+	color: #ffffff !important;
+	box-shadow: none !important;
+}
+
+body.logged-in #maincontent :is(
+	.device-panel-head,
+	.client-panel-head,
+	.stats-card-head,
+	.air-card-head,
+	.air-maintenance-group-head,
+	.wireless-panel-head,
+	.mac-panel-head,
+	.detail-head,
+	.table-row,
+	.top-client-grid
+) {
+	border-color: rgba(23, 8, 77, .10) !important;
+}
+
+body.logged-in #maincontent :is(
+	.client-table,
+	.device-radio-table,
+	.stats-iface-table,
+	.air-table,
+	.air-settings-table,
+	.mac-policy-table,
+	.network-table
+) {
+	border-color: rgba(23, 8, 77, .10) !important;
+	border-radius: 8px !important;
+	box-shadow: none !important;
+}
+
+#modal_overlay .cbi-modal,
+#modal_overlay [class$="-modal"],
+.modal .cbi-modal {
+	border: 1px solid #decabd !important;
+	border-radius: 8px !important;
+	background-color: #ffffff !important;
+	box-shadow: 0 16px 40px rgba(23, 8, 77, .18) !important;
+}
+
+.airui-site-footer {
+	display: block !important;
+	background-color: #ffffff !important;
+	color: #7a718d !important;
+}
+
+/* Live Status pages own their refresh feedback in the hero. */
+body[data-page="admin-status-overview"] #xhr_poll_status {
+	display: none !important;
+}
+
+/* Use one source of vertical rhythm; legacy margins must not compound the gap. */
+html body.logged-in #maincontent .status-page {
+	gap: 18px !important;
+}
+
+html body.logged-in #maincontent .status-page > * {
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+}
+
+/* Shared request and data states. Empty is neutral; stale is always a warning. */
+body.logged-in #maincontent .airui-apply-status,
+body.logged-in #maincontent .airui-data-state {
+	display: flex;
+	align-items: center;
+	min-height: 44px;
+	margin: 0 0 16px;
+	padding: 11px 14px;
+	border: 1px solid #decabd;
+	border-left-width: 4px;
+	border-radius: 8px;
+	background: #ffffff;
+	color: #17084d;
+	font-weight: 700;
+}
+
+body.logged-in #maincontent :is(.airui-apply-status, .airui-data-state)[hidden] {
+	display: none !important;
+}
+
+body.logged-in #maincontent :is(.airui-apply-status, .airui-data-state).is-loading {
+	border-left-color: #7a718d;
+	color: #625a70;
+}
+
+body.logged-in #maincontent :is(.airui-apply-status, .airui-data-state).is-empty {
+	border-left-color: #b5aead;
+	background: #ffffff;
+	color: #7a718d;
+}
+
+body.logged-in #maincontent :is(.airui-apply-status, .airui-data-state).is-applying {
+	border-left-color: #f58634;
+	background: #fef0e7;
+}
+
+body.logged-in #maincontent :is(.airui-apply-status, .airui-data-state).is-success {
+	border-color: #a9dfc5;
+	border-left-color: #15945f;
+	background: #effaf5;
+	color: #087747;
+}
+
+body.logged-in #maincontent :is(.airui-apply-status, .airui-data-state).is-failure {
+	border-color: #efb0b0;
+	border-left-color: #cf3636;
+	background: #fff2f2;
+	color: #a22525;
+}
+
+body.logged-in #maincontent :is(.airui-apply-status, .airui-data-state).is-rollback,
+body.logged-in #maincontent :is(.airui-apply-status, .airui-data-state).is-stale {
+	border-color: #f0c36d;
+	border-left-color: #c77b00;
+	background: #fff8e8;
+	color: #855400;
+}
+
+body.logged-in #maincontent button[aria-busy="true"] {
+	cursor: wait !important;
+	opacity: .68 !important;
+}
+
+body.logged-in #maincontent :is(.status-page-updated, #stats-updated).is-loading {
+	color: #7a718d !important;
+	font-weight: 700 !important;
+}
+
+body.logged-in #maincontent :is(.status-page-updated, #stats-updated).is-stale {
+	display: inline-block;
+	padding: 4px 7px;
+	border: 1px solid #f0c36d;
+	border-radius: 6px;
+	background: #fff8e8;
+	color: #855400 !important;
+	font-weight: 700 !important;
+}
+
+/* MAC filtering: neutralize legacy icon-grid geometry after header icons were removed. */
+html body.logged-in #maincontent .mac-filter-page .mac-filter-title {
+	display: block !important;
+	min-height: 148px !important;
+	padding: 28px 34px !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-filter-title > div {
+	display: block !important;
+	width: 100% !important;
+	max-width: none !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-filter-title .mac-breadcrumb {
+	display: none !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-filter-title .mac-title-row,
+html body.logged-in #maincontent .mac-filter-page .mac-filter-title .mac-title-row > div {
+	display: block !important;
+	width: 100% !important;
+	max-width: none !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-filter-title .mac-title-row::before {
+	display: block !important;
+	margin: 0 0 8px !important;
+	color: #f58634 !important;
+	font-size: 11px !important;
+	font-weight: 850 !important;
+	line-height: 1.2 !important;
+	content: "SECURITY" !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-filter-title h1,
+html body.logged-in #maincontent .mac-filter-page .mac-filter-title p {
+	width: auto !important;
+	max-width: 48rem !important;
+	margin-left: 0 !important;
+	white-space: normal !important;
+	word-break: normal !important;
+	overflow-wrap: normal !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-stats {
+	display: grid !important;
+	grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+	gap: 12px !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-stat {
+	display: block !important;
+	min-width: 0 !important;
+	padding: 16px !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-stat > div {
+	display: flex !important;
+	flex-direction: column !important;
+	width: 100% !important;
+	min-width: 0 !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-stat :is(small, strong, em) {
+	width: auto !important;
+	max-width: 100% !important;
+	white-space: normal !important;
+	word-break: normal !important;
+	overflow-wrap: normal !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-policy-bulk-strip {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(220px, .9fr) !important;
+}
+
+html body.logged-in #maincontent .mac-filter-page .mac-policy-note {
+	grid-column: 1 / -1 !important;
+}
+
+@media (max-width: 1100px) {
+	html body.logged-in #maincontent .mac-filter-page .mac-stats {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+	}
+
+	html body.logged-in #maincontent .mac-filter-page .mac-policy-bulk-strip {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+	}
+}
+
+@media (max-width: 680px) {
+	html body.logged-in #maincontent .mac-filter-page .mac-filter-title {
+		min-height: 0 !important;
+		padding: 22px 20px !important;
+	}
+
+	html body.logged-in #maincontent .mac-filter-page .mac-stats,
+	html body.logged-in #maincontent .mac-filter-page .mac-policy-bulk-strip {
+		grid-template-columns: minmax(0, 1fr) !important;
+	}
+}
+
+@media (max-width: 1152px) {
+	.main > .main-left > .nav > li::before {
+		top: 12px;
+	}
+}
+
+/* Production accessibility and responsive contract. */
+body.logged-in :is(a, button, input, select, textarea, [tabindex]):focus-visible {
+	outline: 3px solid #f58634 !important;
+	outline-offset: 2px !important;
+	box-shadow: none !important;
+}
+
+body.logged-in :is(button, .btn, .cbi-button, input, select, textarea) {
+	min-height: 36px;
+}
+
+body.logged-in #maincontent :is(.air-muted, .wireless-ref-muted, .status-page-updated, #stats-updated) {
+	color: #6f625f !important;
+}
+
+.airui-action-dialog {
+	max-width: 520px !important;
+}
+
+.airui-action-message,
+.airui-action-progress {
+	display: flex;
+	gap: 14px;
+	align-items: flex-start;
+	padding: 16px;
+	border: 1px solid #f2b38c;
+	border-radius: 6px;
+	background: #fff4ec;
+	color: #17084d;
+}
+
+.airui-action-message p,
+.airui-action-progress p {
+	margin: 6px 0 0;
+	color: #5f5351;
+}
+
+.airui-action-buttons {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	margin-top: 18px;
+}
+
+.airui-action-spinner {
+	width: 24px;
+	height: 24px;
+	flex: 0 0 24px;
+	border: 3px solid #f7d7c4;
+	border-top-color: #f58634;
+	border-radius: 50%;
+	animation: airui-action-spin .8s linear infinite;
+}
+
+@keyframes airui-action-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 1024px) {
+	body.logged-in #maincontent :is(.air-dashboard-metrics, .status-summary-grid, .device-status-grid, .wireless-radio-grid) {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+	}
+	body.logged-in #maincontent :is(.wireless-ref-panel, .air-card, .mac-table-wrap) {
+		overflow-x: auto;
+	}
+}
+
+@media (max-width: 680px) {
+	body.logged-in #maincontent .container { padding-left: 12px !important; padding-right: 12px !important; }
+	body.logged-in #maincontent :is(.air-dashboard-metrics, .status-summary-grid, .device-status-grid, .wireless-radio-grid, .mac-stats) {
+		grid-template-columns: minmax(0, 1fr) !important;
+	}
+	body.logged-in #maincontent :is(.status-page-header, .wireless-ref-hero, .air-page-hero) {
+		min-height: 0 !important;
+		padding: 20px !important;
+	}
+	body.logged-in #maincontent :is(.status-page-header, .wireless-ref-hero, .air-page-hero) > * {
+		max-width: 100% !important;
+	}
+	body.logged-in :is(button, .btn, .cbi-button, input, select, textarea) { min-height: 44px; }
+	.airui-action-buttons { flex-direction: column-reverse; }
+	.airui-action-buttons > button { width: 100%; }
+	#modal_overlay .cbi-modal { width: calc(100vw - 24px) !important; max-height: calc(100vh - 24px); overflow-y: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

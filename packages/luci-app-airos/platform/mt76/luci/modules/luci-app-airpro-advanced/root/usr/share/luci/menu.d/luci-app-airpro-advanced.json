@@ -1,0 +1,37 @@
+{
+	"admin/advanced/access_control": {
+		"title": "Access Control",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "advanced/airpro_access_control"
+		},
+		"depends": {
+			"acl": [ "luci-base" ]
+		}
+	},
+
+	"admin/advanced/software": {
+		"title": "Software",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "package-manager"
+		},
+		"depends": {
+			"acl": [ "luci-app-package-manager" ]
+		}
+	},
+
+	"admin/advanced/reboot": {
+		"title": "Reboot",
+		"order": 3,
+		"action": {
+			"type": "view",
+			"path": "system/reboot"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-reboot" ]
+		}
+	}
+}

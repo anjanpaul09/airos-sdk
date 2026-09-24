@@ -6,7 +6,6 @@
 #include <fcntl.h>
 
 #include <stdint.h>  
-#include "airdpi/air_ioctl.h"
 #include "os_time.h"
 #include "os_nif.h"
 #include "log.h"

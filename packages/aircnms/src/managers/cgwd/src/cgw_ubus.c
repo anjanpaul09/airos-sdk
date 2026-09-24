@@ -494,6 +494,9 @@ static int ubus_netinfo_handler(struct ubus_context* ctx, struct ubus_object* ob
             case INFO_EVENT_DEVICE:
                 msgtype_str = "device_info";
                 break;
+            case INFO_EVENT_CLIENT_HISTORY:
+                msgtype_str = "client_history";
+                break;
             default:
                 msgtype_str = "unknown_info";
                 break;

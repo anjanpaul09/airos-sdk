@@ -208,11 +208,12 @@ int netconf_handle_add_whitelist(char *mac);
 int netconf_handle_remove_whitelist(char *mac);
 int netconf_handle_nat_config(nat_config_t *config);
 void netconf_handle_captive_portal(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_params);
-void air_user_rate_limit(uint8_t *mac, int rate, int dir);
+bool air_user_rate_limit(uint8_t *mac, int uprate, int downrate);
 //void check_existing_vlan(const char *section_name);
 //void set_vlan_network(int vlan, const char* section_name);
 bool netconf_check_wifi_config(void); 
-void air_interface_rate_limit(char *vif_name, int rate, int dir, char *type);
+bool air_interface_rate_limit(char *vif_name, int uprate, int downrate, char *type);
+bool air_ifname_rate_limit(char *ifname, int uprate, int downrate);
 
 int execute_uci_command(const char *command, char *result, size_t result_size); 
 int uci_set_radio_params(char *radio_name, struct airpro_mgr_wlan_radio_params *radio_params);

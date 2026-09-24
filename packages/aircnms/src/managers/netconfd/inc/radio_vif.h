@@ -1,3 +1,6 @@
+#ifndef RADIO_VIF_H_INCLUDED
+#define RADIO_VIF_H_INCLUDED
+
 #include <stdbool.h>
 
 #define ENCRYPT_TYPE_MAX_LEN 16
@@ -34,6 +37,12 @@ struct airpro_mgr_wlan_vap_params {
     char network[16];
     bool is_auth;
     char auth_url[512];
+    char portal_id[64];
+    char uam_ip[32];
+    char uam_secret[64];
+    char nas_id[64];
+    char net_segment_ip[32];
+    char net_mask_ip[32];
     bool is_uprate;
     int  uprate;
     bool is_downrate;
@@ -107,3 +116,5 @@ typedef struct
     char ipaddr[32];
     char netmask[32];
 } nat_config_t;
+
+#endif /* RADIO_VIF_H_INCLUDED */

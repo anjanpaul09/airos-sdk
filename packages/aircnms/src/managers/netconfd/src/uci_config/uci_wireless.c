@@ -187,6 +187,11 @@ int uci_get_vap_iface(char *sec, char *iface)
     return status;
 }
 
+static int is_enterprise_encryption(const char *encryption)
+{
+    return !strcmp(encryption, "wpa2") || !strcmp(encryption, "wpa3");
+}
+
 int uci_set_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_params)
 {
     printf("Ankit: vapname - %s, ssid - %s\n", vap_name, vap_params->ssid);
@@ -209,11 +214,18 @@ int uci_set_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_pa
         status += strlen(vap_params->isolate) ? uciSet(pkg, sec, "isolate", vap_params->isolate) : 0;
         status += strlen(vap_params->encryption) ? uciSet(pkg, sec, "encryption", vap_params->encryption) : 0;
         status += strlen(vap_params->key) ? uciSet(pkg, sec, "key", vap_params->key) : 0;
-        status += strlen(vap_params->server_ip) ? uciSet(pkg, sec, "auth_server", vap_params->server_ip) : 0;
-        status += strlen(vap_params->auth_port) ? uciSet(pkg, sec, "auth_port", vap_params->auth_port) : 0;
-        status += strlen(vap_params->server_ip) ? uciSet(pkg, sec, "acct_server", vap_params->server_ip) : 0;
-        status += strlen(vap_params->acct_port) ? uciSet(pkg, sec, "acct_port", vap_params->acct_port) : 0;
-        status += strlen(vap_params->secret_key) ? uciSet(pkg, sec, "key", vap_params->secret_key) : 0;
+        if (is_enterprise_encryption(vap_params->encryption)) {
+            status += strlen(vap_params->server_ip) ? uciSet(pkg, sec, "auth_server", vap_params->server_ip) : 0;
+            status += strlen(vap_params->auth_port) ? uciSet(pkg, sec, "auth_port", vap_params->auth_port) : 0;
+            status += strlen(vap_params->server_ip) ? uciSet(pkg, sec, "acct_server", vap_params->server_ip) : 0;
+            status += strlen(vap_params->acct_port) ? uciSet(pkg, sec, "acct_port", vap_params->acct_port) : 0;
+            status += strlen(vap_params->secret_key) ? uciSet(pkg, sec, "key", vap_params->secret_key) : 0;
+        } else {
+            uciDelete(pkg, sec, "auth_server");
+            uciDelete(pkg, sec, "auth_port");
+            uciDelete(pkg, sec, "acct_server");
+            uciDelete(pkg, sec, "acct_port");
+        }
         status += strlen(vap_params->disabled) ? uciSet(pkg, sec, "disabled", vap_params->disabled) : 0;
         status += strlen(vap_params->macfilter) ? uciSet(pkg, sec, "macfilter", vap_params->macfilter) : 0;
         status += strlen(vap_params->ft_psk_generate_local) ? uciSet(pkg, sec, "ft_psk_generate_local", vap_params->ft_psk_generate_local) : 0;
@@ -226,6 +238,5 @@ int uci_set_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_pa
     uciDestroy();
     return status;
 }
-
 
 

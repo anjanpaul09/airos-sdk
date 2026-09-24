@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 150 150"
+     role="img"
+     aria-labelledby="title">
+  <title id="title">fi-rr-plus-small</title>
+  <g transform="translate(-75 225) scale(1 -1)">
+    <path d="M213 163H163V213Q163 218 159.0 221.5Q155 225 150 225Q145 225 141.0 221.5Q137 218 137 213V163H88Q82 163 78.5 159.0Q75 155 75 150Q75 145 78.5 141.0Q82 137 88 137H138V88Q138 82 141.5 78.5Q145 75 150 75Q155 75 159.0 78.5Q163 82 163 88V138H213Q218 138 221.5 141.5Q225 145 225 150Q225 155 221.5 159.0Q218 163 213 163Z"/>
+  </g>
+</svg>

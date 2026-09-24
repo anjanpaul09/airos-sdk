@@ -1,0 +1,9 @@
+#!/bin/sh
+
+uci -q batch <<'EOF'
+set luci.themes.AirUI='/luci-static/airui'
+set luci.main.mediaurlbase='/luci-static/airui'
+commit luci
+EOF
+
+exit 0

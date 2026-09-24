@@ -1,0 +1,50 @@
+{
+	"admin/system/wan_management": {
+		"title": "WAN Management",
+		"order": 1,
+		"action": { "type": "view", "path": "airui/settings_page_v26" },
+		"depends": { "acl": [ "airui-network" ] }
+	},
+
+	"admin/system/mode": {
+		"title": "Mode",
+		"order": 2,
+		"action": { "type": "view", "path": "airui/settings_page_v26" },
+		"depends": { "acl": [ "airui-network" ] }
+	},
+
+	"admin/security/mac_filter": {
+		"title": "MAC Filter",
+		"order": 2,
+		"action": { "type": "view", "path": "security/airui_mac_filter_bulk_v2" },
+		"depends": { "acl": [ "airui-network" ] }
+	},
+
+	"admin/security/access_control": {
+		"title": "Access Control",
+		"order": 5,
+		"action": { "type": "view", "path": "security/airui_access_control_v4" },
+		"depends": { "acl": [ "airui-network" ] }
+	},
+
+	"admin/maintenance/device_management": {
+		"title": "Device Management",
+		"order": 1,
+		"action": { "type": "view", "path": "airui/settings_page_v26" },
+		"depends": { "acl": [ "airui-network" ] }
+	},
+
+	"admin/maintenance/system_maintenance": {
+		"title": "System Maintenance",
+		"order": 2,
+		"action": { "type": "view", "path": "airui/settings_page_v26" },
+		"depends": { "acl": [ "airui-network" ] }
+	},
+
+	"admin/maintenance/system_logs": {
+		"title": "System Logs",
+		"order": 3,
+		"action": { "type": "view", "path": "airui/settings_page_v26" },
+		"depends": { "acl": [ "airui-network" ] }
+	}
+}

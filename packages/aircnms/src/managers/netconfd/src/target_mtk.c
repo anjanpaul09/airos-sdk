@@ -5,10 +5,31 @@
 #include <stdlib.h>
 #include "uci_ops.h"  
 #include "netconf.h"
+#include "portal_manager.h"
 
 #define HOSTAPD_CONTROL_PATH_DEFAULT "/var/run"
 
 uint32_t flags = 0;  // Global variable
+
+static void add_pending_portal(char pending[][64], int *count,
+        int max_count, const char *portal_id)
+{
+    int i;
+
+    if (!pending || !count || !portal_id || portal_id[0] == '\0')
+        return;
+
+    for (i = 0; i < *count; i++) {
+        if (!strcmp(pending[i], portal_id))
+            return;
+    }
+
+    if (*count >= max_count)
+        return;
+
+    strlcpy(pending[*count], portal_id, sizeof(pending[*count]));
+    (*count)++;
+}
 
 static void str_trim(char *s)
 {
@@ -382,6 +403,8 @@ bool target_config_vif_set(vif_record_t *record)
     int vid = 0;
     int rc;
     char vif_name[8] = {0};
+    char pending_portals[16][64] = {{0}};
+    int n_pending_portals = 0;
 
     for (vid = 0; vid < record->n_vif; vid++) {
         
@@ -407,6 +430,19 @@ bool target_config_vif_set(vif_record_t *record)
             strlcpy(vif_params.forward_type,  record->vif_param[vid].forward_type, sizeof(vif_params.forward_type)); 
             
             strlcpy(vif_params.vlan_id,  record->vif_param[vid].vlan_id, sizeof(vif_params.vlan_id)); 
+            vif_params.is_auth = record->vif_param[vid].is_auth;
+            strlcpy(vif_params.auth_url, record->vif_param[vid].auth_url, sizeof(vif_params.auth_url));
+            strlcpy(vif_params.portal_id, record->vif_param[vid].portal_id, sizeof(vif_params.portal_id));
+            strlcpy(vif_params.uam_ip, record->vif_param[vid].uam_ip, sizeof(vif_params.uam_ip));
+            strlcpy(vif_params.uam_secret, record->vif_param[vid].uam_secret, sizeof(vif_params.uam_secret));
+            strlcpy(vif_params.nas_id, record->vif_param[vid].nas_id, sizeof(vif_params.nas_id));
+            strlcpy(vif_params.net_segment_ip, record->vif_param[vid].net_segment_ip, sizeof(vif_params.net_segment_ip));
+            strlcpy(vif_params.net_mask_ip, record->vif_param[vid].net_mask_ip, sizeof(vif_params.net_mask_ip));
+            strlcpy(vif_params.server_name, record->vif_param[vid].server_name, sizeof(vif_params.server_name));
+            strlcpy(vif_params.server_ip, record->vif_param[vid].server_ip, sizeof(vif_params.server_ip));
+            strlcpy(vif_params.auth_port, record->vif_param[vid].auth_port, sizeof(vif_params.auth_port));
+            strlcpy(vif_params.acct_port, record->vif_param[vid].acct_port, sizeof(vif_params.acct_port));
+            strlcpy(vif_params.secret_key, record->vif_param[vid].secret_key, sizeof(vif_params.secret_key));
         
             if (strncmp(record->vif_param[vid].encryption, "wpa2-enterprise", 15) == 0
                 || strncmp(record->vif_param[vid].encryption, "wpa3-enterprise", 15) == 0) {
@@ -433,7 +469,7 @@ bool target_config_vif_set(vif_record_t *record)
                     rc = system(cmd);
                     
                     memset(cmd, 0, sizeof(cmd));
-                    sprintf(cmd, "uci del wireless.%s.acct_server", vif_name);
+                    sprintf(cmd, "uci del wireless.%s.acct_port", vif_name);
                     rc = system(cmd);
             }
 
@@ -451,28 +487,29 @@ bool target_config_vif_set(vif_record_t *record)
            snprintf(vif_params.ft_psk_generate_local, sizeof(vif_params.ft_psk_generate_local), "%d",ft_local);
 
 #ifdef CONFIG_PLATFORM_MTK 
-            if( strcmp(vif_params.forward_type, "Bridge") == 0) {
+            if (!vif_params.is_auth && strcmp(vif_params.forward_type, "Bridge") == 0) {
                 int vlan = atoi(record->vif_param[vid].vlan_id);
                 if (vlan == 0) {
                     check_existing_vlan(vif_name);
-                    strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
                 } else if (vlan > 0) {
                     check_existing_vlan(vif_name);
                     set_vlan_network(vlan, vif_name);
-                    strlcpy(vif_params.network, record->vif_param[vid].vlan_id, sizeof(vif_params.network));
                     strlcpy(vif_params.vlan_id, record->vif_param[vid].vlan_id, sizeof(vif_params.vlan_id));
                 }
             }
-            if( strcmp(vif_params.forward_type, "NAT") == 0) {
-                printf("Ankit: nat true auth false\n");
-                strlcpy(vif_params.network, "nat_network", sizeof(vif_params.network));
-            }
-
 #endif
             if (!sanitize_and_validate_vif_params(&vif_params)) {
                 fprintf(stderr, "Warning: vif_params contains invalid data, skipping UCI set.\n");
                 return -1;
             }
+#ifdef CONFIG_PLATFORM_MTK
+            if (portal_manager_assign(&vif_params, vif_params.network,
+                                      sizeof(vif_params.network)) != 0)
+                return false;
+            if (vif_params.is_auth)
+                add_pending_portal(pending_portals, &n_pending_portals,
+                                   16, vif_params.portal_id);
+#endif
             
             rc = uci_set_vap_params(vif_name, &vif_params);
 
@@ -487,9 +524,6 @@ bool target_config_vif_set(vif_record_t *record)
             vif_params.uprate = record->vif_param[vid].uprate; 
             vif_params.is_downrate = record->vif_param[vid].is_downrate;
             vif_params.downrate = record->vif_param[vid].downrate;
-            vif_params.is_auth = record->vif_param[vid].is_auth;
-            strlcpy(vif_params.auth_url, record->vif_param[vid].auth_url, sizeof(vif_params.auth_url));
-
 #ifdef CONFIG_PLATFORM_MTK_JEDI
             jedi_set_vap_params(vif_name, &vif_params);            
 #endif
@@ -520,10 +554,11 @@ bool target_config_vif_set(vif_record_t *record)
             
             strlcpy(vif_name, record->vif_param[vid].record_id, sizeof(vif_name));
             strlcpy(vif_params.record_id, record->vif_param[vid].record_id, sizeof(vif_params.record_id));
+            strlcpy(vif_params.portal_id, record->vif_param[vid].portal_id, sizeof(vif_params.portal_id));
             
             strlcpy(vif_params.disabled, "1", sizeof(vif_params.disabled));
             //CAPTIVE PORTAL
-            //netconf_handle_captive_portal(vif_name, &vif_params);
+            portal_manager_release(vif_name, vif_params.portal_id);
             uci_set_vap_params(vif_name, &vif_params);
             
             memset(cmd, 0, sizeof(cmd));
@@ -560,6 +595,19 @@ bool target_config_vif_set(vif_record_t *record)
             strlcpy(vif_params.forward_type,  record->vif_param[vid].forward_type, sizeof(vif_params.forward_type)); 
             
             strlcpy(vif_params.vlan_id,  record->vif_param[vid].vlan_id, sizeof(vif_params.vlan_id)); 
+            vif_params.is_auth = record->vif_param[vid].is_auth;
+            strlcpy(vif_params.auth_url, record->vif_param[vid].auth_url, sizeof(vif_params.auth_url));
+            strlcpy(vif_params.portal_id, record->vif_param[vid].portal_id, sizeof(vif_params.portal_id));
+            strlcpy(vif_params.uam_ip, record->vif_param[vid].uam_ip, sizeof(vif_params.uam_ip));
+            strlcpy(vif_params.uam_secret, record->vif_param[vid].uam_secret, sizeof(vif_params.uam_secret));
+            strlcpy(vif_params.nas_id, record->vif_param[vid].nas_id, sizeof(vif_params.nas_id));
+            strlcpy(vif_params.net_segment_ip, record->vif_param[vid].net_segment_ip, sizeof(vif_params.net_segment_ip));
+            strlcpy(vif_params.net_mask_ip, record->vif_param[vid].net_mask_ip, sizeof(vif_params.net_mask_ip));
+            strlcpy(vif_params.server_name, record->vif_param[vid].server_name, sizeof(vif_params.server_name));
+            strlcpy(vif_params.server_ip, record->vif_param[vid].server_ip, sizeof(vif_params.server_ip));
+            strlcpy(vif_params.auth_port, record->vif_param[vid].auth_port, sizeof(vif_params.auth_port));
+            strlcpy(vif_params.acct_port, record->vif_param[vid].acct_port, sizeof(vif_params.acct_port));
+            strlcpy(vif_params.secret_key, record->vif_param[vid].secret_key, sizeof(vif_params.secret_key));
             
             if (strncmp(record->vif_param[vid].encryption, "wpa2-enterprise", 15) == 0
                 || strncmp(record->vif_param[vid].encryption, "wpa3-enterprise", 15) == 0) {
@@ -578,7 +626,7 @@ bool target_config_vif_set(vif_record_t *record)
                     rc = system(cmd);
                     
                     memset(cmd, 0, sizeof(cmd));
-                    sprintf(cmd, "uci del wireless.%s.acct_server", vif_name);
+                    sprintf(cmd, "uci del wireless.%s.acct_port", vif_name);
                     rc = system(cmd);
                     
                     memset(cmd, 0, sizeof(cmd));
@@ -604,29 +652,31 @@ bool target_config_vif_set(vif_record_t *record)
            snprintf(vif_params.ft_psk_generate_local, sizeof(vif_params.ft_psk_generate_local), "%d",ft_local);
 
 #ifdef CONFIG_PLATFORM_MTK 
-            if( strcmp(record->vif_param[vid].forward_type, "Bridge") == 0) {
+            if (!vif_params.is_auth && strcmp(record->vif_param[vid].forward_type, "Bridge") == 0) {
                 int vlan = atoi(record->vif_param[vid].vlan_id);
                 if (vlan == 0) {
                     check_existing_vlan(vif_name);
-                    strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
                 } else if (vlan > 0) {
                     check_existing_vlan(vif_name);
                     set_vlan_network(vlan, vif_name);
-                    strlcpy(vif_params.network, record->vif_param[vid].vlan_id, sizeof(vif_params.network));
                     strlcpy(vif_params.vlan_id, record->vif_param[vid].vlan_id, sizeof(vif_params.vlan_id));
                 }
             }
 
-            if( strcmp(vif_params.forward_type, "NAT") == 0) {
-                printf("Ankit: nat true auth false\n");
-                strlcpy(vif_params.network, "nat_network", sizeof(vif_params.network));
-            }
 #endif
 
             if (!sanitize_and_validate_vif_params(&vif_params)) {
                 fprintf(stderr, "Warning: vif_params contains invalid data, skipping UCI set.\n");
                 return -1;
             }
+#ifdef CONFIG_PLATFORM_MTK
+            if (portal_manager_assign(&vif_params, vif_params.network,
+                                      sizeof(vif_params.network)) != 0)
+                return false;
+            if (vif_params.is_auth)
+                add_pending_portal(pending_portals, &n_pending_portals,
+                                   16, vif_params.portal_id);
+#endif
             
             uci_set_vap_params(vif_name, &vif_params);
             
@@ -641,9 +691,6 @@ bool target_config_vif_set(vif_record_t *record)
             vif_params.uprate = record->vif_param[vid].uprate; 
             vif_params.is_downrate = record->vif_param[vid].is_downrate;
             vif_params.downrate = record->vif_param[vid].downrate;
-            vif_params.is_auth = record->vif_param[vid].is_auth;
-            strlcpy(vif_params.auth_url, record->vif_param[vid].auth_url, sizeof(vif_params.auth_url));
-
 #ifdef CONFIG_PLATFORM_MTK_JEDI
             jedi_set_vap_params(vif_name, &vif_params);            
 #endif
@@ -668,6 +715,13 @@ bool target_config_vif_set(vif_record_t *record)
 
         }
     }
+
+#ifdef CONFIG_PLATFORM_MTK
+    for (int i = 0; i < n_pending_portals; i++) {
+        if (portal_manager_start(pending_portals[i]) != 0)
+            return false;
+    }
+#endif
 
     return true;
 }

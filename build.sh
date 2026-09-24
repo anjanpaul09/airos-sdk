@@ -7,11 +7,82 @@
 # =============================================================================
 # USER INPUT - MODIFY THESE PATHS AS NEEDED
 # =============================================================================
-SDK_DIR=/home/user/projects/airpro/MTK/ax820/test24/openwrt
+SDK_DIR=/home/airpro/projects/airpro/mtk/mt7621/sdk/openwrt
 OUTPUT_DIR=${PWD}/releases
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AIROS_LUCI_OVERLAY_DIR="${SCRIPT_DIR}/packages/luci-app-airos/platform/mt76/luci"
 # =============================================================================
 # SCRIPT EXECUTION
 # =============================================================================
+
+install_airui_luci_overlay() {
+    echo "Installing AirUI theme and LuCI pages..."
+
+    if [ ! -d "${AIROS_LUCI_OVERLAY_DIR}/themes/luci-theme-airui" ]; then
+        echo "ERROR: Missing AirUI theme: ${AIROS_LUCI_OVERLAY_DIR}/themes/luci-theme-airui"
+        exit 1
+    fi
+
+    if [ ! -d "${AIROS_LUCI_OVERLAY_DIR}/modules/luci-mod-status" ]; then
+        echo "ERROR: Missing AirUI status pages: ${AIROS_LUCI_OVERLAY_DIR}/modules/luci-mod-status"
+        exit 1
+    fi
+
+    for package_makefile in \
+        "${AIROS_LUCI_OVERLAY_DIR}/themes/luci-theme-airui/Makefile" \
+        "${AIROS_LUCI_OVERLAY_DIR}/modules/luci-app-airpro-security/Makefile" \
+        "${AIROS_LUCI_OVERLAY_DIR}/modules/luci-app-airpro-advanced/Makefile"
+    do
+        if [ ! -f "${package_makefile}" ]; then
+            echo "ERROR: Missing LuCI package definition: ${package_makefile}"
+            exit 1
+        fi
+    done
+
+    mkdir -p "${SDK_DIR}/feeds/luci"
+    cp -rf "${AIROS_LUCI_OVERLAY_DIR}/." "${SDK_DIR}/feeds/luci/"
+
+    mkdir -p "${SDK_DIR}/package/feeds/luci"
+    ln -sfn ../../../feeds/luci/themes/luci-theme-airui \
+        "${SDK_DIR}/package/feeds/luci/luci-theme-airui"
+    ln -sfn ../../../feeds/luci/modules/luci-app-airpro-security \
+        "${SDK_DIR}/package/feeds/luci/luci-app-airpro-security"
+    ln -sfn ../../../feeds/luci/modules/luci-app-airpro-advanced \
+        "${SDK_DIR}/package/feeds/luci/luci-app-airpro-advanced"
+
+    rm -rf \
+        "${SDK_DIR}"/build_dir/target-*/luci-mod-status \
+        "${SDK_DIR}"/build_dir/target-*/luci-mod-network \
+        "${SDK_DIR}"/build_dir/target-*/luci-app-airpro-security \
+        "${SDK_DIR}"/build_dir/target-*/luci-app-airpro-advanced \
+        "${SDK_DIR}"/build_dir/target-*/luci-theme-airui
+
+    echo "AirUI overlay installed into ${SDK_DIR}/feeds/luci"
+}
+
+enable_airui_luci_packages() {
+    echo "Selecting AirUI LuCI packages..."
+
+    touch .config
+
+    for package in \
+        luci \
+        luci-base \
+        luci-mod-status \
+        luci-mod-network \
+        luci-app-airpro-security \
+        luci-app-airpro-advanced \
+        luci-theme-airui
+    do
+        if grep -q "^CONFIG_PACKAGE_${package}=" .config; then
+            sed -i "s/^CONFIG_PACKAGE_${package}=.*/CONFIG_PACKAGE_${package}=y/" .config
+        elif grep -q "^# CONFIG_PACKAGE_${package} is not set" .config; then
+            sed -i "s/^# CONFIG_PACKAGE_${package} is not set/CONFIG_PACKAGE_${package}=y/" .config
+        else
+            echo "CONFIG_PACKAGE_${package}=y" >> .config
+        fi
+    done
+}
 
 # Check arguments
 if [ $# -lt 1 ] || [ $# -gt 2 ]; then
@@ -72,7 +143,7 @@ if [ "$BOARD_NAME" = "ipq5018" ]; then
     [ -d "../airos-sdk/packages" ] && cp -rf ../airos-sdk/packages/* package/
     [ -f "../airos-sdk/config/profiles/qca-mt7621.conf" ] && cp ../airos-sdk/config/profiles/qca-mt7621.conf .config
 
-elif [ "$BOARD_NAME" = "mt76" ]; then
+elif [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
     echo "Configuring for mt7621..."
     TARGET=ramips
     SUBTARGET=mt7621
@@ -87,10 +158,7 @@ elif [ "$BOARD_NAME" = "mt76" ]; then
     
     echo "${IMAGE_NAME}" > base-files/platform/mt7621/etc/version
     cp -rf packages/aircnms $SDK_DIR/package/feeds/
-    cp -rf packages/airdpi $SDK_DIR/package/feeds/
-    cp -rf patches/mt7621/owrt-24.10/mac80211/999-airdpi-ops.patch $SDK_DIR/package/kernel/mac80211/patches/subsys/
-    cp -rf packages/feeds/mt7621/owrt-24.10/mac80211/Makefile $SDK_DIR/package/kernel/mac80211/
-    cp -rf packages/luci-app-airos/platform/mt76/luci/* ${SDK_DIR}/feeds/luci/
+    install_airui_luci_overlay
     cp -rf base-files/platform/mt7621/etc ${SDK_DIR}/package/base-files/files/
 else
     echo "ERROR: Unknown board type: $BOARD_NAME"
@@ -111,6 +179,10 @@ cd $SDK_DIR
 
 # Create output directories
 mkdir -p $OUTPUT_DIR/images $OUTPUT_DIR/logs
+
+if [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
+    enable_airui_luci_packages
+fi
 
 # =============================================================================
 # BUILD PROCESS

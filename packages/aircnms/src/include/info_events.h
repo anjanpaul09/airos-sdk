@@ -47,11 +47,17 @@ typedef struct {
     char longitude[32];              // Longitude
 } device_info_event_t;
 
+typedef struct {
+    char *buf;
+    size_t len;
+} client_history_event_t;
+
 /* Info Event Types */
 typedef enum {
     INFO_EVENT_CLIENT = 1,
     INFO_EVENT_VIF = 2,
-    INFO_EVENT_DEVICE = 3
+    INFO_EVENT_DEVICE = 3,
+    INFO_EVENT_CLIENT_HISTORY = 4
 } info_event_type_t;
 
 /* Generic Info Event Structure */
@@ -62,6 +68,7 @@ typedef struct {
         client_info_event_t client;
         vif_info_event_t vif;
         device_info_event_t device;
+        client_history_event_t client_history;
     } u;
 } info_event_t;
 

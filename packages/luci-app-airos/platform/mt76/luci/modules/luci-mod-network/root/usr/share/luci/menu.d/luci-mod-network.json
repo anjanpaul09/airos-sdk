@@ -1,0 +1,38 @@
+{
+	"admin/network/interfaces": {
+		"title": "Interface",
+		"order": 1,
+		"action": {
+			"type": "view",
+      "path": "network/airui_interfaces_v10"
+		},
+		"depends": {
+			"acl": [ "luci-mod-network-config", "airui-network" ]
+		}
+	},
+
+	"admin/network/wireless": {
+		"title": "Wireless",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "network/airui_wireless_v15"
+		},
+		"depends": {
+			"acl": [ "luci-mod-network-config", "airui-network" ],
+			"uci": { "wireless": { "@wifi-device": true } }
+		}
+	},
+
+	"admin/network/routes": {
+		"title": "Routing",
+		"order": 3,
+		"action": {
+			"type": "view",
+			"path": "airui/settings_page_v17"
+		},
+		"depends": {
+			"acl": [ "luci-mod-network-config" ]
+		}
+	}
+}

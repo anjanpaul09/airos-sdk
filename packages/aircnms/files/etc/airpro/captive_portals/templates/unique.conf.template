@@ -1,0 +1,7 @@
+net ${NETWORK_CIDR}
+dynip ${DYNIP_CIDR}
+tundev ${TUNDEV}
+uamlisten ${UAM_IP}
+uamhomepage http://${UAM_IP}:3990/www/radiusdesk.html
+radiuslocationname "${NAS_ID}"
+radiuslocationid "isocc=,cc=,ac=,network=${NAS_ID},"

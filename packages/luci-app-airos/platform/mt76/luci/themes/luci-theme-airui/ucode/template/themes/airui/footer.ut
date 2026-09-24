@@ -1,0 +1,25 @@
+{#
+	AirUI is the AirPro access-point console theme for LuCI.
+
+	luci-theme-airui
+	Copyright 2026 AirPro
+
+	luci-theme-bootstrap:
+	Copyright 2008 Steven Barth <steven@midlink.org>
+	Copyright 2008 Jo-Philipp Wich <jow@openwrt.org>
+	Copyright 2012 David Menting <david@nut-bolt.nl>
+
+	Licensed to the public under the Apache License 2.0
+-#}
+
+			</div>
+			<footer class="airui-site-footer">
+				© AirPro Technology India Ltd. All rights reserved.
+			</footer>
+		</div>
+	</div>
+
+	<script type="text/javascript">L.require('menu-airui')</script>
+
+</body>
+</html>

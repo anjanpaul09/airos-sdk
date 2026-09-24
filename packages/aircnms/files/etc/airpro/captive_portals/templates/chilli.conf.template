@@ -1,0 +1,5 @@
+include ${INSTANCE_DIR}/common.conf
+include ${INSTANCE_DIR}/unique.conf
+include ${INSTANCE_DIR}/specific.conf
+ipup=/etc/chilli/up.sh
+ipdown=/etc/chilli/down.sh
