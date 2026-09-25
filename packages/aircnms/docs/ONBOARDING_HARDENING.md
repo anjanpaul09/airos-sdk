@@ -56,3 +56,20 @@ Board acceptance checks:
   credentials using a controlled cloud-side reconciliation procedure.
 - Load, power-loss-during-flash, broker outage, DNS outage, CA expiry, and cloud rollback tests belong in the
   release qualification matrix; a single physical AP cannot prove fleet scale.
+
+## Runtime ubus acknowledgement
+
+`netconfd.set.cgwd.conf` validates the declared and actual payload sizes, allocates and
+queues an owned copy, and immediately returns one of:
+
+```json
+{"accepted":true,"status":"QUEUED","message":"configuration queued","queueDepth":1}
+```
+
+```json
+{"accepted":false,"status":"REJECTED","message":"invalid payload size","queueDepth":0}
+```
+
+This acknowledgement means the local request is safely queued. It does not claim that
+the cloud has received an application acknowledgement. Actual cloud config revision and
+APPLIED/FAILED reporting remain a separate end-to-end protocol.

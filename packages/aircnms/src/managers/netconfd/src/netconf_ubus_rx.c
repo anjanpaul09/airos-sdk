@@ -99,68 +99,85 @@ static int ubus_reply_rate_limit(struct ubus_context *ctx,
     return UBUS_STATUS_OK;
 }
 
-static int ubus_netconf_config_handler(struct ubus_context* ctx, struct ubus_object* obj,
-                              struct ubus_request_data* req, const char* method,
-                              struct blob_attr* msg) 
+static int ubus_reply_config(struct ubus_context *ctx,
+                             struct ubus_request_data *req,
+                             bool accepted,
+                             const char *message)
 {
-    (void)ctx;
-    (void)obj;
-    (void)req;
-    (void)method;
-    
-    if (!msg) {
-        return -1;
-    }
-    
-    // === Define parsing policy ===
-    enum {
-        DATA,
-        SIZE,
-        __MAX
-    };
+    struct blob_buf reply = {0};
+
+    blob_buf_init(&reply, 0);
+    blobmsg_add_u8(&reply, "accepted", accepted);
+    blobmsg_add_string(&reply, "status", accepted ? "QUEUED" : "REJECTED");
+    blobmsg_add_string(&reply, "message", message ? message : "");
+    blobmsg_add_u32(&reply, "queueDepth", (uint32_t)netconf_queue_length());
+    ubus_send_reply(ctx, req, reply.head);
+    blob_buf_free(&reply);
+    return accepted ? UBUS_STATUS_OK : UBUS_STATUS_INVALID_ARGUMENT;
+}
+
+static int ubus_netconf_config_handler(struct ubus_context *ctx,
+                                       struct ubus_object *obj,
+                                       struct ubus_request_data *req,
+                                       const char *method,
+                                       struct blob_attr *msg)
+{
+    enum { DATA, SIZE, __MAX };
     static const struct blobmsg_policy policy[__MAX] = {
         [DATA] = { .name = "data", .type = BLOBMSG_TYPE_UNSPEC },
         [SIZE] = { .name = "size", .type = BLOBMSG_TYPE_INT32 }
     };
+    struct blob_attr *tb[__MAX] = {0};
+    netconf_item_t *qi = NULL;
+    netconf_response_t res = {0};
+    uint32_t declared_size;
+    void *data;
+    int actual_size;
 
-    struct blob_attr *tb[__MAX];
+    (void)obj;
+    (void)method;
+    if (!ctx || !req || !msg)
+        return UBUS_STATUS_INVALID_ARGUMENT;
+
     blobmsg_parse(policy, __MAX, tb, blob_data(msg), blob_len(msg));
-
     if (!tb[DATA] || !tb[SIZE]) {
-        LOG(ERR, "Missing expected fields in message");
-        return -1;
+        LOG(ERR, "Rejected config message with missing data/size");
+        return ubus_reply_config(ctx, req, false, "missing data or size");
     }
 
-    int size = blobmsg_get_u32(tb[SIZE]);
-    void *data = blobmsg_data(tb[DATA]);
-    int len = blobmsg_data_len(tb[DATA]);
+    declared_size = blobmsg_get_u32(tb[SIZE]);
+    data = blobmsg_data(tb[DATA]);
+    actual_size = blobmsg_data_len(tb[DATA]);
+    if (!data || declared_size == 0 || declared_size != (uint32_t)actual_size ||
+        declared_size > NETCONF_MAX_QUEUE_SIZE_BYTES) {
+        LOG(ERR, "Rejected config size: declared=%u actual=%d", declared_size,
+            actual_size);
+        return ubus_reply_config(ctx, req, false, "invalid payload size");
+    }
 
-    // Log message received
-    LOG(INFO, "MSG_RECV type=CONF msglen=%d", size);
+    qi = CALLOC(1, sizeof(*qi));
+    if (!qi)
+        return ubus_reply_config(ctx, req, false, "allocation failed");
+    qi->buf = MALLOC(declared_size);
+    if (!qi->buf) {
+        netconf_queue_item_free(qi);
+        return ubus_reply_config(ctx, req, false, "allocation failed");
+    }
 
-        // Enqueue into QM queue and signal MQTT worker
-        netconf_item_t *qi = CALLOC(1, sizeof(netconf_item_t));
-        if (!qi) {
-            return -1;
-        }
+    memcpy(qi->buf, data, declared_size);
+    qi->size = declared_size;
+    qi->req.data_type = NETCONF_DATA_CONF;
+    if (!netconf_queue_put(&qi, &res)) {
+        if (qi)
+            netconf_queue_item_free(qi);
+        LOG(ERR, "Rejected config because queue insertion failed: error=%u",
+            res.error);
+        return ubus_reply_config(ctx, req, false, "queue rejected request");
+    }
 
-        // Fill request metadata
-        qi->req.data_type = NETCONF_DATA_CONF;
-        if (data && len) {
-            qi->buf = MALLOC(size);
-            if (!qi->buf) {
-                netconf_queue_item_free(qi);
-            }
-            memcpy(qi->buf, data, size);
-            qi->size = size;
-        }
-        {
-            netconf_response_t res = {0};
-            if (!netconf_queue_put(&qi, &res)) {
-                if (qi) netconf_queue_item_free(qi);
-            }
-        }
-    return 0;
+    LOG(INFO, "MSG_ACCEPTED type=CONF msglen=%u qlen=%d", declared_size,
+        netconf_queue_length());
+    return ubus_reply_config(ctx, req, true, "configuration queued");
 }
 
 static int ubus_netconf_acl_handler(struct ubus_context* ctx, struct ubus_object* obj,
