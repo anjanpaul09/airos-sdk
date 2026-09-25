@@ -10,7 +10,7 @@
 #include "cgw_state_mgr.h"
 
 #define UCI_BUF_LEN 128
-#define DEVICE_CHECK_URL "https://api.cloud.netstream.net.in/api/device_registration/v1/devices-check"
+#define MAX_CHECK_RESPONSE_SIZE 16384
 
 typedef struct {
     char *memory;
@@ -30,6 +30,8 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb, void *us
     size_t realsize = size * nmemb;
     response_buffer_t *mem = (response_buffer_t *)userp;
 
+    if (realsize > MAX_CHECK_RESPONSE_SIZE || mem->size > MAX_CHECK_RESPONSE_SIZE - realsize)
+        return 0;
     char *ptr = realloc(mem->memory, mem->size + realsize + 1);
     if(ptr == NULL)
         return 0;
@@ -45,14 +47,36 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb, void *us
 
 
 /* Perform HTTP POST request */
+static int get_device_check_url(char *url, size_t size)
+{
+    char registration[256] = {0};
+    char *slash;
+    if (cmd_buf("uci get aircnms.@aircnms[0].cloud_url", registration, sizeof(registration)) != 0)
+        return -1;
+    registration[strcspn(registration, "\r\n")] = 0;
+    if (strncmp(registration, "https://", 8) != 0)
+        return -1;
+    slash = strrchr(registration, '/');
+    if (!slash || strcmp(slash + 1, "devices") != 0)
+        return -1;
+    *slash = 0;
+    return snprintf(url, size, "%s/devices-check", registration) < (int)size ? 0 : -1;
+}
+
 static char *post_device_check(const char *json_payload)
 {
     CURL *curl;
     CURLcode res;
+    long status = 0;
+    char check_url[256];
 
     response_buffer_t chunk;
-    chunk.memory = malloc(1);
+    chunk.memory = calloc(1, 1);
     chunk.size = 0;
+    if (!chunk.memory || get_device_check_url(check_url, sizeof(check_url)) != 0) {
+        free(chunk.memory);
+        return NULL;
+    }
 
     struct curl_slist *headers = NULL;
 
@@ -62,16 +86,21 @@ static char *post_device_check(const char *json_payload)
 
     headers = curl_slist_append(headers, "Content-Type: application/json");
 
-    curl_easy_setopt(curl, CURLOPT_URL, DEVICE_CHECK_URL);
+    curl_easy_setopt(curl, CURLOPT_URL, check_url);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_payload);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
     res = curl_easy_perform(curl);
 
-    if(res != CURLE_OK) {
-        fprintf(stderr, "curl error: %s\n", curl_easy_strerror(res));
+    if(res != CURLE_OK || curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status) != CURLE_OK || status < 200 || status >= 300 || chunk.size == 0) {
+        LOG(ERR, "Device check failed: curl=%s http=%ld", curl_easy_strerror(res), status);
         free(chunk.memory);
         chunk.memory = NULL;
     }

@@ -12,6 +12,7 @@ UNIT_SRC += src/cgw_json.c
 UNIT_SRC += src/cgw_json_info.c
 UNIT_SRC += src/cgw_ubus_tx.c
 UNIT_SRC += src/cgw_cloud_regcheck.c
+UNIT_SRC += src/cgw_uci.c
 
 
 UNIT_CFLAGS += -I../../include/
@@ -41,6 +42,7 @@ UNIT_LDFLAGS += -lunixcomm
 UNIT_LDFLAGS += -lpthread
 UNIT_LDFLAGS += -lwebsockets
 UNIT_LDFLAGS += -lubus -lubox -ljson-c -lblobmsg_json
+UNIT_LDFLAGS += -luci
 
 ifeq ($(UNIT_TEST_FLAG), UNIT_TEST_ENABLE)
 UNIT_CFLAGS += -DCONFIG_UNIT_TEST_ENABLE

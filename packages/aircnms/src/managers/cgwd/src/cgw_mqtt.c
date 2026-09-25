@@ -145,7 +145,10 @@ bool cgw_mqtt_config_valid(void)
     
     return
         (strlen(cgw_mqtt_broker) > 0) &&
-        (strlen(cgw_mqtt_topic) > 0);
+        (cgw_mqtt_port > 0 && cgw_mqtt_port <= 65535) &&
+        (strlen(cgw_mqtt_topic) > 0) &&
+        (strlen(air_dev.username) > 0) &&
+        (strlen(air_dev.password) > 0);
 }
 
 void cgw_mqtt_stop(void)
@@ -934,7 +937,7 @@ void uci_get_mqtt_params()
         LOGI("%s: No uci device_id found", __func__);
         return;
     }
-    sscanf(buf, "%s", air_dev.device_id);
+    sscanf(buf, "%31s", air_dev.device_id);
 
     memset(buf, 0, sizeof(buf));
     cmd_buf("uci get aircnms.@aircnms[0].serial_num", buf, (size_t)UCI_BUF_LEN);
@@ -944,7 +947,7 @@ void uci_get_mqtt_params()
         LOGI("%s: No uci serial_num found", __func__);
         return;
     }
-    sscanf(buf, "%s", air_dev.serial_num);
+    sscanf(buf, "%31s", air_dev.serial_num);
 
     memset(buf, 0, sizeof(buf));
     cmd_buf("uci get aircnms.@aircnms[0].macaddr", buf, (size_t)UCI_BUF_LEN);
@@ -954,7 +957,7 @@ void uci_get_mqtt_params()
         LOGI("%s: No uci macaddr found", __func__);
         return;
     }
-    sscanf(buf, "%s", air_dev.macaddr);
+    sscanf(buf, "%31s", air_dev.macaddr);
     
     memset(buf, 0, sizeof(buf));
     cmd_buf("uci get aircnms.@aircnms[0].org_id", buf, (size_t)UCI_BUF_LEN);
@@ -964,7 +967,7 @@ void uci_get_mqtt_params()
         LOGI("%s: No uci org_id found", __func__);
         return;
     }
-    sscanf(buf, "%s", air_dev.org_id);
+    sscanf(buf, "%127s", air_dev.org_id);
     
     memset(buf, 0, sizeof(buf));
     cmd_buf("uci get aircnms.@aircnms[0].network_id", buf, (size_t)UCI_BUF_LEN);
@@ -974,7 +977,7 @@ void uci_get_mqtt_params()
         LOGI("%s: No uci netwrk_id found", __func__);
         return;
     }
-    sscanf(buf, "%s", air_dev.netwrk_id);
+    sscanf(buf, "%127s", air_dev.netwrk_id);
 
     memset(buf, 0, sizeof(buf));
     cmd_buf("uci get aircnms.@aircnms[0].username", buf, (size_t)UCI_BUF_LEN);
@@ -984,7 +987,7 @@ void uci_get_mqtt_params()
         LOGI("%s: No uci username found", __func__);
         return;
     }
-    sscanf(buf, "%s", air_dev.username);
+    sscanf(buf, "%127s", air_dev.username);
 
     memset(buf, 0, sizeof(buf));
     cmd_buf("uci get aircnms.@aircnms[0].password", buf, (size_t)UCI_BUF_LEN);
@@ -994,7 +997,7 @@ void uci_get_mqtt_params()
         LOGI("%s: No uci password found", __func__);
         return;
     }
-    sscanf(buf, "%s", air_dev.password);
+    sscanf(buf, "%127s", air_dev.password);
 
     return;
 }

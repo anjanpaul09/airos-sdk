@@ -65,16 +65,22 @@ bool cgw_send_msg_to_cm(char *payload, long payloadlen, char *topic)
     blobmsg_add_field(&b, BLOBMSG_TYPE_UNSPEC, "data", payload, payloadlen);
     blobmsg_add_u32(&b, "size", payloadlen);
 
-    if (strstr(topic, "config") != NULL) {
-        call_netconfd_method("set.cgwd.conf", &b);
+    int rc = -1;
+    if (!payload || payloadlen <= 0 || !topic) {
+        blob_buf_free(&b);
+        return false;
+    }
+    if (strcmp(topic, "initial_config") == 0) {
+        rc = call_netconfd_method_timeout("set.cgwd.conf", &b, 60000);
+    } else if (strstr(topic, "config") != NULL) {
+        rc = call_netconfd_method("set.cgwd.conf", &b);
     } else if (strstr(topic, "bw_list") != NULL) {
-        call_netconfd_method("set.cgwd.acl", &b);
+        rc = call_netconfd_method("set.cgwd.acl", &b);
     } else if (strstr(topic, "rate_limit") != NULL) {
-        call_netconfd_method("set.cgwd.rl", &b);
-    } else {
+        rc = call_netconfd_method("set.cgwd.rl", &b);
     }
     blob_buf_free(&b);
-    return true;
+    return rc == 0;
 }
 
 int cgw_send_msg_to_sm(char *payload, long payloadlen, char *topic)
@@ -118,19 +124,6 @@ void cgw_mqtt_subscriber_set(mosqev_t *self, void *data, const char *topic, void
         return;
     }
     
-    // Many syslog implementations truncate a single log line (~1KB).
-    // Log header with total length, then chunk the payload over multiple lines to avoid truncation.
     LOG(INFO, "CGW: FROM-CLOUD TOPIC: %s msglen=%ld", topic, payloadlen);
-
-    const size_t chunk_size = 900; // stay under typical syslog line limits
-    size_t offset = 0;
-    int chunk_idx = 0;
-    while (offset < (size_t)payloadlen) {
-        size_t remaining = (size_t)payloadlen - offset;
-        size_t this_chunk = remaining < chunk_size ? remaining : chunk_size;
-        LOG(INFO, "CGW: FROM-CLOUD PAYLOAD[%d]: %.*s", chunk_idx, (int)this_chunk, payload + offset);
-        offset += this_chunk;
-        chunk_idx++;
-    }
     cgw_handle_msgrx(payload, payloadlen, (char *)topic);
 }

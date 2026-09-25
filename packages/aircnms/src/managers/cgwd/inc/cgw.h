@@ -19,9 +19,9 @@ struct blob_buf;  // Forward declaration
 #define CGW_LOG_QUEUE_SIZE (100*1024) // 100k
 
 //updebug.log file
-#define CGW_UPDEBUG_LOG "/tmp/updebug.log" 
+#define CGW_UPDEBUG_LOG "/tmp/updebug.log"
 //downdebug.log file
-#define CGW_DOWNDEBUG_LOG "/tmp/downdebug.log" 
+#define CGW_DOWNDEBUG_LOG "/tmp/downdebug.log"
 #define CGW_MAX_TOPIC_LEN 264
 
 static inline char *cgw_timestamp_ms_to_date (uint64_t   timestamp_ms)
@@ -228,13 +228,13 @@ bool cgw_parse_client_newjson(client_report_data_t *client, char *data);
 int cgw_parse_config_newjson(device_conf_t *conf, char *data);
 bool cgw_parse_alarm_newjson(alarm_msg_t *alarm, char *data);
 bool cgw_parse_event_newjson(event_msg_t *event, char *data);
-bool cgw_parse_neighbor_newjson(neighbor_report_data_t *rpt, char *data); 
+bool cgw_parse_neighbor_newjson(neighbor_report_data_t *rpt, char *data);
 int build_status_payload_to_buf(const char *status, char *outbuf, size_t outlen);
 
 bool cgw_send_event_cloud(cgw_item_t *qi);
 bool cgw_send_config_cloud(cgw_item_t *qi);
 
-void decrypt_aes(const char* encrypted_string, const char* base64_key, char* decrypted_output); 
+bool decrypt_aes(const char *encrypted_string, const char *base64_key, char *decrypted_output, size_t output_size);
 
 void cgw_add_topic_aircnms(cgw_mqtt_topic_list *topic_list);
 void cgw_add_stats_topic_aircnms(stats_topic_t *stats_topic);
@@ -254,6 +254,7 @@ void ws_cleanup(void);
 
 // UBUS TX functions
 int call_netconfd_method(const char *method, struct blob_buf *b);
+int call_netconfd_method_timeout(const char *method, struct blob_buf *b, int timeout_ms);
 int call_cmdexec_method(const char *method, struct blob_buf *b);
 int call_netstats_method(const char *method, struct blob_buf *b);
 

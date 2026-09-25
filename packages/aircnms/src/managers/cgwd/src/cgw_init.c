@@ -456,10 +456,20 @@ int cgw_update_topic_lst(cgw_mqtt_topic_list *topic_list)
             return -2; // Optional: indicate truncation
         }
 
+        int duplicate = 0;
+        int i;
         remove_newline(token);
-        strncpy(topic_list->topic[topic_list->n_topic], token, MAX_TOPIC_LEN - 1);
-        topic_list->topic[topic_list->n_topic][MAX_TOPIC_LEN - 1] = '\0';
-        topic_list->n_topic++;
+        for (i = 0; i < topic_list->n_topic; i++) {
+            if (strcmp(topic_list->topic[i], token) == 0) {
+                duplicate = 1;
+                break;
+            }
+        }
+        if (!duplicate) {
+            strncpy(topic_list->topic[topic_list->n_topic], token, MAX_TOPIC_LEN - 1);
+            topic_list->topic[topic_list->n_topic][MAX_TOPIC_LEN - 1] = '\0';
+            topic_list->n_topic++;
+        }
 
         token = strtok(NULL, delimiter);
     }

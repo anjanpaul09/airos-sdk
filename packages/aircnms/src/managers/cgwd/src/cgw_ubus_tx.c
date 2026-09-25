@@ -26,10 +26,12 @@ static void call_result_cb(struct ubus_request *req, int type, struct blob_attr 
 }
 
 // Function to call a ubus method
-int call_netconfd_method(const char *method, struct blob_buf *b)
+int call_netconfd_method_timeout(const char *method, struct blob_buf *b, int timeout_ms)
 {
     uint32_t id;
     int ret;
+    if (timeout_ms < 100 || timeout_ms > 60000)
+        return -1;
     
     if (!ctx) {
         LOG(ERR, "UBus context not initialized");
@@ -46,13 +48,19 @@ int call_netconfd_method(const char *method, struct blob_buf *b)
     LOG(DEBUG, "Calling method: %s", method);
     
     // Invoke the method
-    ret = ubus_invoke(ctx, id, method, b->head, call_result_cb, NULL, 3000);
+    ret = ubus_invoke(ctx, id, method, b->head, call_result_cb, NULL, timeout_ms);
     if (ret) {
         LOG(ERR, "Failed to invoke %s: %s", method, ubus_strerror(ret));
         return ret;
     }
     
     return 0;
+}
+
+
+int call_netconfd_method(const char *method, struct blob_buf *b)
+{
+    return call_netconfd_method_timeout(method, b, 3000);
 }
 
 int call_netconfd_sync(const char *method, struct blob_buf *b)
