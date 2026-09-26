@@ -73,3 +73,20 @@ queues an owned copy, and immediately returns one of:
 This acknowledgement means the local request is safely queued. It does not claim that
 the cloud has received an application acknowledgement. Actual cloud config revision and
 APPLIED/FAILED reporting remain a separate end-to-end protocol.
+
+## Production credential reconciliation (2026-09-26)
+
+For serial `AIR587BE9248BEA` / device ID `1749368346`, the shared broker role contained
+eight historical client credentials. The credential currently stored on and used by the AP
+was identified by exact username and preserved. Seven superseded client rows and their
+client-role/group associations were deleted in one assertion-guarded PostgreSQL transaction.
+The shared role and all seven ACL rows were preserved.
+
+Evidence and rollback exports:
+
+- VM: `/opt/airpro-cloud/credential-revocation-20260926T063117Z`
+- Off-host verified copy: `/tmp/airpro-revocation-copy/credential-revocation-20260926T063117Z`
+
+Post-revocation, `air-cgwd` was restarted to force fresh authentication. It connected with
+zero authentication errors, retained device ID `1749368346`, became online, and made no
+registration request.
