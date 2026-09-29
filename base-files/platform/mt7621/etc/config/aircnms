@@ -1,8 +1,8 @@
 config aircnms
-        option cloud_url 'https://api.cloud.netstream.net.in/api/device_registration/v1/devices'
+        option cloud_url 'https://api.new.cloud.netstream.net.in/api/device_registration/v1/devices'
         option ipaddr '69.30.254.180'
         option port '35930'
-        option interval '30'
+        option interval '45'
         option device_id 'XXXXXXXXXX'
         option serial_num 'XXXXXXXXXX'
         option macaddr 'XXXXXXXXXX'
@@ -15,3 +15,18 @@ config device
 
 config stats-topic
 
+
+config onboarding 'onboarding'
+        option schema_version '1'
+        option enabled '1'
+        option shadow_mode '0'
+        option recovery_apply_enabled '1'
+        option lifecycle 'fresh'
+        option operational_once '0'
+        option active_attempt_id ''
+        option active_config_job_id ''
+        option desired_revision '0'
+        option applied_revision '0'
+        option last_good_revision '0'
+        option recovery_ssid_enabled '1'
+        option last_failure_code ''

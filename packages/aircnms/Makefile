@@ -79,6 +79,7 @@ endif
 	BUILD_MGR_ACLD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/acld $(MAKE_PACKAGE_ARGS)
 	BUILD_MGR_EVENTD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/eventd $(MAKE_PACKAGE_ARGS)
 	BUILD_MGR_AIRUID:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/airuid $(MAKE_PACKAGE_ARGS)
+	BUILD_MGRONBD:= $(MAKE) -C $(PKG_BUILD_DIR)/managers/onbd $(MAKE_PACKAGE_ARGS)
 endif
 
 define Build/Compile
@@ -127,6 +128,7 @@ endif
 	$(BUILD_MGR_ACLD)
 	$(BUILD_MGR_EVENTD)
 	$(BUILD_MGR_AIRUID)
+	$(BUILD_MGRONBD)
 endef
 
 define Build/InstallDev
@@ -149,8 +151,10 @@ define Package/aircnms/install
 	$(INSTALL_BIN) ./files/airstamond $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/aireventd $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/airuid $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/aironbd $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/air_ssid_check.sh $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/air_led_state.sh $(1)/usr/sbin/
+	$(INSTALL_BIN) ./files/air_onbd_recovery.sh $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/air_setmac_ssid.sh $(1)/usr/sbin/
 	$(INSTALL_DATA) ./files/etc/airpro/captive_portals/templates/*.template $(1)/etc/airpro/captive_portals/templates/
 	$(INSTALL_DATA) ./files/etc/chilli/www/radiusdesk.html $(1)/etc/chilli/www/
@@ -200,6 +204,7 @@ endif
 	$(CP) $(PKG_BUILD_DIR)/managers/acld/acld $(1)/usr/sbin/air-acld
 	$(CP) $(PKG_BUILD_DIR)/managers/eventd/eventd $(1)/usr/sbin/air-eventd
 	$(CP) $(PKG_BUILD_DIR)/managers/airuid/airuid $(1)/usr/sbin/airuid
+	$(CP) $(PKG_BUILD_DIR)/managers/onbd/onbd $(1)/usr/sbin/air-onbd
 
 endef
 

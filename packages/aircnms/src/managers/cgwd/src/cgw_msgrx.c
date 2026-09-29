@@ -7,6 +7,10 @@
 #include "cgw.h"
 #include "log.h"
 #include "mosqev.h"
+#include "cgw_topic_route.h"
+
+_Static_assert(CGW_ROUTE_TOPIC_LEN == CGW_MAX_TOPIC_LEN,
+               "topic router width must match cgwd topic storage");
 
 void cgw_restart_process()
 {
@@ -72,12 +76,21 @@ bool cgw_send_msg_to_cm(char *payload, long payloadlen, char *topic)
     }
     if (strcmp(topic, "initial_config") == 0) {
         rc = call_netconfd_method_timeout("set.cgwd.conf", &b, 60000);
-    } else if (strstr(topic, "config") != NULL) {
-        rc = call_netconfd_method("set.cgwd.conf", &b);
-    } else if (strstr(topic, "bw_list") != NULL) {
-        rc = call_netconfd_method("set.cgwd.acl", &b);
-    } else if (strstr(topic, "rate_limit") != NULL) {
-        rc = call_netconfd_method("set.cgwd.rl", &b);
+    } else {
+        switch (cgw_topic_route(cgw_topic_lst.topic, cgw_topic_lst.n_topic, topic)) {
+        case CGW_ROUTE_CONFIG:
+            rc = call_netconfd_method("set.cgwd.conf", &b);
+            break;
+        case CGW_ROUTE_ACL:
+            rc = call_netconfd_method("set.cgwd.acl", &b);
+            break;
+        case CGW_ROUTE_RATE_LIMIT:
+            rc = call_netconfd_method("set.cgwd.rl", &b);
+            break;
+        default:
+            LOG(WARNING, "MQTT_CONFIG_ROUTE_REJECT topic=%s", topic);
+            break;
+        }
     }
     blob_buf_free(&b);
     return rc == 0;
@@ -97,18 +110,25 @@ int cgw_send_msg_to_sm(char *payload, long payloadlen, char *topic)
 
 int cgw_handle_msgrx(char *payload, long payloadlen, char *topic)
 {
-    bool ret;
-     
-    if (strstr(payload, "cmd") != NULL) {
-        if (strstr(payload, "rf_scan") != NULL) {
-            ret = cgw_send_msg_to_sm(payload, payloadlen, topic);
-        } else {
-            ret = cgw_send_msg_to_dm(payload, payloadlen, topic);
-        }
-    } else {
-        ret = cgw_send_msg_to_cm(payload, payloadlen, topic);
+    cgw_topic_route_t route;
+
+    if (!payload || payloadlen <= 0 || !topic)
+        return false;
+    route = cgw_topic_route(cgw_topic_lst.topic, cgw_topic_lst.n_topic, topic);
+    LOG(INFO, "MQTT_ROUTE route=%s topic=%s", cgw_topic_route_string(route), topic);
+    switch (route) {
+    case CGW_ROUTE_CONFIG:
+    case CGW_ROUTE_ACL:
+    case CGW_ROUTE_RATE_LIMIT:
+        return cgw_send_msg_to_cm(payload, payloadlen, topic);
+    case CGW_ROUTE_COMMAND:
+        if (cgw_payload_is_rf_scan(payload, (size_t)payloadlen))
+            return cgw_send_msg_to_sm(payload, payloadlen, topic);
+        return cgw_send_msg_to_dm(payload, payloadlen, topic);
+    default:
+        LOG(WARNING, "MQTT_ROUTE_REJECT topic=%s", topic);
+        return false;
     }
-    return ret;
 }
 
 void cgw_mqtt_subscriber_set(mosqev_t *self, void *data, const char *topic, void *msg, size_t msglen)

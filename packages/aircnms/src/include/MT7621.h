@@ -35,5 +35,5 @@
 #define SM_BASE_INTERFACE_5G "phy1-ap0"
 #endif
 
-#define DM_FW_UPGRADE_URL "https://api.cloud.netstream.net.in/api/device_registration/v1/file/download"
+#define DM_FW_UPGRADE_URL "https://api.new.cloud.netstream.net.in/api/device_registration/v1/file/download"
 

@@ -192,7 +192,8 @@ bool target_config_radio_set(radio_record_t *record)
     int rid = 0;
     char radio_name[8] = {0};
     char phyname[8] = {0};
-    int ret;
+    bool success = true;
+    int ret = 0;
 
     for (rid = 0; rid < 2; rid++) {
         if (strcmp(record->radio_param[rid].record_id, "wifi1") == 0) {
@@ -221,6 +222,7 @@ bool target_config_radio_set(radio_record_t *record)
 
             if (!sanitize_and_validate_primary_radio_settings(phyname, &rad_params)) {
                 printf("Invalid primary radio config for %s — skipping\n", radio_name);
+                success = false;
                 continue;
             }
 
@@ -233,6 +235,7 @@ bool target_config_radio_set(radio_record_t *record)
             }
 
             ret = uci_set_radio_params(radio_name, &rad_params);
+            if (ret != 0) success = false;
             
             do_wifi_reload = true;
 #ifdef CONFIG_PLATFORM_MTK_JEDI
@@ -254,10 +257,12 @@ bool target_config_radio_set(radio_record_t *record)
 
             if (!sanitize_and_validate_secondary_radio_settings(radio_name, phyname, &rad_params)) {
                 printf(" Invalid secondary radio config for %s — skipping\n", radio_name);
+                success = false;
                 continue;
             }
 
             ret = uci_set_radio_params(radio_name, &rad_params);
+            if (ret != 0) success = false;
 
             if (strcmp(rad_params.channel, "auto") == 0) {
                 do_wifi_reload = true;
@@ -266,6 +271,7 @@ bool target_config_radio_set(radio_record_t *record)
                 printf("Applying channel switch for %s to channel %s\n", radio_name, rad_params.channel);
                 ret = target_chan_switch(radio_name, atoi(rad_params.channel));
                 if (!ret) {
+                    success = false;
                     fprintf(stderr, "ERROR: Channel switch failed for %s to channel %s\n", 
                             radio_name, rad_params.channel);
                     // Continue to next radio instead of failing completely
@@ -278,6 +284,7 @@ bool target_config_radio_set(radio_record_t *record)
             printf("Applying TX power for %s to %s dBm\n", radio_name, rad_params.txpower);
             ret = hostapd_set_txpower(radio_name, atoi(rad_params.txpower));
             if (!ret) {
+                success = false;
                 fprintf(stderr, "ERROR: TX power setting failed for %s to %s dBm\\n",
                         radio_name, rad_params.txpower);
             } else {
@@ -298,10 +305,12 @@ bool target_config_radio_set(radio_record_t *record)
         int rc = system("wifi");
         if (rc == 0) {
             sleep(3);
+        } else {
+            success = false;
         }
     }
 
-    return ret;
+    return success;
 }
 
 /* Day-name → 3-letter UCI abbreviation */
@@ -396,12 +405,42 @@ static void target_disable_vif_schedule(const char *vif_name)
         LOG(INFO, "wifi-schedule: disabled scheduling flag for %s", vif_name);
 }
 
+static bool target_verify_vif_runtime(const char *vif_name, bool enabled)
+{
+    char cmd[512];
+    int attempts = enabled ? 15 : 5;
+
+    if (!vif_name || strncmp(vif_name, "wlan", 4) != 0)
+        return false;
+
+    while (attempts-- > 0) {
+        const char *ifname = get_ifname_from_secname(vif_name);
+        bool present = false;
+
+        if (ifname) {
+            snprintf(cmd, sizeof(cmd),
+                     "ip link show '%s' >/dev/null 2>&1", ifname);
+            present = system(cmd) == 0;
+        }
+        if (present == enabled)
+            return true;
+        if (attempts > 0)
+            sleep(1);
+    }
+
+    LOG(ERR, "VIF_RUNTIME_MISMATCH section=%s expected=%s", vif_name,
+        enabled ? "up" : "down");
+    return false;
+}
+
 bool target_config_vif_set(vif_record_t *record)
 {
     struct airpro_mgr_wlan_vap_params vif_params;
     char cmd[256];
     int vid = 0;
     int rc;
+    bool success = true;
+    bool wifi_changed = false;
     char vif_name[8] = {0};
     char pending_portals[16][64] = {{0}};
     int n_pending_portals = 0;
@@ -512,13 +551,9 @@ bool target_config_vif_set(vif_record_t *record)
 #endif
             
             rc = uci_set_vap_params(vif_name, &vif_params);
+            if (rc != 0) success = false;
 
-            memset(cmd, 0, sizeof(cmd));
-            sprintf(cmd, "wifi reload %s", vif_name);
-            rc = system(cmd);
-            if (rc == 0) {
-                sleep(3);
-            }
+            wifi_changed = true;
 
             vif_params.is_uprate = record->vif_param[vid].is_uprate;
             vif_params.uprate = record->vif_param[vid].uprate; 
@@ -529,15 +564,6 @@ bool target_config_vif_set(vif_record_t *record)
 #endif
 
 #ifdef CONFIG_PLATFORM_MTK 
-            // Single call to set both uplink and downlink
-            air_interface_rate_limit(vif_name, 
-                        record->vif_param[vid].is_uprate ? record->vif_param[vid].uprate : 0,
-                        record->vif_param[vid].is_downrate ? record->vif_param[vid].downrate : 0,
-                        "wlan");
-            air_interface_rate_limit(vif_name, 
-                        record->vif_param[vid].is_wlan_uprate ? record->vif_param[vid].wlan_uprate : 0,
-                        record->vif_param[vid].is_wlan_downrate ? record->vif_param[vid].wlan_downrate : 0,
-                        "wlan_per_user");
 
             //CAPTIVE PORTAL
             //netconf_handle_captive_portal(vif_name, &vif_params);
@@ -559,14 +585,10 @@ bool target_config_vif_set(vif_record_t *record)
             strlcpy(vif_params.disabled, "1", sizeof(vif_params.disabled));
             //CAPTIVE PORTAL
             portal_manager_release(vif_name, vif_params.portal_id);
-            uci_set_vap_params(vif_name, &vif_params);
+            rc = uci_set_vap_params(vif_name, &vif_params);
+            if (rc != 0) success = false;
             
-            memset(cmd, 0, sizeof(cmd));
-            sprintf(cmd, "wifi reload %s", vif_name);
-            rc = system(cmd);
-            if (rc == 0) {
-                sleep(3);
-            }
+            wifi_changed = true;
 #ifdef CONFIG_PLATFORM_MTK_JEDI
             jedi_del_vap_params(vif_name, &vif_params);            
 #endif
@@ -678,14 +700,10 @@ bool target_config_vif_set(vif_record_t *record)
                                    16, vif_params.portal_id);
 #endif
             
-            uci_set_vap_params(vif_name, &vif_params);
+            rc = uci_set_vap_params(vif_name, &vif_params);
+            if (rc != 0) success = false;
             
-            memset(cmd, 0, sizeof(cmd));
-            sprintf(cmd, "wifi reload %s", vif_name);
-            rc = system(cmd);
-            if (rc == 0) {
-                sleep(3);
-            }
+            wifi_changed = true;
             
             vif_params.is_uprate = record->vif_param[vid].is_uprate;
             vif_params.uprate = record->vif_param[vid].uprate; 
@@ -696,14 +714,6 @@ bool target_config_vif_set(vif_record_t *record)
 #endif
 
 #ifdef CONFIG_PLATFORM_MTK 
-            air_interface_rate_limit(vif_name, 
-                        record->vif_param[vid].is_uprate ? record->vif_param[vid].uprate : 0,
-                        record->vif_param[vid].is_downrate ? record->vif_param[vid].downrate : 0,
-                        "wlan");
-            air_interface_rate_limit(vif_name, 
-                        record->vif_param[vid].is_wlan_uprate ? record->vif_param[vid].wlan_uprate : 0,
-                        record->vif_param[vid].is_wlan_downrate ? record->vif_param[vid].wlan_downrate : 0,
-                        "wlan_per_user");
             
             //CAPTIVE PORTAL
             //netconf_handle_captive_portal(vif_name, &vif_params);
@@ -716,6 +726,31 @@ bool target_config_vif_set(vif_record_t *record)
         }
     }
 
+    if (wifi_changed) {
+        rc = system("wifi reload");
+        if (rc == 0)
+            sleep(3);
+        else
+            success = false;
+
+        for (vid = 0; vid < record->n_vif; vid++) {
+            bool enabled = record->vif_param[vid].status != VIF_DISABLE;
+            if (!target_verify_vif_runtime(record->vif_param[vid].record_id,
+                                           enabled))
+                success = false;
+#ifdef CONFIG_PLATFORM_MTK
+            if (enabled) {
+                if (!air_interface_rate_limit(record->vif_param[vid].record_id,
+                        record->vif_param[vid].is_uprate ? record->vif_param[vid].uprate : 0,
+                        record->vif_param[vid].is_downrate ? record->vif_param[vid].downrate : 0,
+                        "wlan"))
+                    success = false;
+                /* Per-user limits are installed by client-specific commands. */
+            }
+#endif
+        }
+    }
+
 #ifdef CONFIG_PLATFORM_MTK
     for (int i = 0; i < n_pending_portals; i++) {
         if (portal_manager_start(pending_portals[i]) != 0)
@@ -723,7 +758,7 @@ bool target_config_vif_set(vif_record_t *record)
     }
 #endif
 
-    return true;
+    return success;
 }
 
 int target_set_roaming_status(int status)

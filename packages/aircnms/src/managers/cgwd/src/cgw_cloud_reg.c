@@ -15,6 +15,8 @@
 #include "os_nif.h"
 #include <openssl/crypto.h>
 #include "cgw_uci.h"
+#include "cgw_registration_result.h"
+#include "cgw_registration_attempt.h"
 
 #define MAX_RESPONSE_SIZE (256 * 1024)  // Increase buffer size for larger responses
 #define MAX_CLOUD_DEVICE_DISCOVERY_RETRIES 3
@@ -86,7 +88,7 @@ static bool add_unique_topic(cgw_mqtt_topic_list *list,const char *topic){
  return true;
 }
 
-bool cgw_process_initial_data(char *data)
+static bool cgw_process_initial_data_attempt(char *data, const char *attempt_id)
 {
  static const char *topic_keys[]={"config","cmd","bwList","rateLimit","broadcast","broadcastWithOrgId","broadcastWithNetworkConfig","broadcastWithNetworkBwList","broadcastWithNetworkCmd"};
  json_error_t error; json_t *root=NULL,*cfg=NULL,*dev_topics=NULL,*stat_topics=NULL,*port_obj=NULL; char *cfg_json=NULL;
@@ -121,6 +123,7 @@ bool cgw_process_initial_data(char *data)
  cfg_json=json_dumps(cfg,JSON_COMPACT); if(!cfg_json||strlen(cfg_json)>262144){ LOG(ERR,"Invalid or oversized configData"); goto out; }
  /* Do not persist credentials until netconfd has accepted the initial config. */
  if(!cgw_send_msg_to_cm(cfg_json,(long)strlen(cfg_json),"initial_config")){ LOG(ERR,"Initial configuration was rejected or timed out"); goto out; }
+ if(attempt_id && !cgw_registration_attempt_transition(attempt_id, CGW_ATTEMPT_APPLYING_CONFIG, CGW_ATTEMPT_COMMITTING)){ LOG(ERR,"Registration attempt lost before credential commit"); goto out; }
  values=(cgw_enrollment_uci_t){device_id,network_id,org_id,username,password,broker,port,&new_topics,&new_stats};
  if(!cgw_uci_commit_enrollment(&values)) goto out;
  memcpy(air_dev.device_id,device_id,sizeof(device_id)); memcpy(air_dev.netwrk_id,network_id,sizeof(network_id)); memcpy(air_dev.org_id,org_id,sizeof(org_id));
@@ -133,6 +136,10 @@ out:
  return ok;
 }
 
+bool cgw_process_initial_data(char *data)
+{
+    return cgw_process_initial_data_attempt(data, NULL);
+}
 
 // Function to parse DeviceInfo struct to JSON string with radio, location, and timezone
 char *parse_device_info_to_json_string(struct DeviceInfo device)
@@ -376,7 +383,19 @@ size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
     return realsize;
 }
 
-bool send_request(void)
+static int registration_progress_cb(void *clientp, curl_off_t dltotal,
+                                    curl_off_t dlnow, curl_off_t ultotal,
+                                    curl_off_t ulnow)
+{
+    const char *attempt_id = clientp;
+    (void)dltotal;
+    (void)dlnow;
+    (void)ultotal;
+    (void)ulnow;
+    return cgw_registration_attempt_is_running(attempt_id) ? 0 : 1;
+}
+
+static bool send_request_internal(const char *existing_attempt_id)
 {
     struct DeviceInfo device;
     struct curl_buffer response = { .data = calloc(1, 1), .size = 0 };
@@ -389,12 +408,36 @@ bool send_request(void)
     char *cleaned_response = NULL;
     json_t *json = NULL;
     bool ret = false;
+    cgw_registration_result_t registration_result = CGW_REG_RESULT_TEMPORARY_FAILURE;
+    char attempt_id[CGW_ATTEMPT_ID_LEN] = {0};
+    bool attempt_reused = false;
 
     if (!response.data) {
         LOG(ERR, "Failed to allocate memory for response buffer");
         return false;
     }
+    if (existing_attempt_id) {
+        if (snprintf(attempt_id, sizeof(attempt_id), "%s", existing_attempt_id) >=
+            (int)sizeof(attempt_id) ||
+            !cgw_registration_attempt_is_running(attempt_id)) {
+            LOG(ERR, "Registration attempt is stale before start");
+            goto cleanup;
+        }
+    } else {
+        if (!cgw_registration_attempt_begin(attempt_id, sizeof(attempt_id),
+                                            &attempt_reused)) {
+            LOG(ERR, "Registration attempt could not be created");
+            goto cleanup;
+        }
+        if (attempt_reused) {
+            LOG(INFO, "Registration request coalesced attempt_id=%s", attempt_id);
+            goto cleanup;
+        }
+        LOG(INFO, "Registration attempt started attempt_id=%s", attempt_id);
+    }
 
+    if (!cgw_registration_attempt_is_running(attempt_id))
+        goto cleanup;
     if (get_cloud_url(cloud_url) != 0) goto cleanup;
 
     get_device_details(&device);
@@ -422,18 +465,24 @@ bool send_request(void)
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, registration_progress_cb);
+    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, attempt_id);
 
+    if (!cgw_registration_attempt_transition(attempt_id, CGW_ATTEMPT_PREPARING,
+                                             CGW_ATTEMPT_HTTP))
+        goto cleanup;
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
-        LOG(ERR, "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+        registration_result = cgw_classify_registration_result(0, false, NULL);
+        LOG(ERR, "Registration result=%s transport=%s",
+            cgw_registration_result_string(registration_result), curl_easy_strerror(res));
         goto cleanup;
     }
-    if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) != CURLE_OK || http_code < 200 || http_code >= 300) {
-        LOG(ERR, "Registration HTTP status %ld", http_code);
-        goto cleanup;
-    }
-    if (response.size == 0) {
-        LOG(ERR, "Empty registration response");
+    if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) != CURLE_OK) {
+        registration_result = cgw_classify_registration_result(0, false, NULL);
+        LOG(ERR, "Registration result=%s reason=HTTP_STATUS_UNAVAILABLE",
+            cgw_registration_result_string(registration_result));
         goto cleanup;
     }
 
@@ -443,9 +492,14 @@ bool send_request(void)
             response.data[i] = ' ';
     }
 
-    cleaned_response = utf8_clean(response.data);
+    cleaned_response = response.size ? utf8_clean(response.data) : NULL;
+    registration_result = cgw_classify_registration_result(http_code, true, cleaned_response);
+    LOG(INFO, "Registration result=%s http_status=%ld",
+        cgw_registration_result_string(registration_result), http_code);
+    if (registration_result != CGW_REG_RESULT_SUCCESS)
+        goto cleanup;
     if (!cleaned_response) {
-        LOG(ERR, "utf8_clean() failed");
+        LOG(ERR, "Successful registration classification has no response body");
         goto cleanup;
     }
 
@@ -460,9 +514,19 @@ bool send_request(void)
     if (json_is_string(error_message)) goto cleanup;
     
     /* Response contains credentials and must never be logged. */
-    ret = cgw_process_initial_data(cleaned_response);
+    if (!cgw_registration_attempt_transition(attempt_id, CGW_ATTEMPT_HTTP,
+                                             CGW_ATTEMPT_APPLYING_CONFIG)) {
+        registration_result = CGW_REG_RESULT_CANCELLED;
+        goto cleanup;
+    }
+    ret = cgw_process_initial_data_attempt(cleaned_response, attempt_id);
+    if (!ret)
+        registration_result = CGW_REG_RESULT_PERMANENT_FAILURE;
     LOG(DEBUG, "cgw_process_initial_data result: %d", ret);
 cleanup:
+    if (attempt_id[0] && !attempt_reused &&
+        !cgw_registration_attempt_complete(attempt_id, registration_result))
+        LOG(WARNING, "Ignored stale registration completion attempt_id=%s", attempt_id);
     if (json) json_decref(json);
     if (curl) curl_easy_cleanup(curl);
     if (headers) curl_slist_free_all(headers);
@@ -472,6 +536,16 @@ cleanup:
     return ret;
 }
 
+
+bool send_request(void)
+{
+    return send_request_internal(NULL);
+}
+
+bool cgw_run_registration_attempt(const char *attempt_id)
+{
+    return send_request_internal(attempt_id);
+}
 
 
 bool ut_dd_req_put_data()

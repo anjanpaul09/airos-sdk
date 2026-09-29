@@ -14760,3 +14760,80 @@ body.logged-in #maincontent .air-system-maintenance .air-firmware-dropzone input
 		width: 100%;
 	}
 }
+
+
+/* Cloud controller read-only Network views. */
+.wireless-page.is-cloud-managed .wireless-read-only-notice {
+	display: flex;
+	align-items: center;
+	gap: .65rem;
+	margin: 0 0 1rem;
+	padding: .75rem .9rem;
+	border: 1px solid #b9d2ff;
+	border-left: 3px solid #246bdb;
+	border-radius: 6px;
+	background: #eef5ff;
+	color: #173b74;
+	box-shadow: none;
+}
+
+.wireless-page.is-cloud-managed .wireless-read-only-notice::before {
+	content: '';
+	flex: 0 0 auto;
+	width: .5rem;
+	height: .5rem;
+	border-radius: 50%;
+	background: #246bdb;
+}
+
+.wireless-page.is-cloud-managed .wireless-read-only-notice strong {
+	margin: 0;
+	color: #173b74;
+	font-size: .86rem;
+}
+
+.wireless-page.is-cloud-managed .wireless-read-only-notice span {
+	color: #4d668c;
+	font-size: .8rem;
+	line-height: 1.35;
+}
+
+.wireless-page.is-cloud-managed .wireless-save:disabled,
+.wireless-page.is-cloud-managed .wireless-ref-icon-button:disabled,
+.wireless-page.is-cloud-managed .wireless-ref-icon-button[aria-disabled="true"] {
+	opacity: .48;
+	cursor: not-allowed;
+	pointer-events: none;
+	box-shadow: none;
+	filter: grayscale(1);
+}
+
+.wireless-page.is-cloud-managed .wireless-save.is-primary:disabled {
+	background: #d9d4cc;
+	border-color: #d9d4cc;
+	color: #8a8178;
+}
+
+.wireless-page.is-cloud-managed .wireless-ref-icon-button.is-danger:disabled,
+.wireless-page.is-cloud-managed .wireless-ref-icon-button.is-danger[aria-disabled="true"] {
+	color: #a79f98;
+	background: transparent;
+	border-color: transparent;
+}
+
+.wireless-page.is-cloud-managed .wireless-ref-applybar {
+	background: #f7f6f3;
+	border-color: #ded9d1;
+}
+
+.wireless-page.is-cloud-managed .wireless-ref-applybar strong {
+	color: #746d66;
+}
+
+@media (max-width: 700px) {
+	.wireless-page.is-cloud-managed .wireless-read-only-notice {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: .28rem;
+	}
+}

@@ -12,25 +12,39 @@ static int              netconf_dequeue_timer_interval;
 
 bool netconf_process_msg(netconf_item_t *ci)
 {
-    char data[8192];
-    long mlen = ci->size;
-    void *mbuf = ci->buf;
-    netconf_request_t req = ci->req;
-    
-    LOG(INFO, "RECIEVED MSG =%s len=%d\n", (char *)mbuf, (int)mlen);
+    char *data;
+    size_t mlen;
+    netconf_request_t req;
+    bool result = false;
 
-    memcpy(data, mbuf, mlen);
-    data[ci->size] = '\0';
-    
-    if( req.data_type == NETCONF_DATA_CONF || req.data_type == NETCONF_DATA_STATS ) {
-        netconf_process_set_msg(data);
-    } else if( req.data_type == NETCONF_DATA_ACL) {
-        netconf_process_acl_msg(data);
-    } else if( req.data_type == NETCONF_DATA_RL) {
-        netconf_process_user_rl_msg(data);
+    if (!ci || !ci->buf || ci->size == 0 ||
+        ci->size > NETCONF_MAX_QUEUE_SIZE_BYTES) {
+        LOG(ERR, "MSG_REJECTED reason=invalid_size");
+        return false;
     }
-    
-    return true;
+
+    mlen = ci->size;
+    req = ci->req;
+    data = MALLOC(mlen + 1);
+    if (!data) {
+        LOG(ERR, "MSG_REJECTED reason=allocation_failed msglen=%zu", mlen);
+        return false;
+    }
+    memcpy(data, ci->buf, mlen);
+    data[mlen] = '\0';
+    LOG(INFO, "MSG_PROCESS type=%d msglen=%zu", req.data_type, mlen);
+
+    if (req.data_type == NETCONF_DATA_CONF || req.data_type == NETCONF_DATA_STATS)
+        result = netconf_process_set_msg(data);
+    else if (req.data_type == NETCONF_DATA_ACL)
+        result = netconf_process_acl_msg(data);
+    else if (req.data_type == NETCONF_DATA_RL)
+        result = netconf_process_user_rl_msg(data);
+    else
+        LOG(ERR, "MSG_REJECTED reason=unsupported_type type=%d", req.data_type);
+
+    FREE(data);
+    return result;
 }
 
 void netconf_dequeue_timer_handler(struct ev_loop *loop, ev_timer *timer, int revents)

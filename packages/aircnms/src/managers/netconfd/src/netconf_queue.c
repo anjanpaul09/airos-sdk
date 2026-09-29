@@ -1,3 +1,4 @@
+#include "netconf_snapshot.h"
 #include "ds.h"
 #include "ds_dlist.h"
 #include "os_time.h"
@@ -82,6 +83,9 @@ bool netconf_queue_drop_head()
 {
     netconf_item_t *qitem;
     if (!netconf_queue_head(&qitem)) return false;
+    if (qitem->job_id[0])
+        netconf_job_transition(qitem->job_id, NETCONF_JOB_QUEUED,
+                               NETCONF_JOB_SUPERSEDED, "QUEUE_EVICTED");
     return netconf_queue_remove(qitem);
 }
 
@@ -255,9 +259,41 @@ bool netconf_queue_msg_process()
         LOG(INFO, "QUEUE_DEQUEUE type=%s msglen=%zu qlen=%d", 
             data_type_str, qi->size, g_netconf_queue.length);
         
-        if (netconf_process_msg(qi)) {
+        if (qi->job_id[0] && !netconf_snapshot_create(qi->job_id)) {
+            LOG(ERR, "JOB_SKIPPED job_id=%s reason=snapshot_failed", qi->job_id);
+            netconf_job_transition(qi->job_id, NETCONF_JOB_QUEUED,
+                                   NETCONF_JOB_FAILED, "SNAPSHOT_FAILED");
             netconf_queue_remove(qi);
+            continue;
         }
+        if (qi->job_id[0] &&
+            !netconf_job_transition(qi->job_id, NETCONF_JOB_QUEUED,
+                                    NETCONF_JOB_APPLYING, "APPLYING")) {
+            LOG(WARNING, "JOB_SKIPPED job_id=%s reason=not_queued", qi->job_id);
+            netconf_queue_remove(qi);
+            continue;
+        }
+        bool applied = netconf_process_msg(qi);
+        if (!applied) {
+            LOG(ERR, "QUEUE_DROP type=%s reason=processing_rejected msglen=%zu",
+                data_type_str, qi->size);
+            if (qi->job_id[0]) {
+                if (netconf_snapshot_restore(qi->job_id))
+                    netconf_job_transition(qi->job_id, NETCONF_JOB_APPLYING,
+                                           NETCONF_JOB_FAILED, "PROCESSING_REJECTED_ROLLED_BACK");
+                else
+                    netconf_job_transition(qi->job_id, NETCONF_JOB_APPLYING,
+                                           NETCONF_JOB_FAILED, "PROCESSING_REJECTED_ROLLBACK_FAILED");
+            }
+        } else {
+            LOG(INFO, "QUEUE_APPLIED type=%s msglen=%zu", data_type_str, qi->size);
+            if (qi->job_id[0])
+                netconf_job_transition(qi->job_id, NETCONF_JOB_APPLYING,
+                                       NETCONF_JOB_APPLIED, "APPLIED");
+        }
+        /* Invalid/unsupported payloads are poison messages.  They must leave the
+         * in-memory queue after one attempt or they block all later config. */
+        netconf_queue_remove(qi);
     }
 
     return true;

@@ -174,7 +174,7 @@ void add_nat_to_network(nat_config_t *config)
     rc = system(cmd);
 
     memset(cmd, 0, sizeof(cmd));
-    sprintf(cmd, "uci set network.nat_network.netmask='255.255.255.0'");
+    snprintf(cmd, sizeof(cmd), "uci set network.nat_network.netmask='%s'", config->netmask);
     rc = system(cmd);
     
     rc = system("uci commit network");
@@ -224,7 +224,7 @@ void add_nat_to_network(nat_config_t *config)
     rc = system(cmd);
 
     memset(cmd, 0, sizeof(cmd));
-    sprintf(cmd, "uci set network.nat_network.netmask='255.255.255.0'");
+    snprintf(cmd, sizeof(cmd), "uci set network.nat_network.netmask='%s'", config->netmask);
     rc = system(cmd);
     
     rc = system("uci commit network");
@@ -311,5 +311,5 @@ int netconf_handle_nat_config(nat_config_t *config)
     }
     //ret = system("ifup nat_network");
 
-    return 0;
+    return ret == 0;
 }

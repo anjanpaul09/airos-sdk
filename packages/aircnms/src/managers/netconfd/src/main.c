@@ -33,9 +33,9 @@ int main()
 
     set_intf_reset_progress_indication(NETCONF_INTF_RESET_STOP);
 
-    netconf_ubus_service_init();
-
+    netconf_job_init();
     netconf_queue_init();
+    netconf_ubus_service_init();
 
     netconf_dequeue_timer_init();
 

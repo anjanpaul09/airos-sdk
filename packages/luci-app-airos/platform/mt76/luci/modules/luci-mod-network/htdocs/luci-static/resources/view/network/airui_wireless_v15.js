@@ -10,6 +10,12 @@ var callHealth = rpc.declare({
 	expect: { '': {} }
 });
 
+var callControllerStatus = rpc.declare({
+	object: 'airui.mode',
+	method: 'controller_status',
+	expect: { '': {} }
+});
+
 var callCapabilities = rpc.declare({
 	object: 'airui.system',
 	method: 'capabilities',
@@ -109,6 +115,34 @@ var RADIO_SECTIONS = [
 
 var lastConfig = null;
 var lastInterfaceConfig = null;
+var cloudManaged = false;
+
+function cloudManagedNotice() {
+	return E('section', { 'class': 'wireless-ref-panel wireless-read-only-notice' }, [
+		E('strong', {}, _('Cloud-managed configuration')),
+		E('span', {}, _('Wireless settings are controlled by AirPro Cloud and are available here as read-only.'))
+	]);
+}
+
+function cloudManagedError() {
+	ui.addNotification(null, E('p', {}, _('Wireless configuration is managed by AirPro Cloud.')), 'info');
+	return Promise.reject(new Error(_('Wireless configuration is managed by AirPro Cloud.')));
+}
+
+function lockCloudManagedControls(root) {
+	if (!cloudManaged)
+		return;
+
+	root.querySelectorAll('input, select, textarea').forEach(function(control) {
+		if (!control.hasAttribute('data-wireless-search'))
+			control.disabled = true;
+	});
+
+	root.querySelectorAll('.wireless-save:not(.air-refresh), .wireless-ref-icon-button.is-danger, .wireless-icon-edit').forEach(function(control) {
+		control.disabled = true;
+		control.setAttribute('aria-disabled', 'true');
+	});
+}
 
 function text(value, fallback) {
 	if (value === null || value === undefined || value === '')
@@ -746,6 +780,9 @@ function bandOptions(selected) {
 }
 
 function saveWirelessCardRequest(card) {
+	if (cloudManaged)
+		return cloudManagedError();
+
 	var sections = ((card.getAttribute('data-wireless-sections') ||
 		card.getAttribute('data-wireless-section') || '').split(','))
 		.map(function(section) { return section.trim(); })
@@ -895,6 +932,9 @@ function refreshWireless() {
 }
 
 function addWirelessSsid() {
+	if (cloudManaged)
+		return cloudManagedError();
+
 	var ssidInput = E('input', {
 		'class': 'wireless-config-input',
 		'type': 'text',
@@ -1177,6 +1217,9 @@ function addWirelessSsid() {
 }
 
 function deleteWirelessSsid(section, ssidName) {
+	if (cloudManaged)
+		return cloudManagedError();
+
 	var card = wirelessCardForSection(section);
 	var shell = card && card.closest('.wireless-ref-ssid-shell');
 
@@ -1222,6 +1265,9 @@ function deleteWirelessSsid(section, ssidName) {
 }
 
 function saveWirelessRequest(apply) {
+	if (cloudManaged)
+		return cloudManagedError();
+
 	var sections = configuredSections();
 	var dryRuns = sections.map(function(section) {
 		return callSetPayload(makePayload(section, true)).catch(featureNotReady);
@@ -1437,6 +1483,9 @@ function fallbackVifs(values, runtime) {
 }
 
 function deleteWirelessVif(vif, ssidName) {
+	if (cloudManaged)
+		return cloudManagedError();
+
 	var sections = sectionsForVif(vif);
 	var card = sections.length ? wirelessCardForSection(sections[0]) : null;
 	var shell = card && card.closest('.wireless-ref-ssid-shell');
@@ -1992,7 +2041,8 @@ return view.extend({
 			safeCall(callHealth),
 			safeCall(callCapabilities),
 			safeCall(callWirelessConfig),
-			safeCall(callInterfaceConfig)
+			safeCall(callInterfaceConfig),
+			safeCall(callControllerStatus)
 		]);
 	},
 
@@ -2001,6 +2051,7 @@ return view.extend({
 		var caps = data[1];
 		var config = data[2];
 		var interfaces = data[3];
+		var controller = data[4];
 
 		if (config && config.feature_not_ready)
 			return backendUnavailable(config);
@@ -2010,8 +2061,10 @@ return view.extend({
 
 		lastConfig = config;
 		lastInterfaceConfig = interfaces && interfaces.ok !== false ? interfaces : null;
+		cloudManaged = !!(controller && controller.ok === true && controller.data &&
+			controller.data.mode == 'cloud');
 
-		var root = E('div', { 'class': 'airdash wireless-page wireless-ref-console' }, [
+		var root = E('div', { 'class': 'airdash wireless-page wireless-ref-console' + (cloudManaged ? ' is-cloud-managed' : '') }, [
 			E('section', { 'class': 'wireless-ref-head' }, [
 				E('div', { 'class': 'wireless-ref-title-block' }, [
 					E('span', { 'class': 'air-page-eyebrow' }, _('Network')),
@@ -2023,6 +2076,7 @@ return view.extend({
 					E('small', { 'class': 'air-page-updated' }, _('Updated just now'))
 				])
 			]),
+			cloudManaged ? cloudManagedNotice() : null,
 			E('nav', { 'class': 'wireless-tabs', 'aria-label': _('Wireless sections') }, [
 				E('a', { 'class': 'is-active', 'href': '#ssid-list' }, _('SSIDs')),
 				E('a', { 'href': '#radio-configuration' }, _('Radio Configuration'))
@@ -2044,6 +2098,7 @@ return view.extend({
 
 		bindSsidAccordion(root);
 		bindWirelessSearch(root);
+		lockCloudManagedControls(root);
 
 		return root;
 	}

@@ -84,6 +84,31 @@ enable_airui_luci_packages() {
     done
 }
 
+enable_wpa3_hostapd() {
+    echo "Selecting the OpenSSL hostapd variant with SAE support..."
+
+    touch .config
+
+    # The generic full-internal hostapd variant does not compile CONFIG_SAE.
+    # hostapd-openssl provides SAE/OWE and conflicts with the generic package,
+    # so make the selection mutually exclusive before make defconfig.
+    if grep -q '^CONFIG_PACKAGE_hostapd=' .config; then
+        sed -i 's/^CONFIG_PACKAGE_hostapd=.*/# CONFIG_PACKAGE_hostapd is not set/' .config
+    elif ! grep -q '^# CONFIG_PACKAGE_hostapd is not set' .config; then
+        echo '# CONFIG_PACKAGE_hostapd is not set' >> .config
+    fi
+
+    if grep -q '^CONFIG_PACKAGE_hostapd-openssl=' .config; then
+        sed -i 's/^CONFIG_PACKAGE_hostapd-openssl=.*/CONFIG_PACKAGE_hostapd-openssl=y/' .config
+    elif grep -q '^# CONFIG_PACKAGE_hostapd-openssl is not set' .config; then
+        sed -i 's/^# CONFIG_PACKAGE_hostapd-openssl is not set/CONFIG_PACKAGE_hostapd-openssl=y/' .config
+    else
+        echo 'CONFIG_PACKAGE_hostapd-openssl=y' >> .config
+    fi
+
+    sed -i 's/^CONFIG_PACKAGE_wpad-openssl=.*/# CONFIG_PACKAGE_wpad-openssl is not set/' .config
+}
+
 # Check arguments
 if [ $# -lt 1 ] || [ $# -gt 2 ]; then
     echo ""
@@ -182,6 +207,7 @@ mkdir -p $OUTPUT_DIR/images $OUTPUT_DIR/logs
 
 if [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
     enable_airui_luci_packages
+    enable_wpa3_hostapd
 fi
 
 # =============================================================================

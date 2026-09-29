@@ -194,6 +194,13 @@ void cgw_mqtt_set_agg_stats_interval(int agg_stats_interval);
 bool cgw_mqtt_is_connected();
 bool cgw_mqtt_config_valid();
 void cgw_mqtt_reconnect();
+typedef enum {
+    CGW_MQTT_RECONNECT_ACCEPTED = 0,
+    CGW_MQTT_RECONNECT_THROTTLED,
+    CGW_MQTT_RECONNECT_NOT_READY
+} cgw_mqtt_reconnect_result_t;
+cgw_mqtt_reconnect_result_t cgw_mqtt_request_reconnect(uint32_t *retry_after);
+void cgw_ubus_emit_mqtt_event(bool connected, int rc, const char *reason_code);
 bool cgw_mqtt_start_worker();
 void cgw_mqtt_stop_worker();
 
@@ -244,6 +251,7 @@ void cgw_get_stats_topic_aircnms(stats_topic_t *stats_topic);
 // Device state management functions
 bool cgw_check_valid_device_id(void);
 bool cgw_device_discovery_request(void);
+bool cgw_run_registration_attempt(const char *attempt_id);
 
 // Utility functions
 int cmd_buf(const char *command, char *buffer, size_t buffer_size);

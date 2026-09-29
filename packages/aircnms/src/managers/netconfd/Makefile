@@ -1,8 +1,11 @@
 UNIT_SRC += src/main.c
 UNIT_SRC += src/netconf_event.c
 UNIT_SRC += src/netconf_queue.c
+UNIT_SRC += src/netconf_job.c
+UNIT_SRC += src/netconf_snapshot.c
 UNIT_SRC += src/netconf_process_msg.c
-UNIT_SRC += src/netconf_set_process.c 
+UNIT_SRC += src/netconf_set_process.c
+UNIT_SRC += src/netconf_payload_validate.c
 UNIT_SRC += src/netconf_network.c 
 UNIT_SRC += src/netconf_vlan.c 
 UNIT_SRC += src/netconf_nat.c
@@ -68,6 +71,7 @@ UNIT_CFLAGS += -I../../libs/datapipeline/inc
 UNIT_CFLAGS += -Wall -Werror
 
 UNIT_LDFLAGS += -ljansson
+UNIT_LDFLAGS += -lcrypto
 UNIT_LDFLAGS += -lcurl
 UNIT_LDFLAGS += -ldl
 UNIT_LDFLAGS += -lev

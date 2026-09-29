@@ -5,12 +5,25 @@ STOP=10
 
 TARGET_DEVICE_ID="XXXXXXXXXX"
 
-# Function to extract and format the last two bytes of the MAC address
-get_mac_suffix() {
-    local iface=$1
-    local mac_address=$(cat /sys/class/net/$iface/address)
-    local mac_suffix=$(echo $mac_address | awk -F':' '{print toupper($5$6)}')
-    echo $mac_suffix
+# Function to extract and format the last three bytes of the MAC address
+get_base_mac_suffix() {
+    local mac_address=""
+
+    mac_address=$(uci get aircnms.@aircnms[0].macaddr 2>/dev/null || true)
+    if [ -n "$mac_address" ] && [ "$mac_address" != "XXXXXXXXXX" ]; then
+        echo "$mac_address" | tr -d ':' | awk '{print toupper(substr($0, length($0)-5, 6))}'
+        return 0
+    fi
+
+    for iface in wan eth1 lan eth0 ra0 rax0; do
+        [ -e "/sys/class/net/$iface/address" ] || continue
+        mac_address=$(cat "/sys/class/net/$iface/address")
+        [ -n "$mac_address" ] || continue
+        echo "$mac_address" | tr -d ':' | awk '{print toupper(substr($0, length($0)-5, 6))}'
+        return 0
+    done
+
+    return 1
 }
 
 # Function to check device ID from /etc/config/aircnms
@@ -43,8 +56,8 @@ start() {
     SSID_NUM=1
 
     # For the 2G interface (e.g. ra0)
-    mac_suffix_phy0=$(get_mac_suffix ra0)
-    new_ssid_phy0="AIR-2G-$mac_suffix_phy0"
+    mac_suffix=$(get_base_mac_suffix)
+    new_ssid_phy0="AirPro-2G-$mac_suffix"
 
     # Update UCI settings for wlan1 (2G)
     uci set wireless.wlan1.ssid="$new_ssid_phy0"
@@ -68,8 +81,7 @@ start() {
     eval "$command"
 
     # For the 5G interface (e.g. rax0)
-    mac_suffix_phy1=$(get_mac_suffix rax0)
-    new_ssid_phy1="AIR-5G-$mac_suffix_phy1"
+    new_ssid_phy1="AirPro-5G-$mac_suffix"
 
     # Update UCI settings for wlan2 (5G)
     uci set wireless.wlan2.ssid="$new_ssid_phy1"

@@ -8,16 +8,30 @@
 #include <signal.h>
 #include <time.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <zlib.h>
 #include "cgw.h"
 #include "report.h"
 #include "cgw_state_mgr.h"
+#include "cgw_registration_attempt.h"
 #include "info_events.h"
 #include "log.h"
 
 static struct ubus_context *ctx = NULL;
 static struct ev_loop *loop = NULL;
 static ev_io ubus_watcher;
+static ev_async registration_result_watcher;
+static pthread_mutex_t registration_worker_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_t registration_worker_thread;
+static bool registration_worker_created;
+static bool registration_worker_running;
+static bool registration_result_pending;
+static cgw_registration_attempt_snapshot_t registration_pending_snapshot;
+static uint64_t mqtt_event_sequence;
+
+typedef struct {
+    char attempt_id[CGW_ATTEMPT_ID_LEN];
+} registration_worker_arg_t;
 
 #define IPC_BUFFER_SIZE 8064
 #define MAX_UBUS_METHODS 2
@@ -122,6 +136,49 @@ static int peek_neighbor_entries(const uint8_t *compressed_data, size_t compress
     return n_entry;
 }
 
+
+void cgw_ubus_emit_mqtt_event(bool connected, int rc, const char *reason_code)
+{
+    struct blob_buf b = {};
+
+    if (!ctx)
+        return;
+    mqtt_event_sequence++;
+    blob_buf_init(&b, 0);
+    blobmsg_add_string(&b, "schema", "air.cgwd.mqtt.v1");
+    blobmsg_add_u8(&b, "connected", connected);
+    blobmsg_add_string(&b, "reason_code", reason_code ? reason_code : "UNKNOWN");
+    blobmsg_add_u32(&b, "broker_rc", (uint32_t)(rc < 0 ? 0 : rc));
+    blobmsg_add_u64(&b, "sequence", mqtt_event_sequence);
+    ubus_send_event(ctx, "air.cgwd.mqtt", b.head);
+    blob_buf_free(&b);
+}
+
+static int ubus_mqtt_reconnect_handler(struct ubus_context *ubus,
+                                       struct ubus_object *obj,
+                                       struct ubus_request_data *req,
+                                       const char *method,
+                                       struct blob_attr *msg)
+{
+    cgw_mqtt_reconnect_result_t result;
+    struct blob_buf b = {};
+    uint32_t retry_after = 0;
+    const char *code;
+
+    (void)obj; (void)method; (void)msg;
+    result = cgw_mqtt_request_reconnect(&retry_after);
+    code = result == CGW_MQTT_RECONNECT_ACCEPTED ? "ACCEPTED" :
+           result == CGW_MQTT_RECONNECT_THROTTLED ? "THROTTLED" : "NOT_READY";
+    blob_buf_init(&b, 0);
+    blobmsg_add_string(&b, "schema", "air.cgwd.mqtt.reconnect.v1");
+    blobmsg_add_u8(&b, "accepted", result == CGW_MQTT_RECONNECT_ACCEPTED);
+    blobmsg_add_string(&b, "code", code);
+    blobmsg_add_u32(&b, "retry_after", retry_after);
+    ubus_send_reply(ubus, req, b.head);
+    blob_buf_free(&b);
+    return 0;
+}
+
 static int ubus_get_state_handler(struct ubus_context *ctx,
                                   struct ubus_object *obj,
                                   struct ubus_request_data *req,
@@ -143,6 +200,237 @@ static int ubus_get_state_handler(struct ubus_context *ctx,
 
     blobmsg_add_string(&b, "state", state_str);
     blobmsg_add_u32(&b, "state_code", s);
+
+    ubus_send_reply(ctx, req, b.head);
+    blob_buf_free(&b);
+    return 0;
+}
+
+static void registration_add_snapshot(struct blob_buf *b,
+                                      const cgw_registration_attempt_snapshot_t *snapshot)
+{
+    blobmsg_add_string(b, "schema", "air.cgwd.registration.v1");
+    blobmsg_add_string(b, "attempt_id", snapshot->attempt_id);
+    blobmsg_add_string(b, "state", cgw_attempt_state_string(snapshot->state));
+    blobmsg_add_string(b, "result",
+                       (snapshot->state == CGW_ATTEMPT_COMPLETE ||
+                        snapshot->state == CGW_ATTEMPT_CANCELLED) ?
+                       cgw_registration_result_string(snapshot->result) : "NONE");
+    blobmsg_add_u32(b, "generation", (uint32_t)snapshot->generation);
+}
+
+static void registration_result_cb(EV_P_ ev_async *w, int revents)
+{
+    cgw_registration_attempt_snapshot_t snapshot;
+    struct blob_buf b = {};
+    bool pending;
+
+    (void)loop;
+    (void)w;
+    (void)revents;
+    pthread_mutex_lock(&registration_worker_lock);
+    pending = registration_result_pending;
+    snapshot = registration_pending_snapshot;
+    registration_result_pending = false;
+    pthread_mutex_unlock(&registration_worker_lock);
+    if (!pending || !ctx)
+        return;
+    blob_buf_init(&b, 0);
+    registration_add_snapshot(&b, &snapshot);
+    ubus_send_event(ctx, "air.cgwd.registration", b.head);
+    blob_buf_free(&b);
+}
+
+static void *registration_worker_main(void *arg)
+{
+    registration_worker_arg_t *worker = arg;
+    cgw_registration_attempt_snapshot_t snapshot;
+
+    cgw_run_registration_attempt(worker->attempt_id);
+    cgw_registration_attempt_snapshot(&snapshot);
+    pthread_mutex_lock(&registration_worker_lock);
+    registration_pending_snapshot = snapshot;
+    registration_result_pending = true;
+    registration_worker_running = false;
+    pthread_mutex_unlock(&registration_worker_lock);
+    ev_async_send(EV_DEFAULT, &registration_result_watcher);
+    free(worker);
+    return NULL;
+}
+
+static void registration_worker_reap(void)
+{
+    pthread_t thread;
+    bool join = false;
+
+    pthread_mutex_lock(&registration_worker_lock);
+    if (registration_worker_created && !registration_worker_running) {
+        thread = registration_worker_thread;
+        registration_worker_created = false;
+        join = true;
+    }
+    pthread_mutex_unlock(&registration_worker_lock);
+    if (join)
+        pthread_join(thread, NULL);
+}
+
+enum { REG_CANCEL_ATTEMPT_ID, __REG_CANCEL_MAX };
+static const struct blobmsg_policy registration_cancel_policy[__REG_CANCEL_MAX] = {
+    [REG_CANCEL_ATTEMPT_ID] = { .name = "attempt_id", .type = BLOBMSG_TYPE_STRING },
+};
+
+static int ubus_registration_start_handler(struct ubus_context *ubus,
+                                           struct ubus_object *obj,
+                                           struct ubus_request_data *req,
+                                           const char *method,
+                                           struct blob_attr *msg)
+{
+    registration_worker_arg_t *worker;
+    struct blob_buf b = {};
+    char attempt_id[CGW_ATTEMPT_ID_LEN] = {0};
+    bool reused = false;
+    int rc;
+
+    (void)obj; (void)method; (void)msg;
+    blob_buf_init(&b, 0);
+    if (get_device_state() == DEVICE_STATE_REGISTERED) {
+        blobmsg_add_string(&b, "schema", "air.cgwd.registration.start.v1");
+        blobmsg_add_u8(&b, "accepted", false);
+        blobmsg_add_string(&b, "code", "ALREADY_ENROLLED");
+        ubus_send_reply(ubus, req, b.head);
+        blob_buf_free(&b);
+        return 0;
+    }
+    registration_worker_reap();
+    if (!cgw_registration_attempt_begin(attempt_id, sizeof(attempt_id), &reused)) {
+        blob_buf_free(&b);
+        return UBUS_STATUS_UNKNOWN_ERROR;
+    }
+    if (!reused) {
+        worker = calloc(1, sizeof(*worker));
+        if (!worker) {
+            cgw_registration_attempt_complete(attempt_id, CGW_REG_RESULT_TEMPORARY_FAILURE);
+            blob_buf_free(&b);
+            return UBUS_STATUS_UNKNOWN_ERROR;
+        }
+        snprintf(worker->attempt_id, sizeof(worker->attempt_id), "%s", attempt_id);
+        pthread_mutex_lock(&registration_worker_lock);
+        registration_worker_running = true;
+        rc = pthread_create(&registration_worker_thread, NULL,
+                            registration_worker_main, worker);
+        if (rc == 0)
+            registration_worker_created = true;
+        else
+            registration_worker_running = false;
+        pthread_mutex_unlock(&registration_worker_lock);
+        if (rc != 0) {
+            free(worker);
+            cgw_registration_attempt_complete(attempt_id, CGW_REG_RESULT_TEMPORARY_FAILURE);
+            blob_buf_free(&b);
+            return UBUS_STATUS_UNKNOWN_ERROR;
+        }
+    }
+    blobmsg_add_string(&b, "schema", "air.cgwd.registration.start.v1");
+    blobmsg_add_u8(&b, "accepted", true);
+    blobmsg_add_string(&b, "code", reused ? "IN_PROGRESS" : "ACCEPTED");
+    blobmsg_add_string(&b, "attempt_id", attempt_id);
+    ubus_send_reply(ubus, req, b.head);
+    blob_buf_free(&b);
+    return 0;
+}
+
+static int ubus_registration_cancel_handler(struct ubus_context *ubus,
+                                            struct ubus_object *obj,
+                                            struct ubus_request_data *req,
+                                            const char *method,
+                                            struct blob_attr *msg)
+{
+    struct blob_attr *tb[__REG_CANCEL_MAX] = {};
+    struct blob_buf b = {};
+    cgw_cancel_result_t result;
+    const char *attempt_id;
+
+    (void)obj; (void)method;
+    if (!msg)
+        return UBUS_STATUS_INVALID_ARGUMENT;
+    blobmsg_parse(registration_cancel_policy, __REG_CANCEL_MAX, tb,
+                  blob_data(msg), blob_len(msg));
+    if (!tb[REG_CANCEL_ATTEMPT_ID])
+        return UBUS_STATUS_INVALID_ARGUMENT;
+    attempt_id = blobmsg_get_string(tb[REG_CANCEL_ATTEMPT_ID]);
+    result = cgw_registration_attempt_cancel(attempt_id);
+    blob_buf_init(&b, 0);
+    blobmsg_add_string(&b, "schema", "air.cgwd.registration.cancel.v1");
+    blobmsg_add_u8(&b, "accepted", result == CGW_CANCEL_ACCEPTED);
+    blobmsg_add_string(&b, "code", cgw_cancel_result_string(result));
+    blobmsg_add_string(&b, "attempt_id", attempt_id);
+    ubus_send_reply(ubus, req, b.head);
+    blob_buf_free(&b);
+    return 0;
+}
+
+/*
+ * Versioned, credential-safe status contract for the onboarding coordinator.
+ * Enrollment and transport are deliberately separate: a registered device can
+ * be disconnected from MQTT, and an MQTT configuration can exist before a
+ * connection is established.
+ */
+static int ubus_status_handler(struct ubus_context *ctx,
+                               struct ubus_object *obj,
+                               struct ubus_request_data *req,
+                               const char *method,
+                               struct blob_attr *msg)
+{
+    struct blob_buf b = {};
+    device_state_t state;
+    const char *state_str;
+    int queue_depth;
+    cgw_registration_attempt_snapshot_t attempt;
+
+    (void)obj;
+    (void)method;
+    (void)msg;
+
+    state = get_device_state();
+    switch (state) {
+        case DEVICE_STATE_DISCOVERY:
+            state_str = "DISCOVERY";
+            break;
+        case DEVICE_STATE_NOT_REGISTERED:
+            state_str = "NOT_REGISTERED";
+            break;
+        case DEVICE_STATE_REGISTERED:
+            state_str = "REGISTERED";
+            break;
+        default:
+            state_str = "UNKNOWN";
+            break;
+    }
+
+    cgw_registration_attempt_snapshot(&attempt);
+    queue_depth = cgw_queue_length();
+    if (queue_depth < 0)
+        queue_depth = 0;
+
+    blob_buf_init(&b, 0);
+    blobmsg_add_string(&b, "schema", "air.cgwd.status.v1");
+    blobmsg_add_string(&b, "enrollment_state", state_str);
+    blobmsg_add_u32(&b, "enrollment_state_code", (uint32_t)state);
+    blobmsg_add_u8(&b, "registered", state == DEVICE_STATE_REGISTERED);
+    blobmsg_add_u8(&b, "mqtt_configured", cgw_mqtt_config_valid());
+    blobmsg_add_u8(&b, "mqtt_connected", cgw_mqtt_is_connected());
+    blobmsg_add_u64(&b, "mqtt_event_sequence", mqtt_event_sequence);
+    blobmsg_add_u8(&b, "device_id_present", air_dev.device_id[0] != '\0');
+    blobmsg_add_u8(&b, "serial_present", air_dev.serial_num[0] != '\0');
+    blobmsg_add_u32(&b, "queue_depth", (uint32_t)queue_depth);
+    blobmsg_add_string(&b, "registration_attempt_state",
+                       cgw_attempt_state_string(attempt.state));
+    blobmsg_add_string(&b, "registration_attempt_id", attempt.attempt_id);
+    blobmsg_add_string(&b, "registration_result",
+                       (attempt.state == CGW_ATTEMPT_COMPLETE ||
+                        attempt.state == CGW_ATTEMPT_CANCELLED) ?
+                       cgw_registration_result_string(attempt.result) : "NONE");
+    blobmsg_add_u32(&b, "registration_generation", (uint32_t)attempt.generation);
 
     ubus_send_reply(ctx, req, b.head);
     blob_buf_free(&b);
@@ -566,6 +854,7 @@ static const ubus_method method_table[] = {
 bool cgw_ubus_service_init()
 {
     static struct ubus_object obj;
+    static struct ubus_object_type obj_type = { .name = "cgw" };
 
     loop = EV_DEFAULT;
     ctx = ubus_connect(NULL);
@@ -577,9 +866,9 @@ bool cgw_ubus_service_init()
     LOG(INFO, "Connected to ubus");
 
     obj.name = "cgwd";
-    obj.type = &(struct ubus_object_type){.name = "cgw"};
-    // Array size should be 6 to hold 6 methods (indices 0-5)
-    static struct ubus_method methods[6];
+    obj.type = &obj_type;
+    // Ten methods, indices 0-9.
+    static struct ubus_method methods[10];
     methods[0].name = "netstats";
     methods[0].handler = ubus_netstats_handler;
     methods[0].policy = NULL;
@@ -598,10 +887,27 @@ bool cgw_ubus_service_init()
     methods[5].name = "cmdexec.config";
     methods[5].handler = ubus_conf_handler;
     methods[5].policy = NULL;
+    methods[6].name = "status";
+    methods[6].handler = ubus_status_handler;
+    methods[6].policy = NULL;
+    methods[7].name = "registration.start";
+    methods[7].handler = ubus_registration_start_handler;
+    methods[7].policy = NULL;
+    methods[8].name = "registration.cancel";
+    methods[8].handler = ubus_registration_cancel_handler;
+    methods[8].policy = registration_cancel_policy;
+    methods[8].n_policy = __REG_CANCEL_MAX;
+    methods[9].name = "mqtt.reconnect";
+    methods[9].handler = ubus_mqtt_reconnect_handler;
+    methods[9].policy = NULL;
     obj.methods = methods;
-    obj.n_methods = 6;
+    obj.n_methods = 10;
+
+    ev_async_init(&registration_result_watcher, registration_result_cb);
+    ev_async_start(loop, &registration_result_watcher);
 
     if (ubus_add_object(ctx, &obj) != 0) {
+        ev_async_stop(loop, &registration_result_watcher);
         LOG(ERR, "Failed to add ubus object");
         ubus_free(ctx);
         ctx = NULL;
@@ -612,6 +918,7 @@ bool cgw_ubus_service_init()
     int fd = ctx->sock.fd;
     if (fd < 0) {
         LOG(ERR, "Invalid ubus fd");
+        ev_async_stop(loop, &registration_result_watcher);
         ubus_free(ctx);
         ctx = NULL;
         return false;
@@ -630,10 +937,28 @@ void cgw_ubus_service_cleanup(void)
 {
     /* ------------------ CLEANUP ------------------ */
 
+    {
+        cgw_registration_attempt_snapshot_t snapshot;
+        pthread_t thread;
+        bool join = false;
+        cgw_registration_attempt_snapshot(&snapshot);
+        if (cgw_registration_attempt_is_cancellable(snapshot.attempt_id))
+            cgw_registration_attempt_cancel(snapshot.attempt_id);
+        pthread_mutex_lock(&registration_worker_lock);
+        if (registration_worker_created) {
+            thread = registration_worker_thread;
+            registration_worker_created = false;
+            join = true;
+        }
+        pthread_mutex_unlock(&registration_worker_lock);
+        if (join)
+            pthread_join(thread, NULL);
+    }
     if (loop) {
+        ev_async_stop(loop, &registration_result_watcher);
         ev_io_stop(loop, &ubus_watcher);
     }
-    
+
     if (ctx) {
         ubus_free(ctx);
         ctx = NULL;

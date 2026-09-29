@@ -14,6 +14,7 @@
 #include "os_nif.h"
 #include "netconf_validate.h"
 #include <radio_vif.h>
+#include "netconf_job.h"
 
 #define NETCONF_MAX_QUEUE_DEPTH (200)
 #define NETCONF_MAX_QUEUE_SIZE_BYTES (2*1024*1024)
@@ -127,6 +128,7 @@ typedef struct netconf_item
     size_t size;
     void *buf;
     time_t timestamp;
+    char job_id[NETCONF_JOB_ID_LEN];
     ds_dlist_node_t qnode;
 } netconf_item_t;
 
@@ -202,16 +204,17 @@ int netconf_process_user_rl_msg(char *buf);
 bool target_config_vif_set(vif_record_t *record);
 bool target_config_radio_set(radio_record_t *record);
 int target_set_roaming_status(int status);
-int netconf_handle_add_blacklist(char *mac);
-int netconf_handle_remove_blacklist(char *mac);
-int netconf_handle_add_whitelist(char *mac);
-int netconf_handle_remove_whitelist(char *mac);
+bool netconf_handle_add_blacklist(char *mac);
+bool netconf_handle_remove_blacklist(char *mac);
+bool netconf_handle_add_whitelist(char *mac);
+bool netconf_handle_remove_whitelist(char *mac);
 int netconf_handle_nat_config(nat_config_t *config);
 void netconf_handle_captive_portal(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_params);
 bool air_user_rate_limit(uint8_t *mac, int uprate, int downrate);
 //void check_existing_vlan(const char *section_name);
 //void set_vlan_network(int vlan, const char* section_name);
 bool netconf_check_wifi_config(void); 
+const char *get_ifname_from_secname(const char *section);
 bool air_interface_rate_limit(char *vif_name, int uprate, int downrate, char *type);
 bool air_ifname_rate_limit(char *ifname, int uprate, int downrate);
 

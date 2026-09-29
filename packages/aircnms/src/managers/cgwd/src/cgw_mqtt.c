@@ -52,6 +52,7 @@ static char             cgw_mqtt_topic[HOST_NAME_MAX] = MQTT_BROKER_TOPIC;
 static int              cgw_mqtt_port;
 static int              cgw_mqtt_qos = STATS_MQTT_QOS;
 static uint8_t          cgw_mqtt_compress = 0;
+static uint64_t         cgw_mqtt_last_manual_reconnect_ms;
 static int              cgw_agg_stats_interval;
 air_device_t air_dev;
 
@@ -180,6 +181,34 @@ uint64_t get_current_timestamp_ms() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);  // Get time since system boot
     return (uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);  // Convert to milliseconds
+}
+
+#define CGW_MQTT_MANUAL_RECONNECT_INTERVAL_MS 30000ULL
+
+cgw_mqtt_reconnect_result_t cgw_mqtt_request_reconnect(uint32_t *retry_after)
+{
+    uint64_t now = get_current_timestamp_ms();
+    uint64_t elapsed;
+
+    if (retry_after)
+        *retry_after = 0;
+    if (!g_mqtt_worker_running || !cgw_mosqev_init || !cgw_mqtt_config_valid())
+        return CGW_MQTT_RECONNECT_NOT_READY;
+    if (cgw_mqtt_last_manual_reconnect_ms) {
+        elapsed = now - cgw_mqtt_last_manual_reconnect_ms;
+        if (elapsed < CGW_MQTT_MANUAL_RECONNECT_INTERVAL_MS) {
+            if (retry_after)
+                *retry_after = (uint32_t)((CGW_MQTT_MANUAL_RECONNECT_INTERVAL_MS -
+                                           elapsed + 999) / 1000);
+            return CGW_MQTT_RECONNECT_THROTTLED;
+        }
+    }
+    cgw_mqtt_last_manual_reconnect_ms = now;
+    cgw_mqtt_reconnect_ts = 0;
+    if (cgw_mqtt_is_connected())
+        mosqev_disconnect(&cgw_mqtt);
+    cgw_restart_mqtt_worker();
+    return CGW_MQTT_RECONNECT_ACCEPTED;
 }
 
 bool cgw_publish_json_qos(char *data, char *topic, int qos, bool retain)
@@ -772,6 +801,9 @@ static void cgw_mqtt_on_disconnect(mosqev_t *self, void *data, int rc)
     (void)data;
 
     g_mqtt_connected = false;
+    cgw_ubus_emit_mqtt_event(false, rc,
+                             rc == 0 ? "GRACEFUL_DISCONNECT" :
+                                       "UNEXPECTED_DISCONNECT");
 
     LOG(ERR,
         "[MQTT] disconnected rc=%d err=%s",
@@ -805,6 +837,7 @@ static void reconnect_cb(EV_P_ ev_timer *w, int revents) {
 
     if (g_mqtt_connected) {
         LOG(INFO, "[MQTT] Connected");
+        cgw_ubus_emit_mqtt_event(true, 0, "CONNECTED");
         
         // Retry online status up to 3 times to ensure delivery
         int retry = 0;

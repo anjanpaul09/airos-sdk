@@ -11,6 +11,12 @@ var callHealth = rpc.declare({
 	expect: { '': {} }
 });
 
+var callControllerStatus = rpc.declare({
+	object: 'airui.mode',
+	method: 'controller_status',
+	expect: { '': {} }
+});
+
 var callInterfaceConfig = rpc.declare({
 	object: 'airui.network',
 	method: 'interface_config',
@@ -90,6 +96,19 @@ var callInterfaceApply = rpc.declare({
 
 var lastConfig = null;
 var pageRefs = {};
+var cloudManaged = false;
+
+function cloudManagedNotice() {
+	return E('section', { 'class': 'wireless-ref-panel wireless-read-only-notice' }, [
+		E('strong', {}, _('Cloud-managed configuration')),
+		E('span', {}, _('Network interfaces are controlled by AirPro Cloud and are available here as read-only.'))
+	]);
+}
+
+function cloudManagedError() {
+	ui.addNotification(null, E('p', {}, _('Network interface configuration is managed by AirPro Cloud.')), 'info');
+	return Promise.reject(new Error(_('Network interface configuration is managed by AirPro Cloud.')));
+}
 
 function t(value, fallback) {
 	if (value === null || value === undefined || value === '')
@@ -516,6 +535,9 @@ function waitForInterfaceApplyResult(attempts) {
 }
 
 function applyInterfacesRequest() {
+	if (cloudManaged)
+		return cloudManagedError();
+
 	var apply = safeCall(function() {
 		return callInterfaceApply(true, true, [ 'network', 'dnsmasq', 'firewall' ], 90);
 	}).then(function(result) {
@@ -562,6 +584,9 @@ function applyInterfaces() {
 }
 
 function saveInterfaceRequest(form, mode, apply) {
+	if (cloudManaged)
+		return cloudManagedError();
+
 	var payload = collectPayload(form);
 	var method = mode == 'set' ? callInterfaceSet : callInterfaceAdd;
 
@@ -593,6 +618,9 @@ function saveInterface(form, mode, apply) {
 }
 
 function editInterfaceModal(item, dhcp) {
+	if (cloudManaged)
+		return cloudManagedError();
+
 	var type = item.cfg.airui_type;
 	var device = networkConfigSection(lastConfig, item.name + '_dev');
 	var start = Number(dhcp.start || 100);
@@ -635,6 +663,9 @@ function editInterfaceModal(item, dhcp) {
 }
 
 function addInterfaceModal(type) {
+	if (cloudManaged)
+		return cloudManagedError();
+
 	var initialNatName = uniqueSectionName(lastConfig, 'nat_network');
 	var initialNatAddress = nextNatAddress(lastConfig);
 
@@ -750,6 +781,9 @@ function addInterfaceModal(type) {
 }
 
 function deleteInterface(name) {
+	if (cloudManaged)
+		return cloudManagedError();
+
 	return actionDialog.run('delete-interface-' + name, {
 		title: _('Delete interface'),
 		message: _('Delete interface %s? Its network configuration will be removed and connectivity may be interrupted.').format(name),
@@ -825,7 +859,7 @@ function table(env) {
 			]),
 			E('div', { 'class': 'wireless-ref-panel-actions' }, [
 				E('span', { 'class': 'wireless-ref-count' }, String(sections.length)),
-				E('button', { 'class': 'wireless-save is-primary', 'type': 'button', 'click': function() { addInterfaceModal('nat'); } }, _('+ Add Interface'))
+				E('button', { 'class': 'wireless-save is-primary', 'type': 'button', 'disabled': cloudManaged, 'title': cloudManaged ? _('Managed by AirPro Cloud') : '', 'click': function() { addInterfaceModal('nat'); } }, _('+ Add Interface'))
 			])
 		]),
 		E('div', { 'class': 'air-settings-table interface-table' }, [
@@ -848,7 +882,7 @@ function table(env) {
 					E('span', {}, networkType(item.name, item.cfg, dhcp)),
 					E('span', {}, addr),
 					E('span', { 'class': enabled ? 'air-status-pill is-positive' : 'air-status-pill is-disabled' }, enabled ? _('Enabled') : _('Disabled')),
-					E('span', { 'class': 'interface-actions' }, removable ? [
+					E('span', { 'class': 'interface-actions' }, removable && !cloudManaged ? [
 						E('button', {
 							'class': 'wireless-ref-icon-button wireless-icon-edit',
 							'type': 'button',
@@ -868,7 +902,7 @@ function table(env) {
 							'class': 'wireless-status-pill',
 							'title': _('System-managed interface'),
 							'style': 'min-width:0;max-width:100%;white-space:nowrap;padding:.2rem .4rem'
-						}, _('Protected'))
+						}, cloudManaged ? _('Cloud managed') : _('Protected'))
 					])
 				]);
 			})
@@ -899,7 +933,8 @@ return view.extend({
 
 			return Promise.all([
 				Promise.resolve(health),
-				safeCall(callInterfaceConfig)
+				safeCall(callInterfaceConfig),
+				safeCall(callControllerStatus)
 			]);
 		});
 	},
@@ -907,6 +942,7 @@ return view.extend({
 	render: function(data) {
 		var health = data[0];
 		var config = data[1];
+		var controller = data[2];
 		var refreshButton;
 		var refreshStatus;
 		var tableNode;
@@ -918,6 +954,8 @@ return view.extend({
 			return backendUnavailable(config);
 
 		lastConfig = config;
+		cloudManaged = !!(controller && controller.ok === true && controller.data &&
+			controller.data.mode == 'cloud');
 		refreshButton = E('button', {
 			'class': 'wireless-save is-primary air-refresh',
 			'type': 'button',
@@ -936,7 +974,7 @@ return view.extend({
 			refreshing: false
 		};
 
-		return E('div', { 'class': 'airdash wireless-page wireless-ref-console interface-page' }, [
+		return E('div', { 'class': 'airdash wireless-page wireless-ref-console interface-page' + (cloudManaged ? ' is-cloud-managed' : '') }, [
 			E('section', { 'class': 'wireless-ref-head' }, [
 				E('div', { 'class': 'wireless-ref-title-block' }, [
 					E('span', { 'class': 'air-page-eyebrow' }, _('Network')),
@@ -948,6 +986,7 @@ return view.extend({
 					refreshStatus
 				])
 			]),
+			cloudManaged ? cloudManagedNotice() : null,
 			tableNode
 		]);
 	},

@@ -10,8 +10,8 @@
 #include "cgw_state_mgr.h"
 #include "log.h"
 
-//wss://api.cloud.netstream.net.in/ws/
-#define WEBSOCKET_URL "api.cloud.netstream.net.in"
+//wss://api.new.cloud.netstream.net.in/ws/
+#define WEBSOCKET_URL "api.new.cloud.netstream.net.in"
 #define WEBSOCKET_PORT 443
 #define WEBSOCKET_PATH "/ws/AIR1231212"
 #define UCI_BUF_LEN 256

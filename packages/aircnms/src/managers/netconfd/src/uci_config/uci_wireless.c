@@ -213,7 +213,19 @@ int uci_set_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_pa
         status += strlen(vap_params->hide_ssid) ? uciSet(pkg, sec, "hidden", vap_params->hide_ssid) : 0;
         status += strlen(vap_params->isolate) ? uciSet(pkg, sec, "isolate", vap_params->isolate) : 0;
         status += strlen(vap_params->encryption) ? uciSet(pkg, sec, "encryption", vap_params->encryption) : 0;
-        status += strlen(vap_params->key) ? uciSet(pkg, sec, "key", vap_params->key) : 0;
+        /* 802.11w is mandatory for pure SAE and optional for transition mode.
+         * Reset it for other modes so SAE-required state cannot survive an
+         * encryption change. */
+        if (!strcmp(vap_params->encryption, "sae"))
+            status += uciSet(pkg, sec, "ieee80211w", "2");
+        else if (!strcmp(vap_params->encryption, "sae-mixed"))
+            status += uciSet(pkg, sec, "ieee80211w", "1");
+        else if (strlen(vap_params->encryption))
+            status += uciSet(pkg, sec, "ieee80211w", "1");
+        if (!strcmp(vap_params->encryption, "none"))
+            uciDelete(pkg, sec, "key");
+        else
+            status += strlen(vap_params->key) ? uciSet(pkg, sec, "key", vap_params->key) : 0;
         if (is_enterprise_encryption(vap_params->encryption)) {
             status += strlen(vap_params->server_ip) ? uciSet(pkg, sec, "auth_server", vap_params->server_ip) : 0;
             status += strlen(vap_params->auth_port) ? uciSet(pkg, sec, "auth_port", vap_params->auth_port) : 0;

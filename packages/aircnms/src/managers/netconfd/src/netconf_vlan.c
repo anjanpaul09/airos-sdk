@@ -133,7 +133,6 @@ void del_vlan_frm_network(int vlan)
     sprintf(cmd, "uci delete network.%d", vlan);
     rc = system(cmd);
 
-    rc = system(cmd);
     rc = system("uci commit network");
     rc = system("/etc/init.d/network restart");
     if (rc != 0) {

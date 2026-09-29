@@ -216,21 +216,23 @@ bool sanitize_and_validate_vif_params(struct airpro_mgr_wlan_vap_params *p)
 
     if (!is_valid_encryption(clean.encryption)) {
         fprintf(stderr, "Invalid encryption type: '%s'\n", clean.encryption);
-        SAFE_STRCPY(clean.encryption, "none");
+        valid = false;
     }
 
-    if (!is_valid_key(clean.key, clean.encryption)) {
+    bool enterprise = (strcmp(clean.encryption, "wpa2") == 0 ||
+                       strcmp(clean.encryption, "wpa3") == 0) && clean.server_ip[0];
+    if (!enterprise && !is_valid_key(clean.key, clean.encryption)) {
         fprintf(stderr, "Invalid key for encryption '%s'\n", clean.encryption);
-        clean.key[0] = '\0';
+        valid = false;
     }
 
     if (!is_valid_vlan_id(clean.vlan_id)) {
-        fprintf(stderr, "Invalid VLAN ID: '%s', setting to 0\n", clean.vlan_id);
-        SAFE_STRCPY(clean.vlan_id, "0");
+        fprintf(stderr, "Invalid VLAN ID: '%s'\n", clean.vlan_id);
+        valid = false;
     }
 
-    if (strcmp(clean.encryption, "wpa2-enterprise") == 0 ||
-        strcmp(clean.encryption, "wpa3-enterprise") == 0) {
+    if (strcmp(clean.encryption, "wpa2") == 0 ||
+        strcmp(clean.encryption, "wpa3") == 0) {
 
         if (!is_valid_ip(clean.server_ip)) {
             fprintf(stderr, "Invalid RADIUS server IP: '%s'\n", clean.server_ip);
@@ -325,7 +327,7 @@ bool sanitize_and_validate_primary_radio_settings(const char *band,
     if (strcmp(band, "2.4GHz") == 0) {
         if (cw != 20 && cw != 40) {
             printf("Invalid width %d for 2.4GHz → default 20\n", cw);
-            strcpy(params->channel_width, "40");
+            strcpy(params->channel_width, "20");
         }
     } else if (strcmp(band, "5GHz") == 0) {
         if (cw != 20 && cw != 40 && cw != 80 && cw != 160) {

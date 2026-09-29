@@ -16,6 +16,8 @@ const char* get_ifname_from_secname(const char *section) {
     static char ifname[MAX_OUTPUT_LEN];
     char command[MAX_OUTPUT_LEN];
 
+    ifname[0] = 0;
+
     // Construct the ubus command with the section name argument
     snprintf(command, sizeof(command),
              "ubus call network.wireless status | grep -A 5 '\"section\": \"%s\"' | grep '\"ifname\"' | awk -F'\"' '{print $4}'",

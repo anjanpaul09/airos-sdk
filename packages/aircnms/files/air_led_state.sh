@@ -1,133 +1,64 @@
 #!/bin/sh
+# MT7621 renderer only. air-onbd owns onboarding state and policy.
 export PATH="/usr/sbin:/usr/bin:/sbin:/bin"
-
-# =========================================================
-#  AirPro LED Status Controller (Production)
-# =========================================================
-
-NAME="air-led"
-DEBUG=0
-
-# --- LED paths ---
-RED="/sys/class/leds/system/brightness"
-GREEN="/sys/class/leds/wlan2g/brightness"
-BLUE="/sys/class/leds/wlan5g/brightness"
-
-# --- Sanity check ---
-[ -w "$RED" ]   || exit 1
-[ -w "$GREEN" ] || exit 1
-[ -w "$BLUE" ]  || exit 1
-
-# --- State ---
-RED_BLINK_STATE=0
-
-# ---------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------
-log() {
-	[ "$DEBUG" = "1" ] && logger -t "$NAME" "$1"
+R=/sys/class/leds/system
+G=/sys/class/leds/wlan2g
+B=/sys/class/leds/wlan5g
+for d in "$R" "$G" "$B"; do [ -w "$d/brightness" ] || exit 1; done
+last=
+phase=0
+none(){ printf none >"$1/trigger"; printf 0 >"$1/brightness"; }
+reset(){ none "$R"; none "$G"; none "$B"; }
+on(){ printf 1 >"$1/brightness"; }
+timer(){
+    printf timer >"$1/trigger"
+    n=0
+    while { [ ! -w "$1/delay_on" ] || [ ! -w "$1/delay_off" ]; } && [ "$n" -lt 10 ]; do
+        sleep 1
+        n=$((n+1))
+    done
+    [ -w "$1/delay_on" ] && [ -w "$1/delay_off" ] || return 1
+    printf "$2" >"$1/delay_on"
+    printf "$3" >"$1/delay_off"
 }
-
-off_all() {
-	echo 0 > "$RED"
-	echo 0 > "$GREEN"
-	echo 0 > "$BLUE"
+apply_state(){
+    reset
+    case "$1" in
+        OPERATIONAL) on "$B" ;;
+        OPERATIONAL_DEGRADED) on "$G" ;;
+        INIT|INITIALIZING|BOOTING) on "$R" ;;
+        DHCP_WAIT) ;;
+        NO_LINK) timer "$R" 200 800 ;;
+        DHCP_FAILED|NO_DEFAULT_ROUTE|DNS_FAILED|INTERNET_UNREACHABLE) on "$R"; on "$G" ;;
+        CLAIM_REQUIRED|PENDING_CLAIM) ;;
+        UNKNOWN_DEVICE) on "$G"; timer "$R" 750 750 ;;
+        CONFIG_APPLYING) on "$G"; on "$B"; timer "$R" 250 250 ;;
+        CONFIG_FAILED|ROLLBACK) timer "$R" 500 500 ;;
+        ENROLLED) on "$B" ;;
+    esac
 }
-
-on_red()   { echo 255 > "$RED"; }
-on_green() { echo 255 > "$GREEN"; }
-on_blue()  { echo 255 > "$BLUE"; }
-
-RED_BLINK_STATE=0
-
-blink_red() {
-	if [ "$RED_BLINK_STATE" -eq 0 ]; then
-		echo 255 > "$RED"
-		RED_BLINK_STATE=1
-	else
-		echo 0 > "$RED"
-		RED_BLINK_STATE=0
-	fi
-}
-
-
-# ---------------------------------------------------------
-# BOOT CHECK
-# System is considered ready when ubus is alive
-# ---------------------------------------------------------
-check_boot() {
-	ubus call system info >/dev/null 2>&1
-}
-
-# ---------------------------------------------------------
-# INTERNET CHECK
-# Route existence (no ping, no ICMP dependency)
-# ---------------------------------------------------------
-check_internet() {
-	ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1
-}
-
-# ---------------------------------------------------------
-# CLOUD CHECK
-# Your CNMS status flag
-# ---------------------------------------------------------
-check_cloud() {
-	[ "$(uci -q get aircnms.@aircnms[0].online)" = "1" ]
-}
-
-# ---------------------------------------------------------
-# LED STATE MACHINE
-# ---------------------------------------------------------
-update_led() {
-
-	# 1. System not ready
-	if ! check_boot; then
-		off_all
-		on_red
-		return
-	fi
-
-	# 2. No internet route
-	if ! check_internet; then
-		off_all
-		blink_red
-		return
-	fi
-
-	# 3. Internet OK, cloud down
-	if ! check_cloud; then
-		off_all
-		on_green
-		return
-	fi
-
-	# 4. All good
-	off_all
-	on_blue
-}
-
-# ---------------------------------------------------------
-# Cleanup on stop
-# ---------------------------------------------------------
-cleanup() {
-	off_all
-	exit 0
-}
+cleanup(){ reset; exit 0; }
 trap cleanup INT TERM
-
-# ---------------------------------------------------------
-# Main loop
-# ---------------------------------------------------------
-log "LED controller started"
-
-while true; do
-	update_led
-
-	# Fast blink when internet is down, else slow poll
-	if ! check_internet; then
-		sleep 1
-	else
-		sleep 3
-	fi
+while :; do
+    state="$(ubus call air.onboarding status 2>/dev/null | jsonfilter -e '@.visible_state' 2>/dev/null)"
+    if [ "$state" != "$last" ]; then apply_state "$state"; last="$state"; fi
+    case "$state" in
+        CLOUD_UNREACHABLE|MQTT_DISCONNECTED)
+            phase=$((1-phase)); reset
+            [ "$phase" = 1 ] && on "$B" || on "$R"
+            ;;
+        CONFIG_QUEUED|CONFIG_VERIFYING)
+            phase=$((1-phase)); reset
+            [ "$phase" = 1 ] && on "$B" || on "$G"
+            ;;
+        DHCP_WAIT|CLAIM_REQUIRED|PENDING_CLAIM)
+            phase=$((1-phase)); reset
+            [ "$phase" = 1 ] && on "$B"
+            ;;
+        OPERATIONAL_DEGRADED)
+            phase=$((1-phase)); reset; on "$G"
+            [ "$phase" = 1 ] && on "$B"
+            ;;
+    esac
+    sleep 1
 done
-

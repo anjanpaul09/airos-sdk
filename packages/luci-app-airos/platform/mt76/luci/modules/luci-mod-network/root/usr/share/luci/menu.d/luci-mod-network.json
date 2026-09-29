@@ -4,7 +4,7 @@
 		"order": 1,
 		"action": {
 			"type": "view",
-      "path": "network/airui_interfaces_v10"
+      "path": "network/airui_interfaces_v11"
 		},
 		"depends": {
 			"acl": [ "luci-mod-network-config", "airui-network" ]

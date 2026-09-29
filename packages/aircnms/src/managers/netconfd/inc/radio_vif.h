@@ -24,10 +24,12 @@ struct airpro_mgr_wlan_vap_params {
     char dhcppoolname[32]; //ui
     char hide_ssid[8];
     char isolate[8];
-    char ssid[32];
+    /* IEEE 802.11 permits 32 octets plus the terminating NUL. */
+    char ssid[33];
     char opmode[10];
     char encryption[16];
-    char key[16];
+    /* WPA passphrase (8..63 bytes) or a 64-digit hexadecimal PSK. */
+    char key[65];
     char server_name[32];
     char server_ip[64];
     char auth_port[16];

@@ -2,6 +2,7 @@
 #include "netconf.h"
 #include "portal_manager.h"
 #include "dpp_types.h"
+#include "netconf_payload_validate.h"
 #include <jansson.h>
 
 int current_roaming_status = false;
@@ -127,26 +128,19 @@ bool netconf_process_vif_list(json_t *vif_list)
         }
 
         /* ---------- Strings (safe) ---------- */
-        strcpy(record->vif_param[i].record_id,
-               json_get_str(vif, "recordId"));
+        strlcpy(record->vif_param[i].record_id, json_get_str(vif, "recordId"), sizeof(record->vif_param[i].record_id));
 
-        strcpy(record->vif_param[i].ssid,
-               json_get_str(vif, "ssid"));
+        strlcpy(record->vif_param[i].ssid, json_get_str(vif, "ssid"), sizeof(record->vif_param[i].ssid));
 
-        strcpy(record->vif_param[i].encryption,
-               json_get_str(vif, "encryption"));
+        strlcpy(record->vif_param[i].encryption, json_get_str(vif, "encryption"), sizeof(record->vif_param[i].encryption));
 
-        strcpy(record->vif_param[i].forward_type,
-               json_get_str(vif, "forwardType"));
+        strlcpy(record->vif_param[i].forward_type, json_get_str(vif, "forwardType"), sizeof(record->vif_param[i].forward_type));
 
-        strcpy(record->vif_param[i].key,
-               json_get_str(vif, "key"));
+        strlcpy(record->vif_param[i].key, json_get_str(vif, "key"), sizeof(record->vif_param[i].key));
 
-        strcpy(record->vif_param[i].device,
-               json_get_str(vif, "radioType"));
+        strlcpy(record->vif_param[i].device, json_get_str(vif, "radioType"), sizeof(record->vif_param[i].device));
 
-        strcpy(record->vif_param[i].auth_url,
-               json_get_str(vif, "authUrl"));
+        strlcpy(record->vif_param[i].auth_url, json_get_str(vif, "authUrl"), sizeof(record->vif_param[i].auth_url));
         strlcpy(record->vif_param[i].portal_id,
                 json_get_str(vif, "portalId"),
                 sizeof(record->vif_param[i].portal_id));
@@ -205,15 +199,12 @@ bool netconf_process_vif_list(json_t *vif_list)
         int vlan_id = json_get_int(vif, "vlanId", 0);
         sprintf(record->vif_param[i].vlan_id, "%d", vlan_id);
 
-        record->vif_param[i].status =
-            json_get_int(vif, "status", 0);
-
-        if (record->vif_param[i].status == 0 &&
-            record->vif_param[i].is_auth &&
-            record->vif_param[i].portal_id[0] != '\0' &&
-            record->vif_param[i].enable[0] == '1') {
-            record->vif_param[i].status = VIF_MODIFY;
-        }
+        record->vif_param[i].status = json_get_int(vif, "status", 0);
+        /* A retained configuration is a full desired-state snapshot.  Cloud resets
+         * status to DEFAULT after publishing, so DEFAULT must reconcile active
+         * slots and clear disabled slots instead of being silently ignored. */
+        if (record->vif_param[i].status == 0)
+            record->vif_param[i].status = enable ? VIF_MODIFY : VIF_DISABLE;
 
         /* ---------- Mobility Domain ---------- */
         const char *md_str = json_get_str(vif, "mobilityDomain");
@@ -234,11 +225,9 @@ bool netconf_process_vif_list(json_t *vif_list)
             strncmp(record->vif_param[i].encryption,
                     "wpa3-enterprise", 15) == 0) {
 
-            strcpy(record->vif_param[i].server_name,
-                   json_get_str(vif, "serverName"));
+            strlcpy(record->vif_param[i].server_name, json_get_str(vif, "serverName"), sizeof(record->vif_param[i].server_name));
 
-            strcpy(record->vif_param[i].server_ip,
-                   json_get_str(vif, "serverIp"));
+            strlcpy(record->vif_param[i].server_ip, json_get_str(vif, "serverIp"), sizeof(record->vif_param[i].server_ip));
 
             j = json_object_get(vif, "authPort");
             if (json_is_integer(j)) {
@@ -254,8 +243,7 @@ bool netconf_process_vif_list(json_t *vif_list)
                          "%lld", json_integer_value(j));
             }
 
-            strcpy(record->vif_param[i].secret_key,
-                   json_get_str(vif, "communicateKey"));
+            strlcpy(record->vif_param[i].secret_key, json_get_str(vif, "communicateKey"), sizeof(record->vif_param[i].secret_key));
         }
 
         /* ---------- Rates ---------- */
@@ -423,6 +411,9 @@ bool netconf_process_radio_list(json_t *radio_list)
         if (j_status && json_is_integer(j_status))
             record->radio_param[i].status = json_integer_value(j_status);
 
+        if (record->radio_param[i].status == 0)
+            record->radio_param[i].status = RADIO_SETTING_PRIMARY;
+
         /* ---------------- channel ---------------- */
         json_t *j_channel = json_object_get(radio, "channel");
         if (j_channel && json_is_string(j_channel)) {
@@ -455,12 +446,13 @@ bool netconf_process_radio_list(json_t *radio_list)
 
         if (j_disabled) {
             if (json_is_boolean(j_disabled)) {
-            /* invert boolean */
+            /* Compatibility contract: cloud's historical `disabled=true`
+             * means the radio is enabled; UCI uses the opposite polarity. */
             disabled = json_boolean_value(j_disabled) ? 0 : 1;
         } else if (json_is_string(j_disabled)) {
             const char *ds = json_string_value(j_disabled);
             if (ds && (!strcasecmp(ds, "true") || !strcmp(ds, "1")))
-                disabled = 0;   /* inverted */
+                disabled = 0;
             else
                 disabled = 1;
             }
@@ -533,6 +525,7 @@ bool netconf_process_radio_list(json_t *radio_list)
 
 bool netconf_process_blacklist(json_t *blackList)
 {
+    bool success = true;
     char tmp_mac[32];
     char type[16];
     strlcpy(type, json_string_value(json_object_get(blackList, "type")), sizeof(type));
@@ -545,15 +538,15 @@ bool netconf_process_blacklist(json_t *blackList)
             if (json_is_string(mac)) {
                 printf("%s\n", json_string_value(mac));
                 memset(tmp_mac, 0, sizeof(tmp_mac));
-                strcpy(tmp_mac, json_string_value(mac));
+                strlcpy(tmp_mac, json_string_value(mac), sizeof(tmp_mac));
                 if (strncmp(type, "ssid", 4) == 0) {
                     char ssid[64];
                     strlcpy(ssid, json_string_value(json_object_get(blackList, "ssid")), sizeof(ssid));
                     LOG(INFO, "SET_ACL blacklist add_ssid mac=%s ssid=%s", tmp_mac, ssid);
-                    netconf_handle_add_blacklist_ssid(tmp_mac, ssid);
+                    if (!netconf_handle_add_blacklist_ssid(tmp_mac, ssid)) success = false;
                 } else {
                     LOG(INFO, "SET_ACL blacklist add mac=%s", tmp_mac);
-                    netconf_handle_add_blacklist(tmp_mac);
+                    if (!netconf_handle_add_blacklist(tmp_mac)) success = false;
                 }
             }
         }
@@ -568,17 +561,18 @@ bool netconf_process_blacklist(json_t *blackList)
             if (json_is_string(mac)) {
                 printf("%s\n", json_string_value(mac));
                 memset(tmp_mac, 0, sizeof(tmp_mac));
-                strcpy(tmp_mac, json_string_value(mac));
+                strlcpy(tmp_mac, json_string_value(mac), sizeof(tmp_mac));
                 LOG(INFO, "SET_ACL blacklist remove mac=%s", tmp_mac);
-                netconf_handle_remove_blacklist(tmp_mac);
+                if (!netconf_handle_remove_blacklist(tmp_mac)) success = false;
             }
         }
     }
-    return true;
+    return success;
 }
 
 int netconf_process_whitelist(json_t *whiteList)
 {
+    bool success = true;
     char tmp_mac[32];
     char type[16];
     strlcpy(type, json_string_value(json_object_get(whiteList, "type")), sizeof(type));
@@ -591,15 +585,15 @@ int netconf_process_whitelist(json_t *whiteList)
             if (json_is_string(mac)) {
                 printf("%s\n", json_string_value(mac));
                 memset(tmp_mac, 0, sizeof(tmp_mac));
-                strcpy(tmp_mac, json_string_value(mac));
+                strlcpy(tmp_mac, json_string_value(mac), sizeof(tmp_mac));
                 if (strncmp(type, "ssid", 4) == 0) {
                     char ssid[64];
                     strlcpy(ssid, json_string_value(json_object_get(whiteList, "ssid")), sizeof(ssid));
                     LOG(INFO, "SET_ACL whitelist add_ssid mac=%s ssid=%s", tmp_mac, ssid);
-                    netconf_handle_add_whitelist_ssid(tmp_mac, ssid);
+                    if (!netconf_handle_add_whitelist_ssid(tmp_mac, ssid)) success = false;
                 } else {
                     LOG(INFO, "SET_ACL whitelist add mac=%s", tmp_mac);
-                    netconf_handle_add_whitelist(tmp_mac);
+                    if (!netconf_handle_add_whitelist(tmp_mac)) success = false;
                 }
             }
         }
@@ -614,13 +608,13 @@ int netconf_process_whitelist(json_t *whiteList)
             if (json_is_string(mac)) {
                 printf("%s\n", json_string_value(mac));
                 memset(tmp_mac, 0, sizeof(tmp_mac));
-                strcpy(tmp_mac, json_string_value(mac));
+                strlcpy(tmp_mac, json_string_value(mac), sizeof(tmp_mac));
                 LOG(INFO, "SET_ACL whitelist remove mac=%s", tmp_mac);
-                netconf_handle_remove_whitelist(tmp_mac);
+                if (!netconf_handle_remove_whitelist(tmp_mac)) success = false;
             }
         }
     }
-    return true;
+    return success;
 
 }
 
@@ -710,64 +704,71 @@ static bool netconf_payload_has_legacy_nat_vif(json_t *root)
 
 int netconf_process_nat_config(json_t *nat_config, bool apply_legacy_nat)
 {
-    int ret = 0;
+    bool success = true;
     nat_config_t config;
+    const char *ip = NULL;
+    const char *mask = NULL;
+    json_t *netSegmentIp;
+    json_t *netMaskIp;
+    json_t *roaming;
 
     memset(&config, 0, sizeof(config));
 
-    json_t *netSegmentIp = json_object_get(nat_config, "netSegmentIp");
-    if (!netSegmentIp || json_is_null(netSegmentIp)) {
-        printf("netSegmentIp is NULL\n");
-        return -1;
-    } else if (json_is_string(netSegmentIp)) {
-        printf("netSegmentIp: %s\n", json_string_value(netSegmentIp));
-        strncpy(config.ipaddr, json_string_value(netSegmentIp), sizeof(config.ipaddr) - 1);
-        config.ipaddr[sizeof(config.ipaddr) - 1] = '\0';  // Ensure null termination
+    netSegmentIp = json_object_get(nat_config, "netSegmentIp");
+    netMaskIp = json_object_get(nat_config, "netMaskIp");
+    if (json_is_string(netSegmentIp))
+        ip = json_string_value(netSegmentIp);
+    if (json_is_string(netMaskIp))
+        mask = json_string_value(netMaskIp);
+
+    /* Cloud legitimately sends an empty NAT object for bridge-only networks. */
+    if ((ip && ip[0]) || (mask && mask[0])) {
+        if (!ip || !ip[0] || !mask || !mask[0]) {
+            LOG(ERR, "natConfig requires both netSegmentIp and netMaskIp");
+            return false;
+        }
+        strlcpy(config.ipaddr, ip, sizeof(config.ipaddr));
+        strlcpy(config.netmask, mask, sizeof(config.netmask));
+        memcpy(&g_last_nat_config, &config, sizeof(g_last_nat_config));
+        portal_manager_set_network_config(config.ipaddr, config.netmask);
+
+        if (apply_legacy_nat)
+            success = netconf_handle_nat_config(&config);
+        else
+            LOG(INFO, "natConfig stored for captive portal; legacy nat_network apply skipped");
     } else {
-        printf("Error: 'netSegmentIp' is not a string\n");
+        LOG(INFO, "natConfig empty; legacy NAT unchanged");
     }
 
-    json_t *netMaskIp = json_object_get(nat_config, "netMaskIp");
-    if (!netMaskIp || json_is_null(netMaskIp)) {
-        printf("netMaskIp is NULL\n");
-    } else if (json_is_string(netMaskIp)) {
-        printf("netMaskIp: %s\n", json_string_value(netMaskIp));
-        strncpy(config.netmask, json_string_value(netMaskIp), sizeof(config.netmask) - 1);
-        config.netmask[sizeof(config.netmask) - 1] = '\0';  // Ensure null termination
-    } else {
-        printf("Error: 'netMaskIp' is not a string\n");
-    }
-
-    memcpy(&g_last_nat_config, &config, sizeof(g_last_nat_config));
-    portal_manager_set_network_config(config.ipaddr, config.netmask);
-    if (apply_legacy_nat) {
-        ret = netconf_handle_nat_config(&config);
-    } else {
-        LOG(INFO, "natConfig stored for captive portal; legacy nat_network apply skipped");
-    }
-
-    json_t *roaming = json_object_get(nat_config, "l2Roaming");
-    if (!roaming || json_is_null(roaming)) {
-        printf("l2Roaming is NULL\n");
-    } else {
-
+    roaming = json_object_get(nat_config, "l2Roaming");
+    if (json_is_boolean(roaming)) {
         int new_roaming_status = json_boolean_value(roaming);
         if (new_roaming_status != current_roaming_status) {
-            ret = target_set_roaming_status(new_roaming_status);
-            current_roaming_status = new_roaming_status;
+            /* target_set_roaming_status follows the shell convention: 0 is success. */
+            if (target_set_roaming_status(new_roaming_status) != 0)
+                success = false;
+            else
+                current_roaming_status = new_roaming_status;
         }
     }
 
-    return ret;
+    return success;
 }
 
 int netconf_process_set_msg(char* buf)
 {
     int ret = true;
+    int step_ret;
     json_error_t error;
     json_t *root = json_loads(buf, 0, &error);
     if (!root) {
-        fprintf(stderr, "Error parsing JSON: %s\n", error.text);
+        LOG(ERR, "CONFIG_REJECTED reason=json_parse_error line=%d", error.line);
+        return false;
+    }
+    char validation_error[192] = {0};
+    if (!netconf_validate_config_payload(root, validation_error, sizeof(validation_error))) {
+        LOG(ERR, "CONFIG_REJECTED reason=%s", validation_error);
+        json_decref(root);
         return false;
     }
  
@@ -779,18 +780,21 @@ int netconf_process_set_msg(char* buf)
             LOG(WARNING,
                 "natConfig is shared by captive and legacy NAT VIFs; use different subnets or disable legacy NAT to avoid br-nat/chilli IP conflict");
         }
-        ret = netconf_process_nat_config(nat_config,
-                                         !has_captive_vif || has_legacy_nat_vif);
+        step_ret = netconf_process_nat_config(nat_config,
+                                              !has_captive_vif || has_legacy_nat_vif);
+        ret = ret && step_ret;
     }
 
     json_t *vif_list = json_object_get(json_object_get(root, "vif"), "vifList");      
     if (vif_list && json_is_array(vif_list)) {
-        ret = netconf_process_vif_list(vif_list);
+        step_ret = netconf_process_vif_list(vif_list);
+        ret = ret && step_ret;
     }
     
     json_t *radio_list = json_object_get(json_object_get(root, "radio"), "radioList");
     if (radio_list && json_is_array(radio_list)) {
-        ret = netconf_process_radio_list(radio_list);
+        step_ret = netconf_process_radio_list(radio_list);
+        ret = ret && step_ret;
     }
 
     json_decref(root);
@@ -810,15 +814,21 @@ int netconf_process_acl_msg(char *buf)
         return false;
     }
     
-    json_t *blackList = json_object_get(root, "blackList");
-    if (blackList) {
-        netconf_process_blacklist(blackList);
+    char validation_error[192] = {0};
+    if (!netconf_validate_acl_payload(root, validation_error, sizeof(validation_error))) {
+        LOG(ERR, "ACL_REJECTED reason=%s", validation_error);
+        json_decref(root);
+        return false;
     }
 
+    json_t *blackList = json_object_get(root, "blackList");
+    bool success = true;
+    if (blackList && !netconf_process_blacklist(blackList))
+        success = false;
+
     json_t *whiteList = json_object_get(root, "whiteList");
-    if (whiteList) {
-        netconf_process_whitelist(whiteList);
-    }
+    if (whiteList && !netconf_process_whitelist(whiteList))
+        success = false;
 
     json_decref(root);
     
@@ -826,7 +836,7 @@ int netconf_process_acl_msg(char *buf)
     netconf_check_wifi_config();
 #endif
 
-    return true;
+    return success;
 }
 
 int netconf_process_user_rl_msg(char *buf)
@@ -844,9 +854,16 @@ int netconf_process_user_rl_msg(char *buf)
         return false;
     }
 
+    char validation_error[192] = {0};
+    if (!netconf_validate_rate_limit_payload(root, validation_error, sizeof(validation_error))) {
+        LOG(ERR, "RATE_LIMIT_REJECTED reason=%s", validation_error);
+        json_decref(root);
+        return false;
+    }
+
     json_t *rate_limit = json_object_get(root, "rateLimit");
     if (rate_limit) {
-        strcpy(tmp_mac, json_string_value(json_object_get(rate_limit, "mac")));
+        strlcpy(tmp_mac, json_string_value(json_object_get(rate_limit, "mac")), sizeof(tmp_mac));
         uplink = atoi(json_string_value(json_object_get(rate_limit, "uplink")));
         downlink = atoi(json_string_value(json_object_get(rate_limit, "downlink")));
     }
@@ -856,12 +873,10 @@ int netconf_process_user_rl_msg(char *buf)
     // Log parameters before setting
     LOG(INFO, "SET_USER_RL mac=%s uplink=%d downlink=%d", tmp_mac, uplink, downlink);
    
-    if (uplink >= 0 || downlink >= 0) {
-        air_user_rate_limit(mac.addr,
+    bool success = air_user_rate_limit(mac.addr,
                        uplink >= 0 ? uplink : 0,
                        downlink >= 0 ? downlink : 0);
-    }
 
     json_decref(root);
-    return true;
+    return success;
 }
