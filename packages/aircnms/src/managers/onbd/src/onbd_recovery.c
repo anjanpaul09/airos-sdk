@@ -1,4 +1,5 @@
 #include "onbd.h"
+#include "log.h"
 
 #include <sys/wait.h>
 #include <stdio.h>
@@ -25,5 +26,8 @@ void onbd_recovery_apply(const onbd_state_t *state)
              state->fallback_active ? "enable" : "disable",
              apply ? "apply" : "shadow");
     rc = system(command);
-    (void)rc;
+    LOG(NOTICE, "RECOVERY_SSID: %s (mode=%s, rc=%d)",
+        state->fallback_active ? "ACTIVATED" : "DEACTIVATED",
+        apply ? "apply" : "shadow",
+        rc);
 }

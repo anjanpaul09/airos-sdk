@@ -795,6 +795,24 @@ int cgw_send_status_online(void)
 // }
 
 
+static void cgw_mqtt_on_connect(mosqev_t *self, void *data, int rc)
+{
+    (void)self;
+    (void)data;
+
+    if (rc == 0) {
+        g_mqtt_connected = true;
+        LOG(NOTICE, "[MQTT] Successfully connected to broker '%s:%d' (ClientID: %s)",
+            cgw_mqtt_broker, cgw_mqtt_port, air_dev.device_id);
+        cgw_ubus_emit_mqtt_event(true, rc, "CONNECTED");
+    } else {
+        g_mqtt_connected = false;
+        LOG(ERR, "[MQTT] Connection failed to broker '%s:%d': rc=%d (%s)",
+            cgw_mqtt_broker, cgw_mqtt_port, rc, mosquitto_strerror(rc));
+        cgw_ubus_emit_mqtt_event(false, rc, "CONNECT_FAILED");
+    }
+}
+
 static void cgw_mqtt_on_disconnect(mosqev_t *self, void *data, int rc)
 {
     (void)self;
@@ -1044,10 +1062,18 @@ static void cgw_mqtt_log_cbk(
     (void)self;
     (void)data;
 
-    LOG(INFO,
-        "[MOSQ][%d] %s",
-        level,
-        msg);
+    /* Suppress routine internal packet traces (PINGREQ, PINGRESP, PUBLISH, PUBACK) */
+    if (level == 16 /* MOSQ_LOG_DEBUG */ ||
+        level == 1  /* MOSQ_LOG_INFO */ ||
+        level == 2  /* MOSQ_LOG_NOTICE */) {
+        return;
+    }
+
+    if (level & 8 /* MOSQ_LOG_ERR */) {
+        LOG(ERR, "[MQTT_LIB] %s", msg);
+    } else if (level & 4 /* MOSQ_LOG_WARNING */) {
+        LOG(WARN, "[MQTT_LIB] %s", msg);
+    }
 }
 
 bool cgw_mqtt_init(void)
@@ -1081,6 +1107,7 @@ bool cgw_mqtt_init(void)
     }
     
     // Register callbacks
+    mosqev_connect_cbk_set(&cgw_mqtt, cgw_mqtt_on_connect);
     mosqev_message_cbk_set(&cgw_mqtt, cgw_mqtt_subscriber_set);
     mosqev_disconnect_cbk_set(&cgw_mqtt, cgw_mqtt_on_disconnect);
 

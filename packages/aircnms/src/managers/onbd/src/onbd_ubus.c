@@ -62,12 +62,15 @@ static void mqtt_event_cb(struct ubus_context *ctx, struct ubus_event_handler *e
                           const char *type, struct blob_attr *msg)
 {
     const char *reason;
+    bool connected;
     (void)ctx; (void)ev; (void)type;
     if (!msg) return;
-    g_onbd_state.connectivity = attr_bool(msg, "connected", false) ?
+    connected = attr_bool(msg, "connected", false);
+    g_onbd_state.connectivity = connected ?
         ONBD_CONN_ONLINE : ONBD_CONN_MQTT_DISCONNECTED;
     reason = attr_string(msg, "reason_code");
     onbd_set_reason(&g_onbd_state, reason ? reason : "MQTT_EVENT");
+    LOG(INFO, "UBUS_EVENT_MQTT: connected=%d reason='%s'", connected, reason ? reason : "none");
 }
 
 static void registration_event_cb(struct ubus_context *ctx, struct ubus_event_handler *ev,
@@ -85,6 +88,8 @@ static void registration_event_cb(struct ubus_context *ctx, struct ubus_event_ha
     else
         g_onbd_state.lifecycle = ONBD_LIFECYCLE_ENROLLING;
     onbd_set_reason(&g_onbd_state, result);
+    LOG(INFO, "UBUS_EVENT_REGISTRATION: result='%s' attempt_id='%s'",
+        result ? result : "none", attempt ? attempt : "none");
 }
 
 static void netconf_event_cb(struct ubus_context *ctx, struct ubus_event_handler *ev,
@@ -108,6 +113,8 @@ static void netconf_event_cb(struct ubus_context *ctx, struct ubus_event_handler
     } else if (!strcmp(status, "FAILED")) g_onbd_state.configuration = ONBD_CONFIG_FAILED;
     else if (!strcmp(status, "SUPERSEDED")) g_onbd_state.configuration = ONBD_CONFIG_SUPERSEDED;
     onbd_set_reason(&g_onbd_state, reason ? reason : status);
+    LOG(INFO, "UBUS_EVENT_NETCONF: status='%s' job_id='%s' rev=%llu reason='%s'",
+        status, job ? job : "none", (unsigned long long)g_onbd_state.desired_revision, reason ? reason : "none");
 }
 
 static void add_common(struct blob_buf *b, const onbd_state_t *s)

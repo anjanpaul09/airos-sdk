@@ -5,6 +5,7 @@
 #include "stamonitord_vif_info.h"
 #include "stamonitord_device_info.h"
 #include "stamonitord_nl80211.h"
+#include "stamonitord_client_events.h"
 #include "log.h"
 #include "dhcp_fp.h"
 
@@ -54,6 +55,7 @@ int main()
 
 cleanup:
 	/* Cleanup */
+    stamonitord_client_events_cleanup();
     stamonitord_history_stop();
     stamonitord_nl80211_stop();
     hostapd_events_stop();

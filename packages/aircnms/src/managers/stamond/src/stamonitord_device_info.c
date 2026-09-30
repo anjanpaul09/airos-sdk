@@ -16,6 +16,7 @@
 
 static struct ev_timer  stamonitord_mqtt_timer;
 static double           stamonitord_mqtt_timer_interval = 10;
+static bool             stamonitord_device_info_initial_sync_done = false;
 
 bool stamonitord_get_current_change(device_info_event_t *conf) 
 {
@@ -94,6 +95,7 @@ bool stamonitord_check_device_config(device_info_event_t *curr_conf)
 {
 #define UCI_BUF_LEN 256
     device_info_event_t pre_conf;
+    memset(&pre_conf, 0, sizeof(pre_conf));
     char buf[UCI_BUF_LEN];
     size_t len;
     int rc;
@@ -176,7 +178,11 @@ int stamonitord_monitor_device_info_change()
     device_info_event_t current_config;
     stamonitord_get_current_change(&current_config);
 
-    if (stamonitord_check_device_config(&current_config)) {
+    if (!stamonitord_device_info_initial_sync_done) {
+        stamonitord_device_info_initial_sync_done = true;
+        LOG(INFO, "Sending initial device info sync to cloud");
+        stamonitord_update_cloud_config(&current_config);
+    } else if (stamonitord_check_device_config(&current_config)) {
         printf("Configuration changed. Updated global config.\n");
         stamonitord_update_cloud_config(&current_config);
     }

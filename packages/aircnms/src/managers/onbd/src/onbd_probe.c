@@ -1,4 +1,5 @@
 #include "onbd.h"
+#include "log.h"
 
 #include <arpa/inet.h>
 #include <curl/curl.h>
@@ -209,4 +210,29 @@ void onbd_probe_network(onbd_state_t *state)
     state->dns_resolved = state->dns_available && dns_resolves(state->cloud_host);
     state->internet_available = state->gateway_reachable && tcp_probe("1.1.1.1", 443);
     state->cloud_available = state->internet_available && state->dns_resolved && cloud_https_probe(state->cloud_host);
+
+    static bool s_last_cloud_avail = false;
+    static bool s_last_gw_avail = false;
+    static bool s_last_dns_avail = false;
+    static bool s_first_probe = true;
+
+    if (s_first_probe ||
+        state->cloud_available != s_last_cloud_avail ||
+        state->gateway_reachable != s_last_gw_avail ||
+        state->dns_resolved != s_last_dns_avail) {
+        LOG(INFO, "PROBE_NETWORK: carrier=%d ip=%d gw=%s(ping=%d) dns_cfg=%d dns_res=%d inet=%d cloud=%d host='%s'",
+            state->carrier_available,
+            state->management_ip_available,
+            state->default_gateway[0] ? state->default_gateway : "none",
+            state->gateway_reachable,
+            state->dns_available,
+            state->dns_resolved,
+            state->internet_available,
+            state->cloud_available,
+            state->cloud_host);
+        s_last_cloud_avail = state->cloud_available;
+        s_last_gw_avail = state->gateway_reachable;
+        s_last_dns_avail = state->dns_resolved;
+        s_first_probe = false;
+    }
 }

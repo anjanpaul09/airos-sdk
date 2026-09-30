@@ -13,6 +13,7 @@
 
 #include "airui_response.h"
 #include "airui_ubus_client.h"
+#include "log.h"
 
 #define AIRUI_MAINT_SOURCE "airui.maintenance"
 #define AIRUI_MAINT_SCHEMA "airui.maintenance.v1"
@@ -968,6 +969,7 @@ int airui_maintenance_reboot(struct ubus_context *ctx,
     action.dry_run = tb[MAINT_DRY_RUN] && blobmsg_get_bool(tb[MAINT_DRY_RUN]);
 
     if (!action.dry_run) {
+        LOG(NOTICE, "UI_MAINTENANCE: REBOOT requested via Web UI (scheduling /sbin/reboot)");
         int cmd_ret = system("(sleep 1; /sbin/reboot) >/dev/null 2>&1 &");
         (void)cmd_ret;
     }
@@ -1010,6 +1012,7 @@ int airui_maintenance_factory_reset(struct ubus_context *ctx,
     }
 
     if (!action.dry_run) {
+        LOG(WARN, "UI_MAINTENANCE: FACTORY RESET requested via Web UI (scheduling /sbin/firstboot -y && reboot)");
         int cmd_ret = system("(sleep 1; /sbin/firstboot -y; /sbin/reboot) >/dev/null 2>&1 &");
         (void)cmd_ret;
     }
@@ -1170,6 +1173,8 @@ int airui_maintenance_firmware_upgrade(struct ubus_context *ctx,
                  force ? "-F" : "",
                  keep_settings ? "" : "-n",
                  AIRUI_FIRMWARE_PATH);
+        LOG(NOTICE, "UI_MAINTENANCE: SYSUPGRADE initiated via Web UI (path=%s, force=%d, keep_settings=%d)",
+            AIRUI_FIRMWARE_PATH, force, keep_settings);
         cmd_ret = system(command);
         (void)cmd_ret;
     }

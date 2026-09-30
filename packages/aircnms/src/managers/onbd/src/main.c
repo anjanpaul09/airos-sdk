@@ -44,18 +44,29 @@ static void maybe_persist_checkpoint(void)
 
 static void observe_cb(EV_P_ ev_timer *watcher, int revents)
 {
-    static char previous[64];
+    static char prev_visible[64] = "";
+    static onbd_lifecycle_t prev_lifecycle = (onbd_lifecycle_t)-1;
+    static onbd_connectivity_t prev_conn = (onbd_connectivity_t)-1;
+    static onbd_config_state_t prev_cfg = (onbd_config_state_t)-1;
     const char *visible;
     (void)loop; (void)watcher; (void)revents;
     onbd_observe(onbd_ubus_context(), &g_onbd_state);
     visible = onbd_visible_state(&g_onbd_state);
-    if (strcmp(previous, visible)) {
-        LOG(INFO, "ONBD_TRANSITION visible_state=%s lifecycle=%s connectivity=%s configuration=%s reason=%s shadow=%d",
+    if (strcmp(prev_visible, visible) ||
+        g_onbd_state.lifecycle != prev_lifecycle ||
+        g_onbd_state.connectivity != prev_conn ||
+        g_onbd_state.configuration != prev_cfg) {
+        LOG(NOTICE, "ONBD_TRANSITION: visible=%s lifecycle=%s conn=%s cfg=%s reason=%s shadow=%d gw=%s cloud=%s",
             visible, onbd_lifecycle_name(g_onbd_state.lifecycle),
             onbd_connectivity_name(g_onbd_state.connectivity),
             onbd_config_name(g_onbd_state.configuration),
-            g_onbd_state.reason_code, g_onbd_state.shadow_mode);
-        snprintf(previous, sizeof(previous), "%s", visible);
+            g_onbd_state.reason_code, g_onbd_state.shadow_mode,
+            g_onbd_state.default_gateway[0] ? g_onbd_state.default_gateway : "none",
+            g_onbd_state.cloud_host);
+        snprintf(prev_visible, sizeof(prev_visible), "%s", visible);
+        prev_lifecycle = g_onbd_state.lifecycle;
+        prev_conn = g_onbd_state.connectivity;
+        prev_cfg = g_onbd_state.configuration;
     }
     onbd_recovery_apply(&g_onbd_state);
     maybe_persist_checkpoint();

@@ -203,7 +203,7 @@ echo "Entering OpenWRT Directory: $SDK_DIR"
 cd $SDK_DIR
 
 # Create output directories
-mkdir -p $OUTPUT_DIR/images $OUTPUT_DIR/logs
+mkdir -p $OUTPUT_DIR/images $OUTPUT_DIR/logs $OUTPUT_DIR/cloud
 
 if [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
     enable_airui_luci_packages
@@ -226,7 +226,34 @@ make -j$(nproc) V=s 2>&1 | tee $OUTPUT_DIR/logs/build-${BUILD_DATETIME}.log
 
 echo "Copying output files..."
 
-cp ${FW_DIR}/${FW_FILE} $OUTPUT_DIR/images/$IMAGE_NAME.bin
+RAW_IMAGE_PATH="$OUTPUT_DIR/images/$IMAGE_NAME.bin"
+CLOUD_PACKAGE_PATH="$OUTPUT_DIR/cloud/$IMAGE_NAME.tar.gz"
+CLOUD_WORK_DIR="$OUTPUT_DIR/cloud/.work-$IMAGE_NAME"
+
+cp ${FW_DIR}/${FW_FILE} "$RAW_IMAGE_PATH"
+
+echo "Creating cloud firmware package..."
+rm -rf "$CLOUD_WORK_DIR"
+mkdir -p "$CLOUD_WORK_DIR/$IMAGE_NAME"
+cp "$RAW_IMAGE_PATH" "$CLOUD_WORK_DIR/$IMAGE_NAME/$IMAGE_NAME.bin"
+(
+    cd "$CLOUD_WORK_DIR/$IMAGE_NAME"
+    md5sum "$IMAGE_NAME.bin" | awk '{print $1}' > md5sum
+    cat > manifest.json <<EOF
+{
+  "name": "$IMAGE_NAME",
+  "board": "$BOARD_NAME",
+  "version": "$RELEASE_VERSION",
+  "build_date": "$BUILD_DATE",
+  "build_time": "$BUILD_TIME",
+  "image": "$IMAGE_NAME.bin",
+  "checksum_type": "md5",
+  "checksum": "$(cat md5sum)"
+}
+EOF
+)
+tar -C "$CLOUD_WORK_DIR" -czf "$CLOUD_PACKAGE_PATH" "$IMAGE_NAME"
+rm -rf "$CLOUD_WORK_DIR"
 
 # =============================================================================
 # BUILD COMPLETE
@@ -234,6 +261,7 @@ cp ${FW_DIR}/${FW_FILE} $OUTPUT_DIR/images/$IMAGE_NAME.bin
 
 echo "=========================================="
 echo "Build completed successfully!"
-echo "Image: $OUTPUT_DIR/images/$IMAGE_NAME.bin"
+echo "Image: $RAW_IMAGE_PATH"
+echo "Cloud package: $CLOUD_PACKAGE_PATH"
 echo "Log: $OUTPUT_DIR/logs/build-${BUILD_DATETIME}.log"
 echo "=========================================="

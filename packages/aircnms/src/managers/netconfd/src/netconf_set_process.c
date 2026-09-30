@@ -55,11 +55,17 @@ void netconf_apply_jedi_conf()
         }
 
         if (is_flag_set(flags, FLAG_WIRELESS_CHANGE)) {
-            LOG(INFO,"WIFI CHANGE DETECTED, WIFI RELOAD!");
-            system("wifi reload");
+            struct timespec t_start, t_end;
+            clock_gettime(CLOCK_MONOTONIC, &t_start);
+            LOG(NOTICE, "WIFI_CONFIG_APPLY: Triggering 'wifi reload' for MT7621 wireless interfaces...");
+            int sys_rc = system("wifi reload");
+            clock_gettime(CLOCK_MONOTONIC, &t_end);
+            double elapsed = (t_end.tv_sec - t_start.tv_sec) + (t_end.tv_nsec - t_start.tv_nsec) / 1e9;
+            LOG(NOTICE, "WIFI_CONFIG_APPLIED: 'wifi reload' completed in %.2fs (exit_code=%d)", elapsed, sys_rc);
         }
 
         rc = netconf_check_wifi_config();
+        LOG(INFO, "WIFI_CONFIG_VERIFY: Status check result=%d", rc);
     } else {
         LOG(INFO, "%s: Setting onboard status and rebooting...", __func__);
         system("uci set aircnms.@aircnms[0].onboard=1");

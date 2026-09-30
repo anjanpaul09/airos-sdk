@@ -8,6 +8,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <inttypes.h>
+#include <ev.h>
 #include "dhcp_fp.h"
 #include "log.h"
 #include "info_events.h"
@@ -15,6 +16,7 @@
 #include "stats_report.h"
 #include "stamonitord_client_cap.h"
 #include "stamonitord_history.h"
+#include "stamonitord_client_events.h"
 
 // Forward declaration - target_info_clients_get is defined in platform/mtk/target/target_stats.c
 bool target_info_clients_get(const uint8_t *macaddr, const char *ifname, 
@@ -60,6 +62,65 @@ static void fill_client_ip_from_history(client_info_event_t *client)
     }
 }
 
+static void fill_client_identity_from_leases_and_arp(client_info_event_t *client)
+{
+    if (!client)
+        return;
+
+    char mac_str[18];
+    snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x",
+             client->macaddr[0], client->macaddr[1], client->macaddr[2],
+             client->macaddr[3], client->macaddr[4], client->macaddr[5]);
+
+    /* 1. Check /tmp/dhcp.leases: timestamp mac ip hostname client-id */
+    if ((!client->ipaddr[0] || strcmp(client->ipaddr, "0.0.0.0") == 0) ||
+        (!client->hostname[0] || strcmp(client->hostname, "unknown") == 0)) {
+        FILE *fp = fopen("/tmp/dhcp.leases", "r");
+        if (fp) {
+            char line[256];
+            while (fgets(line, sizeof(line), fp)) {
+                char ts[32], l_mac[32], l_ip[64], l_host[HOSTNAME_MAX_LEN];
+                if (sscanf(line, "%31s %31s %63s %63s", ts, l_mac, l_ip, l_host) >= 3) {
+                    if (strcasecmp(l_mac, mac_str) == 0) {
+                        if (!client->ipaddr[0] || strcmp(client->ipaddr, "0.0.0.0") == 0) {
+                            strncpy(client->ipaddr, l_ip, sizeof(client->ipaddr) - 1);
+                            client->ipaddr[sizeof(client->ipaddr) - 1] = '\0';
+                        }
+                        if ((!client->hostname[0] || strcmp(client->hostname, "unknown") == 0) &&
+                            strcmp(l_host, "*") != 0 && l_host[0] != '\0') {
+                            strncpy(client->hostname, l_host, sizeof(client->hostname) - 1);
+                            client->hostname[sizeof(client->hostname) - 1] = '\0';
+                        }
+                        break;
+                    }
+                }
+            }
+            fclose(fp);
+        }
+    }
+
+    /* 2. Fallback check /proc/net/arp: IP type flags MAC mask dev */
+    if (!client->ipaddr[0] || strcmp(client->ipaddr, "0.0.0.0") == 0) {
+        FILE *fp = fopen("/proc/net/arp", "r");
+        if (fp) {
+            char line[256];
+            if (fgets(line, sizeof(line), fp)) {
+                while (fgets(line, sizeof(line), fp)) {
+                    char a_ip[64], a_type[16], a_flags[16], a_mac[32];
+                    if (sscanf(line, "%63s %15s %15s %31s", a_ip, a_type, a_flags, a_mac) == 4) {
+                        if (strcasecmp(a_mac, mac_str) == 0) {
+                            strncpy(client->ipaddr, a_ip, sizeof(client->ipaddr) - 1);
+                            client->ipaddr[sizeof(client->ipaddr) - 1] = '\0';
+                            break;
+                        }
+                    }
+                }
+            }
+            fclose(fp);
+        }
+    }
+}
+
 static void enrich_client_identity(client_info_event_t *client)
 {
     if (!client)
@@ -95,24 +156,66 @@ static void enrich_client_identity(client_info_event_t *client)
     }
 
     fill_client_ip_from_history(client);
+    fill_client_identity_from_leases_and_arp(client);
 }
 
-/* Handle client connect event */
-void stamonitord_handle_client_connect(const uint8_t *macaddr, const char *ifname)
+#define CLIENT_CONNECT_TIMEOUT_SEC 5.0
+
+typedef struct pending_connect {
+    uint8_t macaddr[6];
+    char ifname[32];
+    uint64_t timestamp_ms;
+    ev_timer timer;
+    struct pending_connect *next;
+} pending_connect_t;
+
+static pending_connect_t *g_pending_connects = NULL;
+
+static pending_connect_t *find_pending_connect(const uint8_t *macaddr)
 {
-    if (!macaddr) {
-        LOG(ERR, "stamonitord_handle_client_connect: NULL macaddr");
-        return;
+    if (!macaddr)
+        return NULL;
+
+    for (pending_connect_t *p = g_pending_connects; p; p = p->next) {
+        if (memcmp(p->macaddr, macaddr, 6) == 0)
+            return p;
     }
-    
+    return NULL;
+}
+
+static void remove_pending_connect(pending_connect_t *target)
+{
+    if (!target)
+        return;
+
+    ev_timer_stop(EV_DEFAULT, &target->timer);
+
+    pending_connect_t **curr = &g_pending_connects;
+    while (*curr) {
+        if (*curr == target) {
+            *curr = target->next;
+            free(target);
+            return;
+        }
+        curr = &(*curr)->next;
+    }
+}
+
+static void cancel_pending_connect(const uint8_t *macaddr)
+{
+    pending_connect_t *p = find_pending_connect(macaddr);
+    if (p) {
+        remove_pending_connect(p);
+    }
+}
+
+static void dispatch_client_connect(const uint8_t *macaddr, const char *ifname, uint64_t timestamp_ms)
+{
+    if (!macaddr)
+        return;
+
     client_info_event_t client_info = {0};
-    uint64_t timestamp_ms = get_timestamp_ms();
-    //usleep(3000*1000); 
-    struct timespec ts = {
-        .tv_sec = 5,
-        .tv_nsec = 0
-    };
-    nanosleep(&ts, NULL);
+
     // Call target function to fill client info
     if (!target_info_clients_get(macaddr, ifname, &client_info, timestamp_ms, true)) {
         LOG(ERR, "Failed to get client info from target");
@@ -125,15 +228,111 @@ void stamonitord_handle_client_connect(const uint8_t *macaddr, const char *ifnam
     }
 
     client_info.is_connected = true;
-    
+
     // Send client info event
-    LOG(INFO, "Client connected: MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s ip=%s",
-        macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5], 
-        ifname ? ifname : "unknown", client_info.ipaddr);
-    
+    LOG(INFO, "STA_CONNECTED: mac=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s ssid='%s' band=%s ch=%u ip=%s host='%s' os='%s' phy=%s bw=%s roaming=%s",
+        macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5],
+        ifname ? ifname : "unknown",
+        client_info.ssid[0] ? client_info.ssid : "none",
+        client_info.band[0] ? client_info.band : "unknown",
+        client_info.channel,
+        client_info.ipaddr[0] ? client_info.ipaddr : "0.0.0.0",
+        client_info.hostname[0] ? client_info.hostname : "unknown",
+        client_info.osinfo[0] ? client_info.osinfo : "unknown",
+        client_info.capability.phy[0] ? client_info.capability.phy : "legacy",
+        client_info.capability.bw[0] ? client_info.capability.bw : "20",
+        client_info.capability.roaming[0] ? client_info.capability.roaming : "none");
+
     if (!stamonitord_send_client_info_event(&client_info, timestamp_ms)) {
         LOG(ERR, "Failed to send client connect info event");
     }
+}
+
+static void pending_connect_timer_cb(EV_P_ ev_timer *w, int revents)
+{
+    (void)loop;
+    (void)revents;
+
+    pending_connect_t *p = (pending_connect_t *)w->data;
+    if (!p)
+        return;
+
+    uint8_t mac[6];
+    char ifname[32];
+    uint64_t timestamp_ms = p->timestamp_ms;
+
+    memcpy(mac, p->macaddr, 6);
+    strncpy(ifname, p->ifname, sizeof(ifname) - 1);
+    ifname[sizeof(ifname) - 1] = '\0';
+
+    remove_pending_connect(p);
+
+    dispatch_client_connect(mac, ifname, timestamp_ms);
+}
+
+/* Notification when DHCP IP/identity is resolved for a station */
+void stamonitord_client_events_on_dhcp_resolved(const uint8_t *macaddr)
+{
+    if (!macaddr)
+        return;
+
+    pending_connect_t *p = find_pending_connect(macaddr);
+    if (!p)
+        return;
+
+    uint8_t mac[6];
+    char ifname[32];
+    uint64_t timestamp_ms = p->timestamp_ms;
+
+    memcpy(mac, p->macaddr, 6);
+    strncpy(ifname, p->ifname, sizeof(ifname) - 1);
+    ifname[sizeof(ifname) - 1] = '\0';
+
+    remove_pending_connect(p);
+
+    dispatch_client_connect(mac, ifname, timestamp_ms);
+}
+
+/* Clean up pending connect timers on daemon exit */
+void stamonitord_client_events_cleanup(void)
+{
+    while (g_pending_connects) {
+        remove_pending_connect(g_pending_connects);
+    }
+}
+
+/* Handle client connect event */
+void stamonitord_handle_client_connect(const uint8_t *macaddr, const char *ifname)
+{
+    if (!macaddr) {
+        LOG(ERR, "stamonitord_handle_client_connect: NULL macaddr");
+        return;
+    }
+
+    uint64_t timestamp_ms = get_timestamp_ms();
+
+    pending_connect_t *p = find_pending_connect(macaddr);
+    if (!p) {
+        p = calloc(1, sizeof(*p));
+        if (!p) {
+            LOG(ERR, "Failed to allocate pending connect");
+            dispatch_client_connect(macaddr, ifname, timestamp_ms);
+            return;
+        }
+        memcpy(p->macaddr, macaddr, 6);
+        p->next = g_pending_connects;
+        g_pending_connects = p;
+    } else {
+        ev_timer_stop(EV_DEFAULT, &p->timer);
+    }
+
+    strncpy(p->ifname, ifname ? ifname : "unknown", sizeof(p->ifname) - 1);
+    p->ifname[sizeof(p->ifname) - 1] = '\0';
+    p->timestamp_ms = timestamp_ms;
+    p->timer.data = p;
+
+    ev_timer_init(&p->timer, pending_connect_timer_cb, CLIENT_CONNECT_TIMEOUT_SEC, 0.);
+    ev_timer_start(EV_DEFAULT, &p->timer);
 }
 
 /* Handle client disconnect event */
@@ -143,29 +342,32 @@ void stamonitord_handle_client_disconnect(const uint8_t *macaddr, const char *if
         LOG(ERR, "stamonitord_handle_client_disconnect: NULL macaddr");
         return;
     }
-    
+
+    // Cancel pending connect timer if station disconnected before DHCP/timeout
+    cancel_pending_connect(macaddr);
+
     client_info_event_t client_info = {0};
     uint64_t timestamp_ms = get_timestamp_ms();
-    
-    struct timespec ts = {
-        .tv_sec = 5,
-        .tv_nsec = 0
-    };
-    nanosleep(&ts, NULL);
-    
-    // Call target function to fill client info
+
+    // No nanosleep! Zero freeze on disconnect.
     if (!target_info_clients_get(macaddr, ifname, &client_info, timestamp_ms, false)) {
         LOG(ERR, "Failed to get client info from target");
         return;
     }
-    
+
+    enrich_client_identity(&client_info);
     client_info.is_connected = false;
-    
+
     // Send client info event
-    LOG(INFO, "Client disconnected: MAC=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s",
-        macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5], 
-        ifname ? ifname : "unknown");
-    
+    LOG(INFO, "STA_DISCONNECTED: mac=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s ssid='%s' band=%s ch=%u ip=%s host='%s'",
+        macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5],
+        ifname ? ifname : "unknown",
+        client_info.ssid[0] ? client_info.ssid : "none",
+        client_info.band[0] ? client_info.band : "unknown",
+        client_info.channel,
+        client_info.ipaddr[0] ? client_info.ipaddr : "0.0.0.0",
+        client_info.hostname[0] ? client_info.hostname : "unknown");
+
     if (!stamonitord_send_client_info_event(&client_info, timestamp_ms)) {
         LOG(ERR, "Failed to send client disconnect info event");
     }

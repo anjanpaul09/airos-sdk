@@ -1,4 +1,5 @@
 #include "stamonitord_history_internal.h"
+#include "stamonitord_client_events.h"
 
 /* paste Packet parsing section */
 /* paste Accounting section */
@@ -375,6 +376,10 @@ bool process_dhcp_packet(app_t *app, cap_if_t *cap, const parsed_pkt_t *pp) {
         s->dhcp_msg_type = msg_type;
 
     s->identity_last_seen_ms = now_ms();
+
+    if (s->ip != 0) {
+        stamonitord_client_events_on_dhcp_resolved(station_mac.b);
+    }
 
     return true;
 }
