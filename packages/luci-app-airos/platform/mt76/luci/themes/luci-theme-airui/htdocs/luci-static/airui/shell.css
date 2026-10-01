@@ -1,54 +1,835 @@
-/*
- * Final AirUI shell contract.
- *
- * Loaded after legacy theme files so page-level styles cannot repaint the
- * application canvas or reduce navigation contrast.
- */
-html,
-body,
-.main,
-.main > .main-right,
-.main-right,
-.main-right > #maincontent,
-#maincontent,
-#maincontent > .container {
-	background: #ffffff !important;
-	background-color: #ffffff !important;
+html,body,.main,.main > .main-right,.main-right,.main-right > #maincontent,#maincontent,#maincontent > .container{background:#FFF!important;background-color:#FFF!important;background-image:none!important}.main > .main-left{background:#FFF!important}#maincontent > .container,.airdash,.status-page{min-width:0!important}.airdash,.status-page{width:100%!important}body.logged-in .main > .main-left > .nav > li:last-child > a{color:#17084d!important;text-shadow:none!important}body.logged-in #maincontent :is(
+.status-page .status-page-hero,.air-settings-page .air-settings-hero,.wireless-page .wireless-ref-head,.mac-filter-page .mac-filter-title
+) h1{text-decoration:none!important}.airui-site-footer{width:100%!important;background:#FFF!important;color:#7a718d!important;text-align:right!important}
+
+/* ==========================================================================
+   AirUI refresh - appended to shell.css (last stylesheet loaded by header).
+   CSS only: no markup / JS / template logic is changed.
+   Specificity: sidebar rules are scoped to #mainmenu, content rules to
+   body.logged-in #maincontent#maincontent, so they win over the class-based !important
+   rules in cascade.css / custom.css / reference.css without editing them.
+   ========================================================================== */
+
+:root {
+	--ap-orange: #F58634;
+	--ap-orange-dark: #DC6F1F;
+	--ap-orange-soft: #FEF0E7;
+	--ap-orange-tint: #FFF7F1;
+	--ap-navy: #17084D;
+	--ap-ink: #1E1838;
+	--ap-text: #2B2545;
+	--ap-muted: #5C566D;
+	--ap-line: #EEE4DC;
+	--ap-line-strong: #E0D2C7;
+	--ap-page: #FFF6F0;        /* very light brand tint behind cards */
+	--ap-tint: #FFFAF6;        /* card heads, table heads, sidebar */
+	--ap-danger: #D92D20;
+	--ap-radius: 10px;
+	--ap-radius-sm: 8px;
+	--ap-shadow: 0 1px 2px rgba(23, 8, 77, .04), 0 1px 3px rgba(23, 8, 77, .05);
+	--ap-font: Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ---------- 1. Typography: one font family, normal weights ---------- */
+
+html body,
+html body :is(h1, h2, h3, h4, h5, h6, legend, button, input, select, textarea, .btn, .cbi-button) {
+	font-family: var(--ap-font) !important;
+	letter-spacing: 0 !important;
+}
+
+html body {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	color: var(--ap-text) !important;
+}
+
+/* reset the 700-900 weights used everywhere, then re-apply a clear scale */
+body.logged-in #maincontent#maincontent * { font-weight: 400 !important; }
+
+body.logged-in #maincontent#maincontent :is(strong, b, th, dt, label, legend, .cbi-value-title,
+	.cbi-section-table-titles, .table .th, .tr.table-titles .th,
+	button, .btn, .cbi-button, input[type="submit"], input[type="button"], input[type="reset"],
+	.label, .badge, [class*="badge"], [class*="pill"], [class*="chip"], [class*="-status"], [class*="state"],
+	.tabs > li > a, .cbi-tabmenu > li > a, [class*="-nav"] a) {
+	font-weight: 500 !important;
+}
+
+body.logged-in #maincontent#maincontent :is(h2, h3, h4, h5, h6, .cbi-section > h3, [class*="-head"] :is(h2, h3, h4, strong), [class*="title"]) {
+	font-weight: 600 !important;
+	color: var(--ap-ink) !important;
+}
+
+body.logged-in #maincontent#maincontent h1 {
+	font-weight: 700 !important;
+	color: var(--ap-navy) !important;
+	font-size: clamp(1.45rem, 1.1rem + 1vw, 1.9rem) !important;
+	line-height: 1.2 !important;
+}
+
+/* card headings, eyebrows above page titles, step indicators */
+body.logged-in #maincontent#maincontent :is([class*="-head"], [class*="eyebrow"], .detail-head, .metric-title,
+	.air-firmware-steps span, .wireless-ssid-name-cell strong) {
+	font-weight: 600 !important;
+}
+
+body.logged-in #maincontent#maincontent [class*="eyebrow"] { letter-spacing: .06em !important; }
+
+/* metric values (KPI tiles, firmware info, address tiles) */
+body.logged-in #maincontent#maincontent :is([class*="stat"], [class*="metric"], [class*="card"], .air-setting-item) :is(strong, b, [class*="value"]) {
+	font-weight: 600 !important;
+	color: var(--ap-ink) !important;
+}
+
+/* small uppercase eyebrow labels */
+body.logged-in #maincontent#maincontent :is(small, [class*="label"], [class*="eyebrow"], [class*="kicker"]) {
+	letter-spacing: .02em !important;
+}
+
+body.logged-in #maincontent#maincontent :is(p, .cbi-map-descr, .cbi-section-descr, .cbi-value-description, [class*="descr"], [class*="muted"], [class*="hint"], [class*="subtitle"]) {
+	color: var(--ap-muted) !important;
+}
+
+/* ---------- 2. Page canvas ---------- */
+
+html body.logged-in,
+html body.logged-in > .main,
+html body.logged-in > .main > .main-right,
+html body.logged-in #maincontent#maincontent,
+html body.logged-in #maincontent#maincontent > .container {
+	background: var(--ap-page) !important;
+	background-color: var(--ap-page) !important;
 	background-image: none !important;
 }
 
-.main > .main-left {
-	background: #ffffff !important;
+/* ---------- 3. Header ---------- */
+
+html body.logged-in > header,
+html body.logged-in > header > .fill,
+html body.logged-in > header > .fill > .container {
+	background: #FFF !important;
+	box-shadow: none !important;
 }
 
-#maincontent > .container,
-.airdash,
-.status-page {
-	min-width: 0 !important;
+html body.logged-in > header {
+	border-bottom: 1px solid var(--ap-line) !important;
+	box-shadow: 0 1px 0 var(--ap-line) !important;
 }
 
-.airdash,
-.status-page {
-	width: 100% !important;
+html body.logged-in > header > .fill > .container > #logo > img {
+	width: auto !important;
+	height: 40px !important;
+	max-height: 40px !important;
+	max-width: 10rem !important;
 }
 
-body.logged-in .main > .main-left > .nav > li:last-child > a {
-	color: #17084d !important;
+/* ---------- 4. Sidebar - same theme as the AirPro cloud web UI ----------
+   (airpro-cloud-new: _airpro.scss "sidebar (cream + orange)" + styles.scss nb-sidebar)
+   cream panel, navy outline icons, white pill for hover/active with orange text,
+   children indented under a thin guide line. */
+
+#mainmenu.main-left {
+	background: var(--ap-orange-soft) !important;        /* sidebar-background-color: #FEF0E7 */
+	border-right: 1px solid #F5E4D7 !important;           /* border-basic-color-4 */
+	box-shadow: none !important;
+	overflow-y: auto !important;
+	scrollbar-width: thin;
+}
+
+/* orange line that was drawn across the bottom of the screen */
+#mainmenu.main-left::after { display: none !important; content: none !important; }
+
+#mainmenu > .nav { margin: 0 !important; padding: .5rem !important; }   /* nb-menu padding: .5rem */
+
+#mainmenu > .nav > li {
+	margin: 0 0 2px !important;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: .5rem !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	transform: none !important;
+}
+
+/* icons: navy outline icons (mask keeps the same svg files, lets CSS colour them) */
+#mainmenu > .nav > li::before {
+	content: "" !important;
+	top: 11px !important;
+	left: 12px !important;
+	width: 18px !important;                                  /* menu-item-icon-width: 1.125rem */
+	height: 18px !important;
+	background: var(--ap-navy) !important;                   /* menu-item-icon-color: #17084D */
+	-webkit-mask: var(--ap-icon) center / 18px 18px no-repeat;
+	mask: var(--ap-icon) center / 18px 18px no-repeat;
+	opacity: 1 !important;
+	transition: background-color .15s ease;
+}
+
+#mainmenu > .nav > li:nth-child(1) { --ap-icon: url(./icons/activity.svg); }
+#mainmenu > .nav > li:nth-child(2) { --ap-icon: url(./icons/network-nav.svg); }
+#mainmenu > .nav > li:nth-child(3) { --ap-icon: url(./icons/settings.svg); }
+#mainmenu > .nav > li:nth-child(4) { --ap-icon: url(./icons/shield-check.svg); }
+#mainmenu > .nav > li:nth-child(5) { --ap-icon: url(./icons/wrench.svg); }
+#mainmenu > .nav > li:last-child   { --ap-icon: url(./icons/logout.svg); }
+
+#mainmenu > .nav > li:hover::before,
+#mainmenu > .nav > li.active::before { background: var(--ap-orange) !important; }   /* icon-active: #F58634 */
+
+/* top level rows - menu-item-padding .7rem .85rem, radius .5rem, text #171717 / 500 */
+#mainmenu > .nav > li > a {
+	display: flex !important;
+	align-items: center !important;
+	height: 40px !important;
+	min-height: 40px !important;
+	margin: 0 !important;
+	padding: 0 34px 0 40px !important;
+	border: 0 !important;
+	border-radius: .5rem !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	color: #171717 !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	line-height: 1 !important;
 	text-shadow: none !important;
+	white-space: nowrap;
+	overflow: hidden;
+	transition: background-color .15s ease, color .15s ease;
 }
 
-body.logged-in #maincontent :is(
-	.status-page .status-page-hero,
-	.air-settings-page .air-settings-hero,
-	.wireless-page .wireless-ref-head,
-	.mac-filter-page .mac-filter-title
-) h1 {
+/* hover: white pill + orange text */
+#mainmenu > .nav > li > a:hover {
+	background: #FFF !important;
+	color: var(--ap-orange-dark) !important;
+}
+
+/* open section (parent of the active page): white pill, orange text - like the cloud UI */
+#mainmenu > .nav > li.slide.active > a.menu {
+	background: #FFF !important;
+	color: var(--ap-orange-dark) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 2px rgba(23, 8, 77, .06) !important;
+}
+
+/* chevron (expand-state) */
+#mainmenu > .nav > li.slide > .menu::before {
+	content: "" !important;
+	top: 50% !important;
+	right: 12px !important;
+	left: auto !important;
+	width: 12px !important;
+	height: 12px !important;
+	margin-top: -6px !important;
+	background: var(--ap-navy) !important;
+	-webkit-mask: url(./icons/arrow.svg) center / 12px 12px no-repeat;
+	mask: url(./icons/arrow.svg) center / 12px 12px no-repeat;
+	opacity: .6 !important;
+	transition: transform .2s ease !important;
+}
+
+#mainmenu > .nav > li.slide.active > .menu::before,
+#mainmenu > .nav > li.slide > .menu:hover::before { background: var(--ap-orange) !important; opacity: 1 !important; }
+
+/* ripple effect layer */
+#mainmenu > .nav > li > a::after { border-radius: .5rem !important; }
+
+/* children: margin .25rem 0 .375rem 1.4rem, padding-left .5rem, guide line #F5E4D7 */
+#mainmenu > .nav > li.slide > .slide-menu {
+	margin: .25rem 0 .375rem 1.4rem !important;
+	padding: 0 0 0 .5rem !important;
+	border-left: 1px solid #F5E4D7 !important;
+	background: transparent !important;
+}
+
+#mainmenu > .nav > li.slide > .slide-menu > li {
+	margin: 0 0 2px !important;
+	padding: 0 !important;
+	border-radius: .5rem !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+#mainmenu > .nav > li.slide > .slide-menu > li > a {
+	display: flex !important;
+	align-items: center !important;
+	height: 36px !important;
+	margin: 0 !important;
+	padding: 0 10px 0 .75rem !important;
+	border-left: 2px solid transparent !important;
+	border-radius: .5rem !important;
+	background: transparent !important;
+	color: #4A4B4D !important;                               /* color-basic-700 */
+	font-size: 14px !important;
+	font-weight: 500 !important;
+	line-height: 1 !important;
+	text-shadow: none !important;
+	transition: background-color .15s ease, color .15s ease;
+}
+
+#mainmenu > .nav > li.slide > .slide-menu > li > a:hover {
+	background: #FFF !important;
+	color: var(--ap-orange-dark) !important;
+}
+
+#mainmenu > .nav > li.slide > .slide-menu > li.active {
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+/* active page: white pill, orange text, 2px orange edge (submenu-item-active-border-color) */
+#mainmenu > .nav > li.slide > .slide-menu > li.active > a {
+	border-left-color: var(--ap-orange) !important;
+	background: #FFF !important;
+	color: var(--ap-orange-dark) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 2px rgba(23, 8, 77, .06) !important;
+}
+
+/* single (non-slide) active entry */
+#mainmenu > .nav > li:not(.slide).active > a {
+	background: #FFF !important;
+	color: var(--ap-orange-dark) !important;
+	box-shadow: 0 1px 2px rgba(23, 8, 77, .06) !important;
+}
+
+/* log out - normal row under a divider */
+#mainmenu > .nav > li:last-child {
+	display: block !important;
+	margin-top: 12px !important;
+	padding-top: 10px !important;
+	border-top: 1px solid #F5E4D7 !important;
+	border-radius: 0 !important;
+}
+
+#mainmenu > .nav > li:last-child::before { top: 21px !important; }
+
+#mainmenu > .nav > li:last-child > a { width: 100% !important; color: #171717 !important; }
+
+#mainmenu > .nav > li:last-child > a:hover { background: #FFF !important; color: var(--ap-danger) !important; }
+#mainmenu > .nav > li:last-child:hover::before { background: var(--ap-danger) !important; }
+
+/* header: logo block in the same cream as the sidebar, as in the cloud UI header */
+@media screen and (min-width: 1153px) {
+	html body.logged-in > header > .fill > .container { background: transparent !important; }
+
+	html body.logged-in > header > .fill {
+		background:
+			linear-gradient(90deg, var(--ap-orange-soft) 0 calc(16.25rem - 1px), #F5E4D7 calc(16.25rem - 1px) 16.25rem, #FFF 16.25rem) !important;
+	}
+}
+
+/* ---------- 5. Cards / panels ---------- */
+
+/* page hero */
+body.logged-in #maincontent#maincontent :is(.status-page-hero, .air-settings-hero, .wireless-ref-head, .mac-filter-title,
+	.device-hero, .clients-hero, .stats-hero, .stats-v3-hero) {
+	border: 1px solid #F6DFCF !important;
+	border-radius: 12px !important;
+	background: linear-gradient(120deg, var(--ap-orange-soft) 0%, #FFF8F3 60%, #FFFFFF 100%) !important;
+	box-shadow: none !important;
+}
+
+/* top level surfaces: white card with hairline border */
+body.logged-in #maincontent#maincontent :is(.airdash .card, .device-status-card, .device-panel, .client-stat, .client-panel,
+	.stats-panel, .stats-metric-card, .stats-resource-card, .stats-live-card, .stats-side-card, .stats-counters-card,
+	.stats-health-strip, .air-card, .air-settings-card, .air-settings-section, .air-wan-config-card, .air-mode-card,
+	.air-mode-summary, .air-controller-section, .air-firmware-upgrade, .air-maintenance-group, .network-table,
+	.wireless-ref-panel, .wireless-advanced-panel, .wireless-ref-ssid-management, .mac-stat, .mac-panel,
+	.cbi-section, .air-maintenance-log, .air-factory-confirm) {
+	border: 1px solid var(--ap-line) !important;
+	border-radius: var(--ap-radius) !important;
+	background: #FFF !important;
+	background-image: none !important;
+	box-shadow: var(--ap-shadow) !important;
+}
+
+/* nested surfaces: soft tint so they read as groups, not as cards in cards */
+body.logged-in #maincontent#maincontent :is(.air-setting-item, .wireless-advanced-radio,
+	.wireless-advanced-grid, .air-firmware-installed .air-setting-item, .air-firmware-release, .air-firmware-status,
+	.air-firmware-validation, .air-firmware-test, .air-firmware-dropzone) {
+	border: 1px solid var(--ap-line) !important;
+	border-radius: var(--ap-radius-sm) !important;
+	background: #FFF !important;
+	background-image: none !important;
+	box-shadow: none !important;
+}
+
+/* wrappers that only group other cards - no second border around cards */
+body.logged-in #maincontent#maincontent :is(.air-system-maintenance .air-maintenance-group, .air-card .air-firmware-flow, .air-card .air-firmware-upgrade) {
+	border-color: transparent !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+/* card headers */
+body.logged-in #maincontent#maincontent :is(.device-panel-head, .client-panel-head, .stats-panel-head, .stats-card-head, .air-card-head,
+	.air-maintenance-group-head, .wireless-panel-head, .mac-panel-head, .detail-head) {
+	background: transparent !important;
+	border-color: var(--ap-line) !important;
+}
+
+/* light brand touch: warm card border + very soft cream wash at the top of each card */
+body.logged-in #maincontent#maincontent :is(.airdash .card, .device-status-card, .device-panel, .client-stat, .client-panel,
+	.stats-panel, .stats-metric-card, .stats-resource-card, .stats-live-card, .stats-side-card, .stats-counters-card,
+	.air-card, .air-settings-card, .air-wan-config-card, .air-mode-card, .air-controller-section,
+	.network-table, .wireless-ref-panel, .wireless-advanced-panel, .wireless-ref-ssid-management, .mac-stat, .mac-panel,
+	.cbi-section, .air-maintenance-log) {
+	border-color: #F6E3D6 !important;
+	background: linear-gradient(180deg, var(--ap-tint) 0, #FFF 64px) !important;
+}
+
+/* action bars that stick to the bottom */
+body.logged-in #maincontent#maincontent :is(.wireless-ref-applybar, .air-settings-applybar, .mac-actions-bar) {
+	border: 1px solid var(--ap-line) !important;
+	border-radius: var(--ap-radius) !important;
+	background: rgba(255, 255, 255, .96) !important;
+	box-shadow: 0 -4px 18px rgba(23, 8, 77, .08) !important;
+	backdrop-filter: blur(6px);
+}
+
+/* ---------- 6. Tables ---------- */
+
+body.logged-in #maincontent#maincontent table { border-collapse: separate; border-spacing: 0; }
+
+body.logged-in #maincontent#maincontent :is(thead th, .table .tr.table-titles .th, .cbi-section-table-titles .th, [class*="table"] > [class*="head"]) {
+	background: #FFF4EC !important;
+	color: var(--ap-muted) !important;
+	font-size: 12px !important;
+	font-weight: 500 !important;
+	text-transform: none !important;
+	border-bottom: 1px solid var(--ap-line) !important;
+}
+
+body.logged-in #maincontent#maincontent :is(td, .td) { vertical-align: middle !important; border-color: var(--ap-line) !important; }
+
+body.logged-in #maincontent#maincontent :is(tbody tr, .table .tr:not(.table-titles), .table-row):hover { background: #FFFBF8 !important; }
+
+/* ---------- 7. Tabs ---------- */
+
+body.logged-in #maincontent#maincontent :is(.tabs, .cbi-tabmenu) {
+	border-bottom: 1px solid var(--ap-line) !important;
+	background: transparent !important;
+}
+
+body.logged-in #maincontent#maincontent :is(.tabs > li > a, .cbi-tabmenu > li > a, .air-maintenance-nav a) {
 	text-decoration: none !important;
+	color: var(--ap-muted) !important;
+	font-size: 13.5px !important;
+	padding: 10px 14px !important;
+	border-bottom: 2px solid transparent !important;
+	background: transparent !important;
 }
 
-.airui-site-footer {
+body.logged-in #maincontent#maincontent :is(.tabs > li > a, .cbi-tabmenu > li > a, .air-maintenance-nav a):hover { color: var(--ap-navy) !important; }
+
+body.logged-in #maincontent#maincontent :is(.tabs > li.active > a, .cbi-tabmenu > li.cbi-tab > a, .air-maintenance-nav a:is(.is-active, .active, [aria-current], [aria-selected="true"])) {
+	color: var(--ap-orange-dark) !important;
+	border-bottom-color: var(--ap-orange) !important;
+	font-weight: 600 !important;
+}
+
+body.logged-in #maincontent#maincontent .air-maintenance-nav {
+	border: 0 !important;
+	border-bottom: 1px solid var(--ap-line) !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+/* ---------- 8. Forms ---------- */
+
+body.logged-in #maincontent#maincontent :is(input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]):not([type="hidden"]), select, textarea) {
+	min-height: 38px !important;
+	border: 1px solid var(--ap-line-strong) !important;
+	border-radius: var(--ap-radius-sm) !important;
+	background-color: #FFF !important;
+	color: var(--ap-ink) !important;
+	font-size: 13.5px !important;
+	font-weight: 400 !important;
+	box-shadow: 0 1px 1px rgba(23, 8, 77, .03) !important;
+	transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+body.logged-in #maincontent#maincontent :is(input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]), textarea) {
+	padding-left: 12px !important;
+	padding-right: 12px !important;
+}
+
+body.logged-in #maincontent#maincontent textarea { padding-top: 8px !important; padding-bottom: 8px !important; line-height: 1.5 !important; }
+
+body.logged-in #maincontent#maincontent :is(input, select, textarea):hover:not(:disabled):not(:focus) { border-color: #D2C0B2 !important; }
+
+body.logged-in #maincontent#maincontent :is(input, select, textarea):focus {
+	border-color: var(--ap-orange) !important;
+	box-shadow: 0 0 0 3px rgba(245, 134, 52, .16) !important;
+	outline: 0 !important;
+}
+
+body.logged-in #maincontent#maincontent :is(input, select, textarea):disabled,
+body.logged-in #maincontent#maincontent :is(input, textarea)[readonly] {
+	background-color: #F7F4F1 !important;
+	color: var(--ap-muted) !important;
+	cursor: not-allowed;
+}
+
+body.logged-in #maincontent#maincontent ::placeholder { color: #A39DAE !important; opacity: 1; }
+
+body.logged-in #maincontent#maincontent .cbi-dropdown:not(.btn) {
+	min-height: 38px !important;
+	border: 1px solid var(--ap-line-strong) !important;
+	border-radius: var(--ap-radius-sm) !important;
+	background: #FFF !important;
+}
+
+body.logged-in #maincontent#maincontent :is(input[type="checkbox"], input[type="radio"]) {
+	accent-color: var(--ap-orange);
+	width: 16px;
+	height: 16px;
+	vertical-align: middle;
+	cursor: pointer;
+}
+
+body.logged-in #maincontent#maincontent :is(label, .cbi-value-title) {
+	color: var(--ap-text) !important;
+	font-size: 13px !important;
+}
+
+body.logged-in #maincontent#maincontent .cbi-value-description {
+	font-size: 12.5px !important;
+	line-height: 1.5 !important;
+	margin-top: 4px !important;
+}
+
+body.logged-in #maincontent#maincontent .cbi-value { align-items: center; }
+
+/* ---------- 9. Buttons ---------- */
+
+body.logged-in #maincontent#maincontent :is(button, .btn, .cbi-button, input[type="submit"], input[type="button"], input[type="reset"]) {
+	border-radius: var(--ap-radius-sm) !important;
+	font-size: 13px !important;
+	line-height: 1.2 !important;
+	text-transform: none !important;
+	text-shadow: none !important;
+	box-shadow: none !important;
+	cursor: pointer;
+	transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+/* icon + text inside buttons on one line, vertically centred */
+body.logged-in #maincontent#maincontent :is(button, .btn, .cbi-button):not([hidden]):not(.cbi-dropdown) {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	vertical-align: middle;
+}
+
+body.logged-in #maincontent#maincontent :is(button, .btn, .cbi-button, a, td, .td, [class*="head"], [class*="title"]) > :is(svg, img, i, .line-icon) {
+	flex: 0 0 auto;
+	vertical-align: middle;
+}
+
+/* secondary / outline buttons - neutral instead of navy outlines */
+body.logged-in #maincontent#maincontent :is(.mac-outline-button, .air-action, .wireless-save, [class*="outline"], [class*="secondary"]):where(button, .btn, a):not(.is-primary):not(.primary):not(.is-danger):not(.danger) {
+	border: 1px solid var(--ap-line-strong) !important;
+	background: #FFF !important;
+	color: var(--ap-ink) !important;
+	font-weight: 500 !important;
+}
+
+body.logged-in #maincontent#maincontent :is(.mac-outline-button, .air-action, .wireless-save, [class*="outline"], [class*="secondary"]):where(button, .btn, a):not(.is-primary):not(.primary):not(.is-danger):not(.danger):hover:not(:disabled) {
+	border-color: var(--ap-orange) !important;
+	background: var(--ap-orange-tint) !important;
+	color: var(--ap-orange-dark) !important;
+}
+
+body.logged-in #maincontent#maincontent :is(.cbi-button-apply, .cbi-button-save, .cbi-button-add, .cbi-button-positive, .cbi-button-action.important,
+	button.primary, button.is-primary, .status-page-refresh, .clients-refresh, .air-refresh, .wireless-save.is-primary, .mac-primary-button) {
+	border: 1px solid var(--ap-orange) !important;
+	background: var(--ap-orange) !important;
+	color: #FFF !important;
+	font-weight: 600 !important;
+}
+
+body.logged-in #maincontent#maincontent :is(.cbi-button-apply, .cbi-button-save, .cbi-button-add, .cbi-button-positive, .cbi-button-action.important,
+	button.primary, button.is-primary, .status-page-refresh, .clients-refresh, .air-refresh, .wireless-save.is-primary, .mac-primary-button):hover:not(:disabled) {
+	border-color: var(--ap-orange-dark) !important;
+	background: var(--ap-orange-dark) !important;
+	box-shadow: 0 4px 12px rgba(245, 134, 52, .25) !important;
+}
+
+body.logged-in #maincontent#maincontent :is(.cbi-button-reset, .cbi-button-neutral, .cbi-button-edit, .cbi-button-action:not(.important)) {
+	border: 1px solid var(--ap-line-strong) !important;
+	background: #FFF !important;
+	color: var(--ap-ink) !important;
+}
+
+body.logged-in #maincontent#maincontent :is(.cbi-button-reset, .cbi-button-neutral, .cbi-button-edit, .cbi-button-action:not(.important)):hover:not(:disabled) {
+	border-color: #CDBBAE !important;
+	background: #FCF8F5 !important;
+}
+
+body.logged-in #maincontent#maincontent :is(.cbi-button-remove, .cbi-button-negative, .cbi-button-reset.danger, button.danger) {
+	border: 1px solid #F5C2BD !important;
+	background: #FFF !important;
+	color: var(--ap-danger) !important;
+}
+
+body.logged-in #maincontent#maincontent :is(.cbi-button-remove, .cbi-button-negative, button.danger):hover:not(:disabled) {
+	border-color: var(--ap-danger) !important;
+	background: #FEF3F2 !important;
+}
+
+body.logged-in #maincontent#maincontent :is(button, .btn, .cbi-button, input[type="submit"], input[type="button"]):disabled {
+	opacity: .55 !important;
+	cursor: not-allowed !important;
+	box-shadow: none !important;
+}
+
+/* ---------- 10. Footer ---------- */
+
+html body.logged-in .airui-site-footer {
+	background: transparent !important;
+	color: #9A93A6 !important;
+	font-size: 12px !important;
+	padding: 18px 24px !important;
+	text-align: center !important;
+}
+
+/* ---------- 11. Login page ---------- */
+
+/* no separate logo bar on the login screen - the logo is shown inside the card */
+html body.node-main-login > header { display: none !important; }
+
+html body.node-main-login {
+	background: #FEF0E7 !important;
+}
+
+/* original AirPro login backdrop: cream with the diagonal orange shade on the right */
+html body.node-main-login > .main {
+	top: 0 !important;
+	height: 100vh !important;
+	min-height: 100vh !important;
+	background:
+		linear-gradient(116deg, transparent 0 66%, rgba(245, 134, 52, .11) 66.15% 100%),
+		radial-gradient(circle at 76% 18%, rgba(245, 134, 52, .10), transparent 29rem),
+		#FEF0E7 !important;
+}
+
+html body.node-main-login #maincontent {
+	width: min(25rem, calc(100vw - 2rem)) !important;
+	margin: 0 auto !important;
+}
+
+html body.node-main-login #maincontent > .container {
+	border: 1px solid var(--ap-line) !important;
+	border-radius: 16px !important;
+	background: #FFF !important;
+	box-shadow: 0 24px 54px rgba(23, 8, 77, .12), 0 8px 20px rgba(245, 134, 52, .08) !important;
+	padding: 2.25rem 2rem 1.75rem !important;
+}
+
+/* card logo */
+html body.node-main-login #maincontent > .container::before {
+	width: 10rem !important;
+	height: 3rem !important;
+	margin: 0 auto 1.25rem !important;
+}
+
+html body.node-main-login #maincontent :is(h1, h2) {
+	color: var(--ap-navy) !important;
+	font-size: 1.4rem !important;
+	font-weight: 700 !important;
+	line-height: 1.25 !important;
+	text-align: center !important;
+}
+
+html body.node-main-login #maincontent :is(h1, h2)::after { display: none !important; content: none !important; }
+
+html body.node-main-login #maincontent .cbi-map-descr {
+	color: var(--ap-muted) !important;
+	font-size: 13.5px !important;
+	margin: 6px 0 1.5rem !important;
+}
+
+/* stacked label + field */
+html body.node-main-login > .main .cbi-value {
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: stretch !important;
+	gap: 6px !important;
+	margin: 0 0 14px !important;
+}
+
+html body.node-main-login > .main .cbi-value-title {
+	text-align: left !important;
+	color: var(--ap-text) !important;
+	font-size: 13px !important;
+	font-weight: 500 !important;
+}
+
+html body.node-main-login > .main :is(.cbi-input-text, input[type="text"], input[type="password"]) {
+	height: 44px !important;
+	border: 1px solid var(--ap-line-strong) !important;
+	border-radius: 10px !important;
+	background-color: #FFF !important;
+	background-repeat: no-repeat !important;
+	background-position: 13px center !important;
+	background-size: 18px 18px !important;
+	color: var(--ap-ink) !important;
+	font-size: 14px !important;
+	font-weight: 400 !important;
+	padding: 0 14px 0 40px !important;
+}
+
+html body.node-main-login > .main input[type="text"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A39DAE' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 20c0-4 3.6-6 8-6s8 2 8 6'/%3E%3C/svg%3E") !important;
+}
+
+html body.node-main-login > .main input[type="password"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A39DAE' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='10.5' width='16' height='10' rx='2'/%3E%3Cpath d='M8 10.5V7a4 4 0 0 1 8 0v3.5'/%3E%3C/svg%3E") !important;
+}
+
+html body.node-main-login > .main :is(input[type="text"], input[type="password"]):focus {
+	border-color: var(--ap-orange) !important;
+	box-shadow: 0 0 0 3px rgba(245, 134, 52, .16) !important;
+	outline: 0 !important;
+}
+
+/* full width primary button, quiet reset link */
+html body.node-main-login > .main .cbi-page-actions {
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: stretch !important;
+	gap: 8px !important;
+	max-width: none !important;
+	margin: 22px 0 0 !important;
+}
+
+html body.node-main-login > .main :is(.cbi-button, input[type="submit"], input[type="reset"]) {
 	width: 100% !important;
-	background: #ffffff !important;
-	color: #7a718d !important;
-	text-align: right !important;
+	height: 44px !important;
+	min-height: 44px !important;
+	border-radius: 10px !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	box-shadow: none !important;
+	cursor: pointer;
+	transition: background-color .15s ease, box-shadow .15s ease;
+}
+
+html body.node-main-login > .main input[type="submit"]:hover {
+	background: var(--ap-orange-dark) !important;
+	border-color: var(--ap-orange-dark) !important;
+	box-shadow: 0 6px 16px rgba(245, 134, 52, .28) !important;
+}
+
+html body.node-main-login > .main input[type="reset"] {
+	margin: 0 !important;
+	height: 36px !important;
+	min-height: 36px !important;
+	border-color: transparent !important;
+	background: transparent !important;
+	color: var(--ap-muted) !important;
+	font-weight: 500 !important;
+}
+
+html body.node-main-login > .main input[type="reset"]:hover { color: var(--ap-navy) !important; background: #FAF6F3 !important; }
+
+html body.node-main-login footer,
+html body.node-main-login .airui-site-footer {
+	position: fixed !important;
+	left: 0 !important;
+	right: 0 !important;
+	bottom: 16px !important;
+	width: 100% !important;
+	border: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	color: #9A93A6 !important;
+	font-size: 12px !important;
+	text-align: center !important;
+}
+
+/* ---------- 12. Mobile / tablet ---------- */
+
+@media screen and (max-width: 1152px) {
+	/* show the logo + a visible menu button after login */
+	html body.logged-in > header > .fill > .container {
+		display: flex !important;
+		align-items: center !important;
+	}
+
+	html body.logged-in > header > .fill > .container > #logo {
+		display: inline-flex !important;
+		min-width: 0 !important;
+		margin: 0 auto 0 4px !important;
+	}
+
+	html body.logged-in > header > .fill > .container > #logo > img { height: 34px !important; }
+
+	html body.logged-in .showSide {
+		display: inline-block !important;
+		flex: 0 0 auto;
+		width: 40px !important;
+		height: 40px !important;
+		margin: 0 4px 0 12px !important;
+		border-radius: var(--ap-radius-sm);
+		cursor: pointer;
+		background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2317084D' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M4 7h16M4 12h16M4 17h16'/%3E%3C/svg%3E") center / 22px 22px no-repeat !important;
+	}
+
+	html body.logged-in .showSide:hover { background-color: var(--ap-orange-tint) !important; }
+
+	#mainmenu.main-left { box-shadow: 8px 0 24px rgba(23, 8, 77, .12) !important; }
+
+	html body.logged-in .darkMask { background: rgba(23, 8, 77, .32) !important; }
+}
+
+@media (max-width: 560px) {
+	html body.node-main-login > .main { padding: 1rem 0 3rem !important; }
+	html body.node-main-login #maincontent > .container { padding: 1.75rem 1.25rem 1.25rem !important; }
+}
+
+/* ---------- 13. Readability: slightly heavier + larger text ---------- */
+
+/* same font everywhere in content (dashboard widgets had their own stack); logs stay monospace */
+body.logged-in #maincontent#maincontent :not(pre, code, kbd, samp, textarea, [class*="log"] *, [class*="mono"]) {
+	font-family: var(--ap-font) !important;
+}
+
+/* content: base text 500 instead of 400, a size step up for small text */
+body.logged-in #maincontent#maincontent * { font-weight: 500 !important; }
+
+body.logged-in #maincontent#maincontent :is(strong, b, th, dt, label, legend, .cbi-value-title,
+	button, .btn, .cbi-button, input[type="submit"], input[type="button"], input[type="reset"],
+	.label, .badge, [class*="badge"], [class*="pill"], [class*="chip"], [class*="-status"],
+	.tabs > li > a, .cbi-tabmenu > li > a, [class*="-nav"] a, [class*="tabs"] a, .k) {
+	font-weight: 600 !important;
+}
+
+body.logged-in #maincontent#maincontent :is(h2, h3, h4, h5, h6, [class*="title"], [class*="-head"], [class*="eyebrow"],
+	.detail-head, .metric-title, .air-firmware-steps span, .wireless-ssid-name-cell strong) {
+	font-weight: 700 !important;
+}
+
+body.logged-in #maincontent#maincontent :is([class*="stat"], [class*="metric"], [class*="card"], .air-setting-item) :is(strong, b, [class*="value"], .v) {
+	font-weight: 700 !important;
+}
+
+body.logged-in #maincontent#maincontent h1 { font-weight: 800 !important; }
+
+body.logged-in #maincontent#maincontent :is(td, .td, .table-row, .v, li, dd) { color: var(--ap-ink) !important; }
+
+body.logged-in #maincontent#maincontent :is(p, .cbi-map-descr, .cbi-section-descr, [class*="descr"], [class*="subtitle"]) {
+	font-size: max(13.5px, 1em) !important;
+}
+
+body.logged-in #maincontent#maincontent :is(.cbi-value-title, label, .cbi-value-description, td, .td, .k, .v) {
+	font-size: max(14px, 1em) !important;
+}
+
+body.logged-in #maincontent#maincontent :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+	font-size: 14px !important;
+	font-weight: 500 !important;
 }

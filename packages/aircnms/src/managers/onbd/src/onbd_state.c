@@ -205,7 +205,8 @@ const char *onbd_visible_state(const onbd_state_t *state)
     /* 2. Claim Required / Unknown Device (merged per specification) */
     if (!strcmp(state->reason_code, "PENDING_CLAIM") ||
         !strcmp(state->reason_code, "CLAIM_REQUIRED") ||
-        !strcmp(state->reason_code, "UNKNOWN_DEVICE"))
+        !strcmp(state->reason_code, "UNKNOWN_DEVICE") ||
+        !strcmp(state->reason_code, "NETWORK_READY_NOT_ENROLLED"))
         return "CLAIM_REQUIRED";
 
     /* 3. Base Connectivity Failures */

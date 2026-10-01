@@ -15,9 +15,6 @@ static const char *s_default_tags[] = {
     "air-onbd-recovery",
     "air-ssid-check",
     "air_led_state",
-    "hostapd",
-    "dnsmasq",
-    "netifd",
     NULL
 };
 
