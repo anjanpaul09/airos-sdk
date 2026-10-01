@@ -7,7 +7,7 @@
 # =============================================================================
 # USER INPUT - MODIFY THESE PATHS AS NEEDED
 # =============================================================================
-SDK_DIR=/home/airpro/projects/airpro/mtk/mt7621/sdk/openwrt
+SDK_DIR="${OPENWRT_SDK_DIR:-/home/airpro/projects/airpro/mtk/mt7621/sdk/openwrt}"
 OUTPUT_DIR=${PWD}/releases
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AIROS_LUCI_OVERLAY_DIR="${SCRIPT_DIR}/packages/luci-app-airos/platform/mt76/luci"
@@ -65,8 +65,15 @@ enable_airui_luci_packages() {
 
     touch .config
 
+    # Explicitly disable alternative themes to enforce AirUI branding & save flash space
+    for theme in luci-theme-bootstrap luci-theme-material; do
+        sed -i "/^CONFIG_PACKAGE_${theme}=/d" .config
+        if ! grep -q "^# CONFIG_PACKAGE_${theme} is not set" .config; then
+            echo "# CONFIG_PACKAGE_${theme} is not set" >> .config
+        fi
+    done
+
     for package in \
-        luci \
         luci-base \
         luci-mod-status \
         luci-mod-network \
@@ -85,28 +92,21 @@ enable_airui_luci_packages() {
 }
 
 enable_wpa3_hostapd() {
-    echo "Selecting the OpenSSL hostapd variant with SAE support..."
+    echo "Selecting the OpenSSL hostapd variant and disabling conflicts..."
 
     touch .config
 
-    # The generic full-internal hostapd variant does not compile CONFIG_SAE.
-    # hostapd-openssl provides SAE/OWE and conflicts with the generic package,
-    # so make the selection mutually exclusive before make defconfig.
-    if grep -q '^CONFIG_PACKAGE_hostapd=' .config; then
-        sed -i 's/^CONFIG_PACKAGE_hostapd=.*/# CONFIG_PACKAGE_hostapd is not set/' .config
-    elif ! grep -q '^# CONFIG_PACKAGE_hostapd is not set' .config; then
-        echo '# CONFIG_PACKAGE_hostapd is not set' >> .config
-    fi
+    # Explicitly disable all conflicting hostapd/wpad variants
+    for pkg in hostapd wpad-openssl wpad-basic wpad-basic-mbedtls wpad-mini; do
+        sed -i "/^CONFIG_PACKAGE_${pkg}=/d" .config
+        if ! grep -q "^# CONFIG_PACKAGE_${pkg} is not set" .config; then
+            echo "# CONFIG_PACKAGE_${pkg} is not set" >> .config
+        fi
+    done
 
-    if grep -q '^CONFIG_PACKAGE_hostapd-openssl=' .config; then
-        sed -i 's/^CONFIG_PACKAGE_hostapd-openssl=.*/CONFIG_PACKAGE_hostapd-openssl=y/' .config
-    elif grep -q '^# CONFIG_PACKAGE_hostapd-openssl is not set' .config; then
-        sed -i 's/^# CONFIG_PACKAGE_hostapd-openssl is not set/CONFIG_PACKAGE_hostapd-openssl=y/' .config
-    else
-        echo 'CONFIG_PACKAGE_hostapd-openssl=y' >> .config
-    fi
-
-    sed -i 's/^CONFIG_PACKAGE_wpad-openssl=.*/# CONFIG_PACKAGE_wpad-openssl is not set/' .config
+    sed -i '/^CONFIG_PACKAGE_hostapd-openssl=/d' .config
+    sed -i '/^# CONFIG_PACKAGE_hostapd-openssl is not set/d' .config
+    echo 'CONFIG_PACKAGE_hostapd-openssl=y' >> .config
 }
 
 # Check arguments
@@ -182,6 +182,16 @@ elif [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
     rm -rf ${SDK_DIR}/packages/feeds/airdpi
     
     echo "${IMAGE_NAME}" > base-files/platform/mt7621/etc/version
+
+    # Apply board profile configuration to SDK
+    PROFILE_CONFIG="${SCRIPT_DIR}/config/profiles/mtk-mt7621.config"
+    if [ -f "${PROFILE_CONFIG}" ]; then
+        echo "Applying board profile configuration: ${PROFILE_CONFIG} -> ${SDK_DIR}/.config"
+        cp -f "${PROFILE_CONFIG}" "${SDK_DIR}/.config"
+    else
+        echo "WARNING: Board profile config not found at ${PROFILE_CONFIG}"
+    fi
+
     cp -rf packages/aircnms $SDK_DIR/package/feeds/
     install_airui_luci_overlay
     cp -rf base-files/platform/mt7621/etc ${SDK_DIR}/package/base-files/files/
@@ -195,10 +205,14 @@ fi
 # COMMON OPERATIONS
 # =============================================================================
 
-# Copy common base files
-# [ -d "../airos-sdk/base-files/common" ] && cp -rf ../airos-sdk/base-files/common/* package/base-files/files/
+# Validate OpenWrt SDK directory
+if [ ! -d "${SDK_DIR}" ]; then
+    echo "ERROR: OpenWrt SDK directory not found: ${SDK_DIR}"
+    echo "Please set the OPENWRT_SDK_DIR environment variable or adjust SDK_DIR in build.sh."
+    exit 1
+fi
 
-# Enter BUUILD directory
+# Enter BUILD directory
 echo "Entering OpenWRT Directory: $SDK_DIR"
 cd $SDK_DIR
 
