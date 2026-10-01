@@ -55,7 +55,9 @@ install_airui_luci_overlay() {
         "${SDK_DIR}"/build_dir/target-*/luci-mod-network \
         "${SDK_DIR}"/build_dir/target-*/luci-app-airpro-security \
         "${SDK_DIR}"/build_dir/target-*/luci-app-airpro-advanced \
-        "${SDK_DIR}"/build_dir/target-*/luci-theme-airui
+        "${SDK_DIR}"/build_dir/target-*/luci-theme-airui \
+        "${SDK_DIR}"/build_dir/target-*/luci-mod-system \
+        "${SDK_DIR}"/build_dir/target-*/luci-app-package-manager
 
     echo "AirUI overlay installed into ${SDK_DIR}/feeds/luci"
 }
@@ -70,6 +72,14 @@ enable_airui_luci_packages() {
         sed -i "/^CONFIG_PACKAGE_${theme}=/d" .config
         if ! grep -q "^# CONFIG_PACKAGE_${theme} is not set" .config; then
             echo "# CONFIG_PACKAGE_${theme} is not set" >> .config
+        fi
+    done
+
+    # Explicitly disable stock system and package-manager to keep Administration menu clean
+    for pkg in luci-mod-admin-full luci-mod-system luci-app-package-manager; do
+        sed -i "/^CONFIG_PACKAGE_${pkg}=/d" .config
+        if ! grep -q "^# CONFIG_PACKAGE_${pkg} is not set" .config; then
+            echo "# CONFIG_PACKAGE_${pkg} is not set" >> .config
         fi
     done
 
@@ -110,10 +120,10 @@ enable_wpa3_hostapd() {
 }
 
 # Check arguments
-if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+if [ $# -lt 1 ] || [ $# -gt 3 ]; then
     echo ""
-    echo "Usage: ./build.sh <board_name> <release_version>"
-    echo "Example: ./build.sh mt7621 1.0"
+    echo "Usage: ./build.sh <board_name> [release_version] [product_model]"
+    echo "Example: ./build.sh mt7621 1.2 AP520"
     echo ""
     echo "Supported boards: mt7621, ipq5018"
     echo ""
@@ -122,7 +132,9 @@ fi
 
 # Get parameters
 BOARD_NAME=$1
-RELEASE_VERSION=$2
+RELEASE_VERSION=${2:-"1.2"}
+PRODUCT_MODEL=${3:-"AP520"}
+PLATFORM_NAME="airos"
 
 # Generate timestamp and image name
 BUILD_DATE=$(date +"%Y%m%d")
@@ -136,6 +148,8 @@ echo "=========================================="
 echo "AIROS SDK Build"
 echo "=========================================="
 echo "Board: $BOARD_NAME"
+echo "Model: $PRODUCT_MODEL"
+echo "Platform: $PLATFORM_NAME"
 echo "Version: $RELEASE_VERSION"
 echo "Date: $BUILD_DATE"
 echo "Time: $BUILD_TIME"
@@ -182,6 +196,15 @@ elif [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
     rm -rf ${SDK_DIR}/packages/feeds/airdpi
     
     echo "${IMAGE_NAME}" > base-files/platform/mt7621/etc/version
+    
+    mkdir -p base-files/platform/mt7621/etc/config
+    cat << EOF > base-files/platform/mt7621/etc/config/version
+config version 'version'
+	option version '${RELEASE_VERSION}'
+	option timestamp '${BUILD_DATE}'
+	option model '${PRODUCT_MODEL}'
+	option platform '${PLATFORM_NAME}'
+EOF
 
     # Apply board profile configuration to SDK
     PROFILE_CONFIG="${SCRIPT_DIR}/config/profiles/mtk-mt7621.config"

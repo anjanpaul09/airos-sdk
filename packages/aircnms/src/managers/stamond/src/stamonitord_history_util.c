@@ -239,3 +239,70 @@ void json_escape(FILE *f, const char *s) {
 
     fputc('"', f);
 }
+
+bool stamonitord_history_fill_identity_from_leases_and_arp(const uint8_t *mac,
+                                                           char *ipaddr,
+                                                           size_t ipaddr_len,
+                                                           char *hostname,
+                                                           size_t hostname_len)
+{
+    if (!mac)
+        return false;
+
+    char mac_str[18];
+    snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    bool found = false;
+
+    /* 1. Check /tmp/dhcp.leases: timestamp mac ip hostname client-id */
+    if ((ipaddr && ipaddr_len > 0 && (!ipaddr[0] || strcmp(ipaddr, "0.0.0.0") == 0)) ||
+        (hostname && hostname_len > 0 && (!hostname[0] || strcmp(hostname, "unknown") == 0))) {
+        FILE *fp = fopen("/tmp/dhcp.leases", "r");
+        if (fp) {
+            char line[256];
+            while (fgets(line, sizeof(line), fp)) {
+                char ts[32], l_mac[32], l_ip[64], l_host[64];
+                if (sscanf(line, "%31s %31s %63s %63s", ts, l_mac, l_ip, l_host) >= 3) {
+                    if (strcasecmp(l_mac, mac_str) == 0) {
+                        if (ipaddr && ipaddr_len > 0 && (!ipaddr[0] || strcmp(ipaddr, "0.0.0.0") == 0)) {
+                            snprintf(ipaddr, ipaddr_len, "%s", l_ip);
+                            found = true;
+                        }
+                        if (hostname && hostname_len > 0 && (!hostname[0] || strcmp(hostname, "unknown") == 0) &&
+                            strcmp(l_host, "*") != 0 && l_host[0] != '\0') {
+                            snprintf(hostname, hostname_len, "%s", l_host);
+                            found = true;
+                        }
+                        break;
+                    }
+                }
+            }
+            fclose(fp);
+        }
+    }
+
+    /* 2. Fallback check /proc/net/arp: IP type flags MAC mask dev */
+    if (ipaddr && ipaddr_len > 0 && (!ipaddr[0] || strcmp(ipaddr, "0.0.0.0") == 0)) {
+        FILE *fp = fopen("/proc/net/arp", "r");
+        if (fp) {
+            char line[256];
+            /* Skip header */
+            if (fgets(line, sizeof(line), fp)) {
+                while (fgets(line, sizeof(line), fp)) {
+                    char a_ip[64], a_type[16], a_flags[16], a_mac[32];
+                    if (sscanf(line, "%63s %15s %15s %31s", a_ip, a_type, a_flags, a_mac) == 4) {
+                        if (strcasecmp(a_mac, mac_str) == 0) {
+                            snprintf(ipaddr, ipaddr_len, "%s", a_ip);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            fclose(fp);
+        }
+    }
+
+    return found;
+}

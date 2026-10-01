@@ -135,6 +135,7 @@ void stamonitord_history_notify_station_connect(const uint8_t *mac, const char *
         return;
 
     s->last_seen_ms = now_ms();
+    s->associated = true;
     LOG(DEBUG, "STAMONITORD history station connect: %02x:%02x:%02x:%02x:%02x:%02x ifname=%s",
         station_mac.b[0], station_mac.b[1], station_mac.b[2],
         station_mac.b[3], station_mac.b[4], station_mac.b[5],
@@ -153,6 +154,7 @@ void stamonitord_history_notify_station_disconnect(const uint8_t *mac, const cha
         return;
 
     s->last_seen_ms = now_ms();
+    s->associated = false;
     LOG(DEBUG, "STAMONITORD history station disconnect: %02x:%02x:%02x:%02x:%02x:%02x ifname=%s",
         station_mac.b[0], station_mac.b[1], station_mac.b[2],
         station_mac.b[3], station_mac.b[4], station_mac.b[5],
@@ -234,6 +236,24 @@ bool stamonitord_history_lookup_client_identity(const uint8_t *mac,
         }
 
         return found;
+    }
+
+    return false;
+}
+
+bool stamonitord_history_is_station_associated(const uint8_t *mac) {
+    if (!g_hist || !mac)
+        return false;
+
+    mac_addr_t station_mac;
+    memcpy(station_mac.b, mac, sizeof(station_mac.b));
+
+    uint32_t h = hash_bytes(station_mac.b, sizeof(station_mac.b)) % STATION_BUCKETS;
+
+    for (station_t *s = g_hist->app.stations[h]; s; s = s->next) {
+        if (mac_equal(s->mac, station_mac)) {
+            return s->associated;
+        }
     }
 
     return false;

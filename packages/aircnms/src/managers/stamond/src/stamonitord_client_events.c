@@ -67,58 +67,9 @@ static void fill_client_identity_from_leases_and_arp(client_info_event_t *client
     if (!client)
         return;
 
-    char mac_str[18];
-    snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x",
-             client->macaddr[0], client->macaddr[1], client->macaddr[2],
-             client->macaddr[3], client->macaddr[4], client->macaddr[5]);
-
-    /* 1. Check /tmp/dhcp.leases: timestamp mac ip hostname client-id */
-    if ((!client->ipaddr[0] || strcmp(client->ipaddr, "0.0.0.0") == 0) ||
-        (!client->hostname[0] || strcmp(client->hostname, "unknown") == 0)) {
-        FILE *fp = fopen("/tmp/dhcp.leases", "r");
-        if (fp) {
-            char line[256];
-            while (fgets(line, sizeof(line), fp)) {
-                char ts[32], l_mac[32], l_ip[64], l_host[HOSTNAME_MAX_LEN];
-                if (sscanf(line, "%31s %31s %63s %63s", ts, l_mac, l_ip, l_host) >= 3) {
-                    if (strcasecmp(l_mac, mac_str) == 0) {
-                        if (!client->ipaddr[0] || strcmp(client->ipaddr, "0.0.0.0") == 0) {
-                            strncpy(client->ipaddr, l_ip, sizeof(client->ipaddr) - 1);
-                            client->ipaddr[sizeof(client->ipaddr) - 1] = '\0';
-                        }
-                        if ((!client->hostname[0] || strcmp(client->hostname, "unknown") == 0) &&
-                            strcmp(l_host, "*") != 0 && l_host[0] != '\0') {
-                            strncpy(client->hostname, l_host, sizeof(client->hostname) - 1);
-                            client->hostname[sizeof(client->hostname) - 1] = '\0';
-                        }
-                        break;
-                    }
-                }
-            }
-            fclose(fp);
-        }
-    }
-
-    /* 2. Fallback check /proc/net/arp: IP type flags MAC mask dev */
-    if (!client->ipaddr[0] || strcmp(client->ipaddr, "0.0.0.0") == 0) {
-        FILE *fp = fopen("/proc/net/arp", "r");
-        if (fp) {
-            char line[256];
-            if (fgets(line, sizeof(line), fp)) {
-                while (fgets(line, sizeof(line), fp)) {
-                    char a_ip[64], a_type[16], a_flags[16], a_mac[32];
-                    if (sscanf(line, "%63s %15s %15s %31s", a_ip, a_type, a_flags, a_mac) == 4) {
-                        if (strcasecmp(a_mac, mac_str) == 0) {
-                            strncpy(client->ipaddr, a_ip, sizeof(client->ipaddr) - 1);
-                            client->ipaddr[sizeof(client->ipaddr) - 1] = '\0';
-                            break;
-                        }
-                    }
-                }
-            }
-            fclose(fp);
-        }
-    }
+    stamonitord_history_fill_identity_from_leases_and_arp(client->macaddr,
+                                                          client->ipaddr, sizeof(client->ipaddr),
+                                                          client->hostname, sizeof(client->hostname));
 }
 
 static void enrich_client_identity(client_info_event_t *client)

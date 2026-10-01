@@ -22,4 +22,9 @@ int stamonitord_nl80211_start(struct ev_loop *loop);
  */
 void stamonitord_nl80211_stop(void);
 
+/**
+ * Check if a station is currently connected.
+ */
+bool stamonitord_nl80211_is_sta_connected(const uint8_t *mac);
+
 #endif

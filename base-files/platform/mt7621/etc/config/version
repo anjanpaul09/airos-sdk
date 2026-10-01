@@ -1,0 +1,5 @@
+config version 'version'
+	option version '1.24'
+	option timestamp '20261001'
+	option model 'AP520'
+	option platform 'airos'

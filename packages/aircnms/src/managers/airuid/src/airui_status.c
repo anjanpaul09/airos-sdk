@@ -663,6 +663,7 @@ static void status_builder(struct blob_buf *b, void *user)
     add_call_result(b, ctx, "board", "system", "board", NULL);
     add_call_result(b, ctx, "system", "system", "info", NULL);
     add_uci_config(b, ctx, "network", "network");
+    add_uci_config(b, ctx, "version", "version");
     add_wireless_bundle(b, ctx);
     airui_mode_add_snapshot(b, ctx);
 

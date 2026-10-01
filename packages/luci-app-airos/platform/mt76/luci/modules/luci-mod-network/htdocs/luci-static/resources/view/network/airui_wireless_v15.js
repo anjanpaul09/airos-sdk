@@ -1322,8 +1322,7 @@ function backendUnavailable(env) {
 	return E('div', { 'class': 'airdash wireless-page wireless-ref-console' }, [
 		E('section', { 'class': 'wireless-ref-head' }, [
 			E('div', { 'class': 'wireless-ref-title-block' }, [
-				E('h1', {}, _('Wireless Settings')),
-				E('p', {}, _('Configure radios, SSIDs, security and per-client wireless traffic controls.'))
+				E('h1', {}, _('Wireless Settings'))
 			])
 		]),
 		E('section', { 'class': 'wireless-ref-panel' }, [
@@ -2067,9 +2066,7 @@ return view.extend({
 		var root = E('div', { 'class': 'airdash wireless-page wireless-ref-console' + (cloudManaged ? ' is-cloud-managed' : '') }, [
 			E('section', { 'class': 'wireless-ref-head' }, [
 				E('div', { 'class': 'wireless-ref-title-block' }, [
-					E('span', { 'class': 'air-page-eyebrow' }, _('Network')),
-					E('h1', {}, _('Wireless (SSID)')),
-					E('p', {}, _('Create and manage Wi-Fi SSIDs and configure radio settings.'))
+					E('h1', {}, _('Wireless (SSID)'))
 				]),
 				E('div', { 'class': 'wireless-ref-toolbar' }, [
 					E('button', { 'class': 'wireless-save is-primary air-refresh', 'type': 'button', 'click': function() { window.location.reload(); } }, _('Refresh')),

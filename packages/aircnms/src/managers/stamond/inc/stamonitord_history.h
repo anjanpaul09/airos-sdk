@@ -51,6 +51,12 @@ bool stamonitord_history_lookup_client_identity(const uint8_t *mac,
                                                 size_t dhcp_options_len,
                                                 char *dhcp_vendor,
                                                 size_t dhcp_vendor_len);
+bool stamonitord_history_is_station_associated(const uint8_t *mac);
+bool stamonitord_history_fill_identity_from_leases_and_arp(const uint8_t *mac,
+                                                           char *ipaddr,
+                                                           size_t ipaddr_len,
+                                                           char *hostname,
+                                                           size_t hostname_len);
 #ifdef __cplusplus
 }
 #endif

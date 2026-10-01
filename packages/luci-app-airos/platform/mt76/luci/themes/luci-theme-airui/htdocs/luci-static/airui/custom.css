@@ -13738,16 +13738,16 @@ body.logged-in #maincontent :is(
 	position: relative;
 	overflow: hidden;
 	display: flex;
-	align-items: flex-end;
+	align-items: center;
 	justify-content: space-between;
 	gap: 24px;
-	min-height: 148px;
+	min-height: 72px;
 	margin: 0;
 	border: 1px solid var(--dash-border);
 	border-radius: 18px;
 	background: #FEF0E7 !important;
 	box-shadow: none;
-	padding: 28px 34px;
+	padding: 18px 34px;
 }
 
 .status-page .status-page-hero::before {
@@ -13891,13 +13891,13 @@ body,
 	position: relative;
 	overflow: hidden;
 	display: flex;
-	align-items: flex-end;
+	align-items: center;
 	justify-content: space-between;
 	gap: 24px;
 	width: 100%;
-	min-height: 148px;
+	min-height: 72px;
 	margin: 0 0 18px;
-	padding: 28px 34px;
+	padding: 18px 34px;
 	border: 0 !important;
 	border-radius: 8px !important;
 	background: linear-gradient(135deg, #FEF0E7 0%, #FEF0E7 72%, #fff 100%) !important;
@@ -13934,7 +13934,7 @@ body,
 .wireless-ref-title-block h1,
 .mac-filter-title h1 {
 	display: inline-block;
-	margin: 0 0 8px !important;
+	margin: 0 !important;
 	padding: 0 !important;
 	border: 0 !important;
 	color: #17084d !important;
@@ -14146,13 +14146,13 @@ body.logged-in #maincontent :is(
 	position: relative !important;
 	overflow: hidden !important;
 	display: flex !important;
-	align-items: flex-end !important;
+	align-items: center !important;
 	justify-content: space-between !important;
 	gap: 24px !important;
 	width: 100% !important;
-	min-height: 148px !important;
+	min-height: 72px !important;
 	margin: 0 0 18px !important;
-	padding: 28px 34px !important;
+	padding: 18px 34px !important;
 	border: 0 !important;
 	border-radius: 8px !important;
 	background: linear-gradient(135deg, #FEF0E7 0%, #FEF0E7 72%, #fff 100%) !important;
@@ -14182,7 +14182,7 @@ body.logged-in #maincontent :is(
 	.mac-filter-page .mac-filter-title
 ) h1 {
 	display: inline-block !important;
-	margin: 0 0 8px !important;
+	margin: 0 !important;
 	padding: 0 !important;
 	border: 0 !important;
 	color: #17084d !important;
@@ -14837,3 +14837,28 @@ body.logged-in #maincontent .air-system-maintenance .air-firmware-dropzone input
 		gap: .28rem;
 	}
 }
+
+/* Hide short description subtitle on all tabs */
+.status-page-hero .status-page-copy > p,
+.status-page-hero > div > p,
+.stats-v3-hero > div > p,
+.clients-hero > div > p,
+.wireless-ref-head .wireless-ref-title-block > p,
+.air-settings-hero > div > p,
+.mac-filter-title > div > p,
+.mac-hero-copy > p {
+	display: none !important;
+}
+
+/* Hide orange category naming (eyebrow / kicker) on all tabs */
+.status-page-eyebrow,
+.status-page-hero .eyebrow,
+.status-page-hero .stats-v3-eyebrow,
+.stats-v3-eyebrow,
+.air-settings-kicker,
+.air-page-eyebrow,
+.eyebrow {
+	display: none !important;
+}
+
+

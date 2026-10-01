@@ -37,7 +37,7 @@ function confirm(options) {
 				button(_('Cancel'), 'btn', function() { finish(false); }),
 				button(options.confirmLabel || _('Continue'), options.danger ? 'btn cbi-button cbi-button-negative' : 'btn cbi-button cbi-button-apply', function() { finish(true); })
 			])
-		], 'cbi-modal airui-action-dialog');
+		], 'cbi-modal', 'airui-action-dialog');
 	});
 }
 
@@ -56,7 +56,7 @@ function progress(options) {
 				E('p', {}, options.message || _('Please wait. Do not close this page.'))
 			])
 		])
-	], 'cbi-modal airui-action-dialog airui-action-dialog-locked');
+	], 'cbi-modal', 'airui-action-dialog', 'airui-action-dialog-locked');
 }
 
 function run(key, options, task) {

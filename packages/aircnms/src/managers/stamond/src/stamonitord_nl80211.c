@@ -124,6 +124,12 @@ static void stamonitord_sta_handle_del(const char *ifname, int ifindex, int link
     free(sta);
 }
 
+bool stamonitord_nl80211_is_sta_connected(const uint8_t *mac) {
+    if (!mac)
+        return false;
+    return ds_tree_find(&g_sta_table, (void *)mac) != NULL;
+}
+
 /* Send CTRL_CMD_GETFAMILY request to resolve nl80211 family ID */
 static int nl_send_ctrl_getfamily(int fd) {
     struct {

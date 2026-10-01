@@ -4,7 +4,7 @@
 		"order": 1,
 		"action": {
 			"type": "view",
-			"path": "status/airui_dashboard_v12"
+			"path": "status/airui_dashboard_v13"
 		},
 		"depends": {
 			"acl": [ "airui-status" ]
@@ -16,7 +16,7 @@
 		"order": 2,
 		"action": {
 			"type": "view",
-			"path": "status/airui_device_status_v12"
+			"path": "status/airui_device_status_v13"
 		},
 		"depends": {
 			"acl": [ "airui-status" ]

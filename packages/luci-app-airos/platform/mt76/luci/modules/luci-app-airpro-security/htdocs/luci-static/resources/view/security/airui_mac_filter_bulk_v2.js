@@ -562,9 +562,7 @@ function renderUnavailable(message) {
 	return E('div', { 'class': 'mac-filter-page' }, [
 		E('section', { 'class': 'mac-filter-title' }, [
 			E('div', {}, [
-				E('span', { 'class': 'air-page-eyebrow' }, _('Security')),
-				E('h1', {}, _('MAC Filtering')),
-				E('p', {}, _('Control allowed or blocked client MAC addresses per SSID.'))
+				E('h1', {}, _('MAC Filtering'))
 			])
 		]),
 		E('section', { 'class': 'mac-panel' }, [
@@ -642,9 +640,7 @@ return view.extend({
 		return E('div', { 'class': 'mac-filter-page' }, [
 			E('section', { 'class': 'mac-filter-title' }, [
 				E('div', {}, [
-					E('span', { 'class': 'air-page-eyebrow' }, _('Security')),
-					E('h1', {}, _('MAC Filtering')),
-					E('p', {}, _('Control allowed or blocked client MAC addresses per SSID.'))
+					E('h1', {}, _('MAC Filtering'))
 				])
 			]),
 			E('section', { 'class': 'mac-stats' }, [

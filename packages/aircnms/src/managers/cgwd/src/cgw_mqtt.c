@@ -53,6 +53,8 @@ static int              cgw_mqtt_port;
 static int              cgw_mqtt_qos = STATS_MQTT_QOS;
 static uint8_t          cgw_mqtt_compress = 0;
 static uint64_t         cgw_mqtt_last_manual_reconnect_ms;
+static const int        s_reconnect_backoff_ladder[] = {60, 120, 300, 600};
+static int              s_reconnect_ladder_idx = 0;
 static int              cgw_agg_stats_interval;
 air_device_t air_dev;
 
@@ -205,6 +207,7 @@ cgw_mqtt_reconnect_result_t cgw_mqtt_request_reconnect(uint32_t *retry_after)
     }
     cgw_mqtt_last_manual_reconnect_ms = now;
     cgw_mqtt_reconnect_ts = 0;
+    s_reconnect_ladder_idx = 0;
     if (cgw_mqtt_is_connected())
         mosqev_disconnect(&cgw_mqtt);
     cgw_restart_mqtt_worker();
@@ -717,14 +720,20 @@ void cgw_mqtt_reconnect()
             {
                 LOG(DEBUG, "Connecting to %s ...\n", cgw_mqtt_broker);
                 result = mosqev_connect(&cgw_mqtt, cgw_mqtt_broker, cgw_mqtt_port);
-                cgw_mqtt_reconnect_ts = ticks() + TICKS_S(STATS_MQTT_RECONNECT);
                 if (!result)
                 {
+                    int delay_sec = s_reconnect_backoff_ladder[s_reconnect_ladder_idx];
+                    cgw_mqtt_reconnect_ts = ticks() + TICKS_S(delay_sec);
+                    int num_ladder_steps = (int)(sizeof(s_reconnect_backoff_ladder)/sizeof(s_reconnect_backoff_ladder[0]));
+                    s_reconnect_ladder_idx = (s_reconnect_ladder_idx + 1) % num_ladder_steps;
+                    LOG(INFO, "[MQTT] Connection failed, retrying in %ds (next ladder level %d)", delay_sec, s_reconnect_ladder_idx);
                     LOGE("Connecting.\n");
                     return;
                 }
                 else
                 {
+                    s_reconnect_ladder_idx = 0;
+                    cgw_mqtt_reconnect_ts = ticks() + TICKS_S(STATS_MQTT_RECONNECT);
                     int ret;
                     for (int i = 0; i < cgw_topic_lst.n_topic; i++) {
                         ret = mosquitto_subscribe(mqtt->me_mosq, NULL, cgw_topic_lst.topic[i], 1);
@@ -855,6 +864,7 @@ static void reconnect_cb(EV_P_ ev_timer *w, int revents) {
 
     if (g_mqtt_connected) {
         LOG(INFO, "[MQTT] Connected");
+        s_reconnect_ladder_idx = 0;
         cgw_ubus_emit_mqtt_event(true, 0, "CONNECTED");
         
         // Retry online status up to 3 times to ensure delivery

@@ -50,8 +50,8 @@ config dhcp 'nat'
 
 config dhcp 'mgmt'
         option interface 'mgmt'
-        option start '100'
-        option limit '150'
+        option start '10'
+        option limit '91'
         option leasetime '12h'
         option ignore '0'
 

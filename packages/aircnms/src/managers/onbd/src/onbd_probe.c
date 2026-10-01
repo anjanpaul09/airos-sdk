@@ -18,9 +18,6 @@
 #include <unistd.h>
 #include <uci.h>
 
-#define ONBD_DHCP_WAIT_LIMIT 6
-#define ONBD_DHCP_RETRY_LIMIT 3
-
 static bool read_one(const char *path, char expected)
 {
     char value = 0;
@@ -201,8 +198,15 @@ void onbd_probe_network(onbd_state_t *state)
         state->dhcp_retry_count = 0;
     } else if (state->carrier_available && state->dhcp_wait_ticks < UINT32_MAX) {
         state->dhcp_wait_ticks++;
-        if (state->dhcp_wait_ticks >= ONBD_DHCP_WAIT_LIMIT && state->dhcp_retry_count < ONBD_DHCP_RETRY_LIMIT)
-            state->dhcp_retry_count++;
+        if (state->dhcp_wait_ticks >= ONBD_DHCP_WAIT_LIMIT) {
+            state->dhcp_wait_ticks = 0;
+            if (state->dhcp_retry_count < ONBD_DHCP_RETRY_LIMIT) {
+                state->dhcp_retry_count++;
+                system("ifup lan >/dev/null 2>&1");
+                LOG(NOTICE, "DHCP_PROBE: retry %u/%d triggered",
+                    state->dhcp_retry_count, ONBD_DHCP_RETRY_LIMIT);
+            }
+        }
     }
     state->default_route_available = default_route_present(state->default_gateway, sizeof(state->default_gateway));
     state->gateway_reachable = state->default_route_available && run_ping(state->default_gateway);

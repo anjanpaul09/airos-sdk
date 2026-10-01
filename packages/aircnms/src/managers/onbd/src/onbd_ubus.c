@@ -130,6 +130,9 @@ static void add_common(struct blob_buf *b, const onbd_state_t *s)
     blobmsg_add_u8(b, "recovery_apply_enabled", s->recovery_apply_enabled);
     blobmsg_add_u8(b, "operational_once", s->operational_once);
     blobmsg_add_u8(b, "recovery_ssid_enabled", s->recovery_ssid_enabled);
+    blobmsg_add_u8(b, "fallback_active", s->fallback_active);
+    blobmsg_add_u8(b, "wifi_suppressed", s->wifi_suppressed);
+    blobmsg_add_u32(b, "cloud_down_ticks", s->cloud_down_ticks);
     blobmsg_add_string(b, "attempt_id", s->attempt_id);
     blobmsg_add_string(b, "config_job_id", s->config_job_id);
     blobmsg_add_u64(b, "desired_revision", s->desired_revision);

@@ -9,6 +9,7 @@
 #include "log.h"
 #include "info_events.h"
 #include "stamonitord_history.h"
+#include "stamonitord_nl80211.h"
 #include "dhcp_fp.h"
 
 /* Shared ubus context */
@@ -54,13 +55,14 @@ static int ubus_client_identity_handler(struct ubus_context *ctx,
 {
     struct blob_attr *tb[__CLIENT_IDENTITY_MAX];
     uint8_t macaddr[6] = {0};
+    char mac_str[18] = {0};
     char ipaddr[IPADDR_MAX_LEN] = {0};
     char hostname[HOSTNAME_MAX_LEN] = {0};
     char dhcp_options[128] = {0};
     char dhcp_vendor[64] = {0};
     char osinfo[256] = "unknown";
     struct blob_buf b = {};
-    bool found;
+    bool found = false;
 
     (void)obj;
     (void)method;
@@ -73,32 +75,58 @@ static int ubus_client_identity_handler(struct ubus_context *ctx,
         return UBUS_STATUS_INVALID_ARGUMENT;
     }
 
-    found = stamonitord_history_lookup_client_identity(macaddr,
-                                                       ipaddr,
-                                                       sizeof(ipaddr),
-                                                       hostname,
-                                                       sizeof(hostname),
-                                                       dhcp_options,
-                                                       sizeof(dhcp_options),
-                                                       dhcp_vendor,
-                                                       sizeof(dhcp_vendor));
+    snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x",
+             macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
 
-    if (!found)
-        return UBUS_STATUS_NOT_FOUND;
+    /* 1. Lookup in history */
+    if (stamonitord_history_lookup_client_identity(macaddr,
+                                                   ipaddr,
+                                                   sizeof(ipaddr),
+                                                   hostname,
+                                                   sizeof(hostname),
+                                                   dhcp_options,
+                                                   sizeof(dhcp_options),
+                                                   dhcp_vendor,
+                                                   sizeof(dhcp_vendor))) {
+        found = true;
+    }
 
+    /* 2. Fallback to leases and ARP */
+    if (!ipaddr[0] || strcmp(ipaddr, "0.0.0.0") == 0 ||
+        !hostname[0] || strcmp(hostname, "unknown") == 0) {
+        if (stamonitord_history_fill_identity_from_leases_and_arp(macaddr,
+                                                                 ipaddr,
+                                                                 sizeof(ipaddr),
+                                                                 hostname,
+                                                                 sizeof(hostname))) {
+            found = true;
+        }
+    }
+
+    /* 3. Determine OS info from DHCP options if present */
     if (dhcp_options[0]) {
         char *os_info = get_os_info(dhcp_options,
                                     dhcp_vendor[0] ? dhcp_vendor : NULL);
-        if (os_info && os_info[0])
+        if (os_info && os_info[0]) {
             snprintf(osinfo, sizeof(osinfo), "%s", os_info);
+            found = true;
+        }
+    }
+
+    /* Check if identity attributes are resolved */
+    if ((ipaddr[0] && strcmp(ipaddr, "0.0.0.0") != 0) ||
+        (hostname[0] && strcmp(hostname, "unknown") != 0 && strcmp(hostname, "*") != 0) ||
+        (osinfo[0] && strcmp(osinfo, "unknown") != 0)) {
+        found = true;
     }
 
     blob_buf_init(&b, 0);
-    blobmsg_add_string(&b, "hostname", hostname[0] ? hostname : "unknown");
+    blobmsg_add_string(&b, "macaddr", mac_str);
+    blobmsg_add_string(&b, "hostname", (hostname[0] && strcmp(hostname, "*") != 0) ? hostname : "unknown");
     blobmsg_add_string(&b, "ipAddress", ipaddr[0] ? ipaddr : "0.0.0.0");
     blobmsg_add_string(&b, "osInfo", osinfo);
     blobmsg_add_string(&b, "clientType", "wireless");
-    blobmsg_add_u8(&b, "found", true);
+    blobmsg_add_u8(&b, "found", found);
     ubus_send_reply(ctx, req, b.head);
     blob_buf_free(&b);
 

@@ -14,6 +14,9 @@ struct ubus_context;
 #define ONBD_HOST_LEN 128
 #define ONBD_RECOVERY_BAD_LIMIT 3
 #define ONBD_RECOVERY_GOOD_LIMIT 2
+#define ONBD_DHCP_WAIT_LIMIT 12
+#define ONBD_DHCP_RETRY_LIMIT 3
+#define ONBD_CLOUD_GRACE_TICKS 12 /* 12 * 5s = 60s grace period before suppressing SSIDs */
 
 typedef enum {
     ONBD_LIFECYCLE_INIT = 0,
@@ -73,6 +76,8 @@ typedef struct {
     bool gateway_reachable;
     bool cloud_available;
     bool fallback_active;
+    bool wifi_suppressed;
+    uint32_t cloud_down_ticks;
     uint32_t dhcp_wait_ticks;
     uint32_t dhcp_retry_count;
     uint32_t recovery_bad_ticks;

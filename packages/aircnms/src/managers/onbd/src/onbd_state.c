@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 const char *onbd_lifecycle_name(onbd_lifecycle_t value)
@@ -88,7 +89,7 @@ void onbd_derive_shadow_state(onbd_state_t *state)
         state->connectivity = ONBD_CONN_NO_LINK;
         onbd_set_reason(state, "NO_CARRIER");
     } else if (!state->management_ip_available) {
-        if (state->dhcp_wait_ticks >= 6 && state->dhcp_retry_count >= 3) {
+        if (state->dhcp_retry_count >= ONBD_DHCP_RETRY_LIMIT) {
             state->connectivity = ONBD_CONN_DHCP_FAILED;
             onbd_set_reason(state, "DHCP_TIMEOUT");
         } else {
@@ -164,14 +165,30 @@ void onbd_derive_shadow_state(onbd_state_t *state)
     } else if (state->stored_identity_valid && state->lifecycle != ONBD_LIFECYCLE_ENROLLING) {
         state->lifecycle = ONBD_LIFECYCLE_ENROLLED;
     }
+
+    /* Provisioned AP: Wi-Fi suppression after grace period (60s = 12 ticks) */
+    if (state->connectivity == ONBD_CONN_ONLINE) {
+        state->cloud_down_ticks = 0;
+        if (state->wifi_suppressed) {
+            state->wifi_suppressed = false;
+            system("/usr/sbin/air_wifi_suppress.sh restore >/dev/null 2>&1");
+        }
+    } else if (state->operational_once) {
+        if (state->cloud_down_ticks < UINT32_MAX)
+            state->cloud_down_ticks++;
+        if (state->cloud_down_ticks >= ONBD_CLOUD_GRACE_TICKS && !state->wifi_suppressed) {
+            state->wifi_suppressed = true;
+            system("/usr/sbin/air_wifi_suppress.sh suppress >/dev/null 2>&1");
+        }
+    }
 }
 
 const char *onbd_visible_state(const onbd_state_t *state)
 {
     if (!state)
         return "UNKNOWN";
-    if (state->operational_once && state->lifecycle == ONBD_LIFECYCLE_OPERATIONAL)
-        return "OPERATIONAL";
+
+    /* 1. Configuration in progress or rollback takes top priority */
     if (state->configuration == ONBD_CONFIG_ROLLING_BACK)
         return "ROLLBACK";
     if (state->configuration == ONBD_CONFIG_FAILED)
@@ -182,10 +199,16 @@ const char *onbd_visible_state(const onbd_state_t *state)
         return "CONFIG_VERIFYING";
     if (state->configuration == ONBD_CONFIG_QUEUED)
         return "CONFIG_QUEUED";
-    if (state->lifecycle == ONBD_LIFECYCLE_OPERATIONAL)
-        return state->connectivity == ONBD_CONN_ONLINE ? "OPERATIONAL" : "OPERATIONAL_DEGRADED";
-    if (!strcmp(state->reason_code, "PENDING_CLAIM")) return "CLAIM_REQUIRED";
-    if (!strcmp(state->reason_code, "UNKNOWN_DEVICE")) return "UNKNOWN_DEVICE";
+    if (state->configuration == ONBD_CONFIG_DOWNLOADING)
+        return "CONFIG_QUEUED";
+
+    /* 2. Claim Required / Unknown Device (merged per specification) */
+    if (!strcmp(state->reason_code, "PENDING_CLAIM") ||
+        !strcmp(state->reason_code, "CLAIM_REQUIRED") ||
+        !strcmp(state->reason_code, "UNKNOWN_DEVICE"))
+        return "CLAIM_REQUIRED";
+
+    /* 3. Base Connectivity Failures */
     if (state->connectivity == ONBD_CONN_INITIALIZING) return "INITIALIZING";
     if (state->connectivity == ONBD_CONN_NO_LINK) return "NO_LINK";
     if (state->connectivity == ONBD_CONN_DHCP_WAIT) return "DHCP_WAIT";
@@ -195,7 +218,17 @@ const char *onbd_visible_state(const onbd_state_t *state)
     if (state->connectivity == ONBD_CONN_INTERNET_UNREACHABLE) return "INTERNET_UNREACHABLE";
     if (state->connectivity == ONBD_CONN_CLOUD_UNREACHABLE) return "CLOUD_UNREACHABLE";
     if (state->connectivity == ONBD_CONN_MQTT_DISCONNECTED) return "MQTT_DISCONNECTED";
+
+    /* 4. Cloud Connecting: internet is up, enrolling or attempting cloud connection */
+    if (state->lifecycle == ONBD_LIFECYCLE_ENROLLING)
+        return "CLOUD_CONNECTING";
+
+    /* 5. Fully Operational / Enrolled */
+    if (state->lifecycle == ONBD_LIFECYCLE_OPERATIONAL || state->operational_once)
+        return state->connectivity == ONBD_CONN_ONLINE ? "OPERATIONAL" : "OPERATIONAL_DEGRADED";
+
     if (state->lifecycle == ONBD_LIFECYCLE_ENROLLED)
-        return "ENROLLED";
+        return state->connectivity == ONBD_CONN_ONLINE ? "ENROLLED" : "OPERATIONAL_DEGRADED";
+
     return onbd_lifecycle_name(state->lifecycle);
 }

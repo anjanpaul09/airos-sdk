@@ -548,6 +548,8 @@ function disconnectButton(client) {
 		'type': 'button',
 		'title': _('Disconnect client'),
 		'click': function(ev) {
+			ev.preventDefault();
+			ev.stopPropagation();
 			var button = ev.currentTarget;
 			return actionDialog.run('disconnect-' + client.mac, {
 				title: _('Disconnect wireless client'),
@@ -559,19 +561,22 @@ function disconnectButton(client) {
 			}, function() {
 				button.disabled = true;
 				return callClientDisconnect(client.mac).then(function(response) {
-				if (!response || response.ok === false)
-					throw new Error(response && response.errors && response.errors[0] && response.errors[0].message || _('Disconnect failed'));
+					if (!response || response.ok === false)
+						throw new Error(response && response.errors && response.errors[0] && response.errors[0].message || _('Disconnect failed'));
 
-				var seconds = response.data && response.data.reconnect_block_seconds || 60;
-				return waitForDisconnect(client.mac).then(function() {
-					ui.addNotification(null, E('p', {}, _('%s was disconnected. Reconnection is paused for %d seconds.').format(text(client.host, client.mac), seconds)), 'info');
-					window.location.reload();
+					var seconds = response.data && response.data.reconnect_block_seconds || 60;
+					return waitForDisconnect(client.mac).then(function() {
+						ui.addNotification(null, E('p', {}, _('%s was disconnected. Reconnection is paused for %d seconds.').format(text(client.host, client.mac), seconds)), 'info');
+						window.setTimeout(function() {
+							window.location.reload();
+						}, 1200);
+					});
+				}).catch(function(error) {
+					button.disabled = false;
+					ui.addNotification(null, E('p', {}, error.message || _('Disconnect failed')), 'error');
+					throw error;
 				});
-			}).catch(function(error) {
-				button.disabled = false;
-				ui.addNotification(null, E('p', {}, error.message || _('Disconnect failed')), 'error');
-				throw error;
-			}); });
+			});
 		}
 	}, _('Disconnect'));
 }
@@ -713,9 +718,7 @@ var clientsView = view.extend({
 		page = E('div', { 'class': 'airdash clients-page status-page' }, [
 			E('section', { 'class': 'clients-hero status-page-hero' }, [
 				E('div', {}, [
-					E('span', { 'class': 'eyebrow' }, _('Clients')),
-					E('h1', {}, _('Connected Clients')),
-					E('p', {}, _('Live wireless and directly connected wired clients discovered from radio association, DHCP, and neighbor data.'))
+					E('h1', {}, _('Connected Clients'))
 				]),
 				E('div', { 'class': 'status-page-actions' }, [
 					E('button', {

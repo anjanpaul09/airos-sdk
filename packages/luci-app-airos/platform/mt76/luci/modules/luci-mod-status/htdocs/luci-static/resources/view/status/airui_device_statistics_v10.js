@@ -561,9 +561,7 @@ function drawLineChart(canvas, series, colors, options) {
 function hero(refresh) {
 	return E('section', { 'class': 'stats-v3-hero status-page-hero' }, [
 		E('div', {}, [
-			E('span', { 'class': 'stats-v3-eyebrow' }, _('Device Statistics')),
-			E('h1', {}, _('Traffic & Radio Metrics')),
-			E('p', {}, _('Live throughput, interface counters, load trend, and wireless retry health from the device telemetry backend.'))
+			E('h1', {}, _('Traffic & Radio Metrics'))
 		]),
 		E('div', { 'class': 'stats-v3-refresh-box status-page-actions' }, [
 			E('button', {

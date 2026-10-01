@@ -158,6 +158,7 @@ define Package/aircnms/install
 	$(INSTALL_BIN) ./files/air_ssid_check.sh $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/air_led_state.sh $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/air_onbd_recovery.sh $(1)/usr/sbin/
+	$(INSTALL_BIN) ./files/air_wifi_suppress.sh $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/air_setmac_ssid.sh $(1)/usr/sbin/
 	$(INSTALL_DATA) ./files/etc/airpro/captive_portals/templates/*.template $(1)/etc/airpro/captive_portals/templates/
 	$(INSTALL_DATA) ./files/etc/chilli/www/radiusdesk.html $(1)/etc/chilli/www/

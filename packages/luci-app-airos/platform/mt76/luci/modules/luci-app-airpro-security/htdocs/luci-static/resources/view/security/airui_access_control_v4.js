@@ -108,7 +108,7 @@ return view.extend({
 			remoteControl.classList.toggle('is-on', ev.target.checked);
 		});
 		return E('div', { 'class': 'air-page air-settings-page ac-simple-page' }, [
-			E('section', { 'class': 'air-settings-hero' }, [ E('div', {}, [ E('span', { 'class': 'air-settings-kicker' }, _('Security')), E('h1', {}, _('Access Control')), E('p', {}, _('Choose which management services can reach this access point.')) ]) ]),
+			E('section', { 'class': 'air-settings-hero' }, [ E('div', {}, [ E('h1', {}, _('Access Control')) ]) ]),
 				E('section', { 'class': 'air-settings-summary' }, [
 					[ _('HTTPS'), this.serviceEnabled('https') ? _('Enabled') : _('Disabled') ], [ _('SSH'), this.serviceEnabled('ssh') ? _('Enabled') : _('Disabled') ],
 					[ _('Remote WAN'), this.state.remote_wan ? _('Enabled') : _('Disabled') ], [ _('Allowed source'), this.state.remote_wan ? _('WAN') : (this.state.lan_subnet || _('LAN')) ]

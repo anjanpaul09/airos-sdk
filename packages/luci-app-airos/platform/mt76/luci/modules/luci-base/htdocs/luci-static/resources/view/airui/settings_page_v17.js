@@ -1298,9 +1298,7 @@ function renderWanManagement(page, payload) {
 	return E('div', { 'class': 'air-page air-settings-page air-wan-management' }, [
 		E('section', { 'class': 'air-settings-hero' }, [
 			E('div', {}, [
-				E('span', { 'class': 'air-settings-kicker' }, page.kicker),
-				E('h1', {}, page.title),
-				E('p', {}, page.subtitle)
+				E('h1', {}, page.title)
 			])
 		]),
 		E('section', { 'class': connected ? 'air-wan-status is-connected' : 'air-wan-status' }, [
@@ -1413,9 +1411,7 @@ function renderMaintenance(page, payload, selectedKey) {
 		return E('div', { 'class': 'air-page air-settings-page air-maintenance-page air-system-maintenance' }, [
 			E('section', { 'class': 'air-settings-hero' }, [
 				E('div', {}, [
-					E('span', { 'class': 'air-settings-kicker' }, page.kicker),
-					E('h1', {}, page.title),
-					E('p', {}, page.subtitle)
+					E('h1', {}, page.title)
 				])
 			]),
 			E('nav', {
@@ -1754,9 +1750,7 @@ function renderMaintenance(page, payload, selectedKey) {
 	return E('div', { 'class': 'air-page air-settings-page air-maintenance-page' }, [
 		E('section', { 'class': 'air-settings-hero' }, [
 			E('div', {}, [
-				E('span', { 'class': 'air-settings-kicker' }, page.kicker),
-				E('h1', {}, page.title),
-				E('p', {}, page.subtitle)
+				E('h1', {}, page.title)
 			]),
 			rootKey == 'system_logs' ? E('div', { 'class': 'status-page-actions' }, [
 				E('button', {
@@ -1850,9 +1844,7 @@ function renderModePage(page, payload) {
 	}, [
 		E('section', { 'class': 'air-settings-hero' }, [
 			E('div', {}, [
-				E('span', { 'class': 'air-settings-kicker' }, page.kicker),
-				E('h1', {}, page.title),
-				E('p', {}, page.subtitle)
+				E('h1', {}, page.title)
 			])
 		]),
 		E('section', { 'class': 'air-settings-summary air-mode-summary' }, [
@@ -1961,9 +1953,7 @@ function renderBackendUnavailable(message, page) {
 	return E('div', { 'class': 'air-page air-settings-page' }, [
 		E('section', { 'class': 'air-settings-hero' }, [
 			E('div', {}, [
-				E('span', { 'class': 'air-settings-kicker' }, page.kicker),
-				E('h1', {}, page.title),
-				E('p', {}, page.subtitle)
+				E('h1', {}, page.title)
 			])
 		]),
 		E('section', { 'class': 'air-card air-settings-card air-settings-wide air-settings-warning' }, [
@@ -2062,9 +2052,7 @@ return view.extend({
 		return E('div', { 'class': 'air-page air-settings-page' }, [
 			E('section', { 'class': 'air-settings-hero' }, [
 				E('div', {}, [
-					E('span', { 'class': 'air-settings-kicker' }, page.kicker),
-					E('h1', {}, page.title),
-					E('p', {}, page.subtitle)
+					E('h1', {}, page.title)
 				])
 			]),
 			E('section', { 'class': 'air-settings-summary' }, page.summary.map(function(data) { return item(data[0], data[1]); })),

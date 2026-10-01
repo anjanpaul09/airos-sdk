@@ -136,6 +136,18 @@ bool onbd_persist_init(onbd_state_t *state)
              uci_get_option(ctx, section, "active_attempt_id", ""));
     snprintf(state->config_job_id, sizeof(state->config_job_id), "%s",
              uci_get_option(ctx, section, "active_config_job_id", ""));
+
+    if (!state->operational_once) {
+        state->lifecycle = ONBD_LIFECYCLE_INIT;
+        state->fallback_active = false;
+        state->dhcp_wait_ticks = 0;
+        state->dhcp_retry_count = 0;
+        state->recovery_bad_ticks = 0;
+        state->recovery_good_ticks = 0;
+        system("/usr/sbin/air_onbd_recovery.sh disable apply >/dev/null 2>&1");
+    }
+    system("/usr/sbin/air_wifi_suppress.sh restore >/dev/null 2>&1");
+
     ok = true;
 out:
     if (pkg) uci_unload(ctx, pkg);
@@ -164,6 +176,8 @@ bool onbd_persist_runtime_state(const onbd_state_t *state)
     json_object_object_add(root, "reason_code", json_object_new_string(state->reason_code));
     json_object_object_add(root, "shadow_mode", json_object_new_boolean(state->shadow_mode));
     json_object_object_add(root, "fallback_active", json_object_new_boolean(state->fallback_active));
+    json_object_object_add(root, "wifi_suppressed", json_object_new_boolean(state->wifi_suppressed));
+    json_object_object_add(root, "cloud_down_ticks", json_object_new_int((int)state->cloud_down_ticks));
     json_object_object_add(root, "recovery_bad_ticks", json_object_new_int((int)state->recovery_bad_ticks));
     json_object_object_add(root, "recovery_good_ticks", json_object_new_int((int)state->recovery_good_ticks));
     json_object_object_add(root, "cloud_host", json_object_new_string(state->cloud_host));

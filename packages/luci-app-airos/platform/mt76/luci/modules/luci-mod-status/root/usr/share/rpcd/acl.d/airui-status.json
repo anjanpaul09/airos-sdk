@@ -6,7 +6,8 @@
 				"airui.system": [ "health", "capabilities" ],
 				"airui.status": [ "snapshot", "summary", "overview", "device_status", "clients", "statistics" ],
 				"stamond": [ "client.identity" ]
-			}
+			},
+			"uci": [ "version", "aircnms" ]
 		},
 		"write": {
 			"ubus": {

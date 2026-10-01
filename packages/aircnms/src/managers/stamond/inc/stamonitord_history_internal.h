@@ -208,6 +208,7 @@ typedef struct station {
     uint64_t first_seen_ms;
     uint64_t last_seen_ms;
     uint64_t last_reported_ms;
+    bool associated;
     size_t domain_count;
     domain_stat_t *domains[DOMAIN_BUCKETS];
     struct station *next;

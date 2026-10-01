@@ -24,40 +24,45 @@ timer(){
 apply_state(){
     reset
     case "$1" in
-        OPERATIONAL) on "$B" ;;
-        OPERATIONAL_DEGRADED) on "$G" ;;
+        OPERATIONAL|ENROLLED) on "$B" ;;
         INIT|INITIALIZING|BOOTING) on "$R" ;;
-        DHCP_WAIT) ;;
+        CLOUD_CONNECTING) timer "$B" 150 150 ;;
         NO_LINK) timer "$R" 200 800 ;;
         DHCP_FAILED|NO_DEFAULT_ROUTE|DNS_FAILED|INTERNET_UNREACHABLE) on "$R"; on "$G" ;;
-        CLAIM_REQUIRED|PENDING_CLAIM) ;;
-        UNKNOWN_DEVICE) on "$G"; timer "$R" 750 750 ;;
-        CONFIG_APPLYING) on "$G"; on "$B"; timer "$R" 250 250 ;;
-        CONFIG_FAILED|ROLLBACK) timer "$R" 500 500 ;;
-        ENROLLED) on "$B" ;;
+        CONFIG_APPLYING) timer "$R" 200 200; timer "$G" 200 200; timer "$B" 200 200 ;;
+        CONFIG_FAILED|ROLLBACK|CONFIG_ROLLED_BACK) timer "$R" 500 500 ;;
+        DHCP_WAIT|CLAIM_REQUIRED|PENDING_CLAIM|UNKNOWN_DEVICE|CLOUD_UNREACHABLE|MQTT_DISCONNECTED|OPERATIONAL_DEGRADED|CONFIG_QUEUED|CONFIG_VERIFYING|CONFIG_DOWNLOADING) ;;
     esac
 }
 cleanup(){ reset; exit 0; }
 trap cleanup INT TERM
+if [ -n "$1" ]; then
+    apply_state "$1"
+    exit 0
+fi
 while :; do
     state="$(ubus call air.onboarding status 2>/dev/null | jsonfilter -e '@.visible_state' 2>/dev/null)"
     if [ "$state" != "$last" ]; then apply_state "$state"; last="$state"; fi
     case "$state" in
-        CLOUD_UNREACHABLE|MQTT_DISCONNECTED)
+        DHCP_WAIT)
             phase=$((1-phase)); reset
-            [ "$phase" = 1 ] && on "$B" || on "$R"
+            [ "$phase" = 1 ] && { on "$R"; on "$G"; }
             ;;
-        CONFIG_QUEUED|CONFIG_VERIFYING)
+        CLOUD_UNREACHABLE|MQTT_DISCONNECTED|OPERATIONAL_DEGRADED)
+            if [ -f /run/air-onbd/wifi_suppressed ]; then
+                reset; on "$R"; on "$G"
+            else
+                phase=$((1-phase)); reset
+                [ "$phase" = 1 ] && on "$B" || { on "$R"; on "$G"; }
+            fi
+            ;;
+        CLAIM_REQUIRED|PENDING_CLAIM|UNKNOWN_DEVICE)
+            phase=$((1-phase)); reset
+            [ "$phase" = 1 ] && on "$B"
+            ;;
+        CONFIG_QUEUED|CONFIG_VERIFYING|CONFIG_DOWNLOADING)
             phase=$((1-phase)); reset
             [ "$phase" = 1 ] && on "$B" || on "$G"
-            ;;
-        DHCP_WAIT|CLAIM_REQUIRED|PENDING_CLAIM)
-            phase=$((1-phase)); reset
-            [ "$phase" = 1 ] && on "$B"
-            ;;
-        OPERATIONAL_DEGRADED)
-            phase=$((1-phase)); reset; on "$G"
-            [ "$phase" = 1 ] && on "$B"
             ;;
     esac
     sleep 1
