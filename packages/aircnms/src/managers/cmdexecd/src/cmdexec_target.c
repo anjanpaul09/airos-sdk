@@ -94,6 +94,14 @@ int target_reset_aircnms()
     sprintf(cmd, "uci del aircnms.@stats-topic[0].cmdr");
     rc = system(cmd);
 
+    memset(cmd, 0, sizeof(cmd));
+    sprintf(cmd, "uci del aircnms.onboarding.operational_once");
+    rc = system(cmd);
+
+    memset(cmd, 0, sizeof(cmd));
+    sprintf(cmd, "uci set aircnms.onboarding.lifecycle='init'");
+    rc = system(cmd);
+
     rc = system("uci commit aircnms");
 
     return rc;
@@ -215,18 +223,17 @@ int target_reset_wireless()
 
 int target_cmd_device_delete(char *command)
 {
-    int rc;
+    (void)command;
 
-    rc = target_reset_wireless();        //RESET WIRELESS FILE
-    rc = target_reset_network();        //RESET NETWORK FILE
-    rc = target_reset_aircnms();         //RESET AIRCNMS FILE
+    target_reset_wireless();        //RESET WIRELESS FILE
+    target_reset_network();         //RESET NETWORK FILE
+    target_reset_aircnms();         //RESET AIRCNMS FILE
 #ifdef CONFIG_PLATFORM_MTK_JEDI
     system("cp -f /etc/config/factorydata/mt7915.dbdc.b0.dat /etc/wireless/mediatek/");
     system("cp -f /etc/config/factorydata/mt7915.dbdc.b1.dat /etc/wireless/mediatek/");
 #endif
-    rc= target_cmd_reboot("reboot");
-
-    return rc;
+    sync();
+    return system("(sleep 1; /sbin/firstboot -y; /sbin/reboot) >/dev/null 2>&1 &");
 }
 
 int target_cmd_reboot(char *cmd)

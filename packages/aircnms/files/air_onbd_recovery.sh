@@ -6,8 +6,8 @@ MODE="$2"
 STATE_DIR="/run/air-onbd"
 INTENT="$STATE_DIR/recovery.intent"
 APPLIED="$STATE_DIR/recovery.applied"
-NET="mgmt"
-RECOVERY_IP="192.168.188.253"
+NET="nat_network"
+RECOVERY_IP="192.168.23.1"
 WAN_IF="lan"
 WAN_FALLBACK_DEV="br-lan"
 WAN_FALLBACK_IP="192.168.188.253"
@@ -40,20 +40,6 @@ first_radio() {
         esac
     done
     [ "$band" = 2g ] && echo wifi1 || echo wifi0
-}
-
-ensure_network() {
-    uciq get network.$NET >/dev/null || uci set network.$NET=interface
-    uci set network.$NET.proto='static'
-    uci set network.$NET.ipaddr="$RECOVERY_IP"
-    uci set network.$NET.netmask='255.255.255.0'
-
-    uciq get dhcp.$NET >/dev/null || uci set dhcp.$NET=dhcp
-    uci set dhcp.$NET.interface="$NET"
-    uci set dhcp.$NET.start='10'
-    uci set dhcp.$NET.limit='91'
-    uci set dhcp.$NET.leasetime='12h'
-    uci set dhcp.$NET.ignore='0'
 }
 
 ensure_wifi_iface() {
@@ -96,24 +82,22 @@ apply_state() {
         fi
 
         remove_legacy_recovery_network
-        ensure_network
         remove_legacy_recovery_ifaces
         ensure_wifi_iface "airrec2g" "$r2" "Airpro_${suffix}" 0
         ensure_wifi_iface "airrec5g" "$r5" "Airpro_${suffix}" 0
-        uci commit network
-        uci commit dhcp
         uci commit wireless
-        /etc/init.d/dnsmasq reload >/dev/null 2>&1 || true
         wifi reload >/dev/null 2>&1 || true
 
-        # WAN Fallback IP
-        uci set network.$WAN_IF.proto='static'
-        uci set network.$WAN_IF.ipaddr="$WAN_FALLBACK_IP"
-        uci set network.$WAN_IF.netmask="$WAN_FALLBACK_NETMASK"
-        uciq delete network.wan_fallback || true
-        uci commit network
-        ifup "$WAN_IF" >/dev/null 2>&1 || /etc/init.d/network reload >/dev/null 2>&1 || true
-        log "recovery enable=1 applied network=$NET recovery_ip=$RECOVERY_IP wan_if=$WAN_IF wan_fallback_ip=$WAN_FALLBACK_IP ssid=Airpro_$suffix"
+        # WAN Fallback IP (only set on br-lan if not already set)
+        if [ "$(uciq get network.$WAN_IF.proto)" != "static" ] || [ "$(uciq get network.$WAN_IF.ipaddr)" != "$WAN_FALLBACK_IP" ]; then
+            uci set network.$WAN_IF.proto='static'
+            uci set network.$WAN_IF.ipaddr="$WAN_FALLBACK_IP"
+            uci set network.$WAN_IF.netmask="$WAN_FALLBACK_NETMASK"
+            uciq delete network.wan_fallback || true
+            uci commit network
+            ifup "$WAN_IF" >/dev/null 2>&1 || /etc/init.d/network reload >/dev/null 2>&1 || true
+        fi
+        log "recovery enable=1 applied recovery_ip=$RECOVERY_IP wan_if=$WAN_IF wan_fallback_ip=$WAN_FALLBACK_IP ssid=Airpro_$suffix"
     else
         remove_legacy_recovery_ifaces
         uci commit wireless

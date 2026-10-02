@@ -35,5 +35,7 @@ done
 
 uci commit wireless
 
-wifi reload
+if [ "$1" != "--no-reload" ]; then
+    wifi reload
+fi
 

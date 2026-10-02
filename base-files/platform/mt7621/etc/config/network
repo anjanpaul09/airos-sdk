@@ -7,7 +7,6 @@ config interface 'loopback'
 config globals 'globals'
 	option packet_steering '1'
 
-# --- br-lan: wan port + WiFi SSIDs bridged ---
 config device
 	option name 'br-lan'
 	option type 'bridge'
@@ -19,20 +18,12 @@ config interface 'lan'
 	option proto 'dhcp'
 	option ipv6 '0'
 
-# --- Management: lan port, static IP ---
-config device
-	option name 'br-mgmt'
-	option type 'bridge'
-	list ports 'lan'
-	option bridge_empty '1'
-
 config interface 'mgmt'
-	option device 'br-mgmt'
+	option device 'lan'
 	option proto 'static'
-	option ipaddr '192.168.188.253'
+	option ipaddr '192.168.33.33'
 	option netmask '255.255.255.0'
 
-# --- NAT bridge: for captive portal / NAT'd clients ---
 config device
 	option name 'br-nat'
 	option type 'bridge'

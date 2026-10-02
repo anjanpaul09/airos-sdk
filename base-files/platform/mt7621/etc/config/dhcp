@@ -50,8 +50,5 @@ config dhcp 'nat'
 
 config dhcp 'mgmt'
         option interface 'mgmt'
-        option start '10'
-        option limit '91'
-        option leasetime '12h'
-        option ignore '0'
+        option ignore '1'
 

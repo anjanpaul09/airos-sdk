@@ -14,6 +14,19 @@ boot() {
             uci -q delete network.lan.netmask
             net_changed=1
         fi
+
+        # Ensure mgmt is on physical port lan with 192.168.33.33 and DHCP disabled
+        if [ "$(uci -q get network.mgmt.ipaddr)" != "192.168.33.33" ] || [ "$(uci -q get network.mgmt.device)" != "lan" ]; then
+            uci -q delete network.br_mgmt
+            uci -q delete network.@device[1]
+            uci set network.mgmt.device='lan'
+            uci set network.mgmt.proto='static'
+            uci set network.mgmt.ipaddr='192.168.33.33'
+            uci set network.mgmt.netmask='255.255.255.0'
+            uci -q set dhcp.mgmt.ignore='1'
+            uci -q commit dhcp
+            net_changed=1
+        fi
         [ "$net_changed" = "1" ] && uci commit network
 
         # Clean up any stale recovery SSIDs from wireless before wireless starts

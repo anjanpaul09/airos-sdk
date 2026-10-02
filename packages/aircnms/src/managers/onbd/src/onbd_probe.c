@@ -43,14 +43,14 @@ static bool carrier_present(void)
 static bool is_management_ifname(const char *name)
 {
     if (!name) return false;
-    /* Skip loopback, internal management bridge, NAT bridge, and wireless interfaces */
-    if (!strcmp(name, "lo") || !strcmp(name, "br-mgmt") || !strcmp(name, "br-nat"))
+    /* Skip loopback, internal management bridge, NAT bridge, physical LAN port, and wireless interfaces */
+    if (!strcmp(name, "lo") || !strcmp(name, "br-mgmt") || !strcmp(name, "br-nat") || !strcmp(name, "lan"))
         return false;
     if (!strncmp(name, "phy", 3) || !strncmp(name, "ra", 2) || !strncmp(name, "wlan", 4))
         return false;
-    /* Accept WAN / LAN bridge or main ethernet interfaces */
+    /* Accept WAN bridge or main uplink interfaces */
     if (!strcmp(name, "br-lan") || !strcmp(name, "eth0") || !strcmp(name, "eth1") ||
-        !strcmp(name, "wan") || !strcmp(name, "lan"))
+        !strcmp(name, "wan"))
         return true;
     return false;
 }
