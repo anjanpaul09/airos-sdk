@@ -959,15 +959,23 @@ void uci_get_mqtt_params()
         LOGI("%s: No uci ipaddr found", __func__);
         return;
     }
-    int ret_ip = sscanf(buf, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
-    if (ret_ip != 4) {
-        LOG(ERR, "Failed to parse IP address from UCI");
+    // Strip any trailing whitespace or newline characters from cmd_buf output
+    while (len > 0 && (buf[len - 1] == '\r' || buf[len - 1] == '\n' || buf[len - 1] == ' ' || buf[len - 1] == '\t')) {
+        buf[--len] = '\0';
+    }
+    if (len == 0)
+    {
+        LOGI("%s: No valid uci ipaddr found", __func__);
         return;
     }
-    int ret = snprintf(cgw_mqtt_broker, sizeof(cgw_mqtt_broker), "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-    if (ret < 0 || ret >= (int)sizeof(cgw_mqtt_broker)) {
-        LOG(ERR, "MQTT broker IP address buffer overflow (ret=%d)", ret);
-        return;
+
+    int ret_ip = sscanf(buf, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
+    if (ret_ip == 4 && (ip1 >= 0 && ip1 <= 255) && (ip2 >= 0 && ip2 <= 255) &&
+        (ip3 >= 0 && ip3 <= 255) && (ip4 >= 0 && ip4 <= 255)) {
+        snprintf(cgw_mqtt_broker, sizeof(cgw_mqtt_broker), "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+    } else {
+        // Domain name or hostname
+        STRSCPY(cgw_mqtt_broker, buf);
     }
 
     memset(buf, 0, sizeof(buf));

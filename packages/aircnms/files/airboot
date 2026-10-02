@@ -1,0 +1,41 @@
+#!/bin/sh /etc/rc.common
+
+START=19
+
+boot() {
+    local op_once
+    op_once="$(uci -q get aircnms.onboarding.operational_once 2>/dev/null)"
+    if [ "$op_once" != "1" ]; then
+        # Ensure WAN/lan starts as DHCP client on boot for un-enrolled AP
+        local net_changed=0
+        if [ "$(uci -q get network.lan.proto)" = "static" ] && [ "$(uci -q get network.lan.ipaddr)" = "192.168.188.253" ]; then
+            uci set network.lan.proto='dhcp'
+            uci -q delete network.lan.ipaddr
+            uci -q delete network.lan.netmask
+            net_changed=1
+        fi
+        [ "$net_changed" = "1" ] && uci commit network
+
+        # Clean up any stale recovery SSIDs from wireless before wireless starts
+        local wl_changed=0
+        if uci -q get wireless.airrec2g >/dev/null 2>&1; then
+            uci -q delete wireless.airrec2g
+            wl_changed=1
+        fi
+        if uci -q get wireless.airrec5g >/dev/null 2>&1; then
+            uci -q delete wireless.airrec5g
+            wl_changed=1
+        fi
+        [ "$wl_changed" = "1" ] && uci commit wireless
+
+        # Reset stale recovery lifecycle in aircnms so onboarding starts fresh
+        if [ "$(uci -q get aircnms.onboarding.lifecycle)" = "recovery" ]; then
+            uci set aircnms.onboarding.lifecycle='init'
+            uci commit aircnms
+        fi
+    fi
+}
+
+start() {
+    boot
+}

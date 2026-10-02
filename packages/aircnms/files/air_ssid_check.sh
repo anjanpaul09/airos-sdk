@@ -49,16 +49,15 @@ apply_ssid_config() {
         return 1
     }
 
-    local new_ssid_phy0="AirPro-2G-$mac_suffix"
-    local new_ssid_phy1="AirPro-5G-$mac_suffix"
+    local default_ssid="Airpro_$mac_suffix"
 
-    uci set wireless.wlan1.ssid="$new_ssid_phy0"
+    uci set wireless.wlan1.ssid="$default_ssid"
     uci set wireless.wlan1.network="nat_network"
-    uci set wireless.wlan2.ssid="$new_ssid_phy1"
+    uci set wireless.wlan2.ssid="$default_ssid"
     uci set wireless.wlan2.network="nat_network"
     uci commit wireless
 
-    log "SSID configured: $new_ssid_phy0 , $new_ssid_phy1"
+    log "SSID configured: $default_ssid"
     wifi reload
 }
 

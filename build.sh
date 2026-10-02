@@ -190,10 +190,10 @@ elif [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
     BUILD_DIR=${SDK_DIR}/build_dir/target-mipsel_24kc_musl
     FW_DIR=${SDK_DIR}/bin/targets/${TARGET}/${SUBTARGET}
     FW_FILE=openwrt-${TARGET}-${SUBTARGET}-${PROFILE}-squashfs-sysupgrade.bin
-    rm -rf ${BUILD_DIR}/target-mipsel_24kc_musl/aircnms
-    rm -rf ${BUILD_DIR}/target-mipsel_24kc_musl/linux-ramips_mt7621/airdpi
-    rm -rf ${SDK_DIR}/packages/feeds/aircnms
-    rm -rf ${SDK_DIR}/packages/feeds/airdpi
+    rm -rf "${SDK_DIR}"/build_dir/target-*/aircnms*
+    rm -rf "${SDK_DIR}"/build_dir/target-*/linux-*/airdpi*
+    rm -rf "${SDK_DIR}"/package/feeds/aircnms
+    rm -rf "${SDK_DIR}"/package/feeds/airdpi
     
     echo "${IMAGE_NAME}" > base-files/platform/mt7621/etc/version
     

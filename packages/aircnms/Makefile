@@ -155,6 +155,7 @@ define Package/aircnms/install
 	$(INSTALL_BIN) ./files/airuid $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/aironbd $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/airlogd $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/airboot $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/air_ssid_check.sh $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/air_led_state.sh $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/air_onbd_recovery.sh $(1)/usr/sbin/

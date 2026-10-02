@@ -31,11 +31,27 @@ static bool carrier_present(void)
 {
     static const char *paths[] = {
         "/sys/class/net/eth0/carrier", "/sys/class/net/eth1/carrier",
-        "/sys/class/net/wan/carrier", "/sys/class/net/br-lan/carrier"
+        "/sys/class/net/wan/carrier", "/sys/class/net/lan/carrier",
+        "/sys/class/net/br-lan/carrier"
     };
     size_t i;
     for (i = 0; i < sizeof(paths) / sizeof(paths[0]); i++)
         if (read_one(paths[i], '1')) return true;
+    return false;
+}
+
+static bool is_management_ifname(const char *name)
+{
+    if (!name) return false;
+    /* Skip loopback, internal management bridge, NAT bridge, and wireless interfaces */
+    if (!strcmp(name, "lo") || !strcmp(name, "br-mgmt") || !strcmp(name, "br-nat"))
+        return false;
+    if (!strncmp(name, "phy", 3) || !strncmp(name, "ra", 2) || !strncmp(name, "wlan", 4))
+        return false;
+    /* Accept WAN / LAN bridge or main ethernet interfaces */
+    if (!strcmp(name, "br-lan") || !strcmp(name, "eth0") || !strcmp(name, "eth1") ||
+        !strcmp(name, "wan") || !strcmp(name, "lan"))
+        return true;
     return false;
 }
 
@@ -47,11 +63,21 @@ static bool management_ipv4_present(void)
     for (it = list; it; it = it->ifa_next) {
         struct sockaddr_in *address;
         uint32_t host;
-        if (!it->ifa_addr || it->ifa_addr->sa_family != AF_INET ||
+        if (!it->ifa_name || !it->ifa_addr || it->ifa_addr->sa_family != AF_INET ||
             !(it->ifa_flags & IFF_UP) || (it->ifa_flags & IFF_LOOPBACK)) continue;
+        if (!is_management_ifname(it->ifa_name)) continue;
         address = (struct sockaddr_in *)it->ifa_addr;
         host = ntohl(address->sin_addr.s_addr);
-        if ((host >> 24) != 127 && host != 0 && (host >> 24) != 169) { found = true; break; }
+        /* Filter out:
+         * - 0.0.0.0
+         * - 127.0.0.0/8 (loopback)
+         * - 169.254.0.0/16 (link-local)
+         * - 192.168.188.253 (0xC0A8BCFD - recovery fallback IP)
+         */
+        if (host != 0 && (host >> 24) != 127 && (host >> 16) != 0xA9FE && host != 0xC0A8BCFD) {
+            found = true;
+            break;
+        }
     }
     freeifaddrs(list);
     return found;
