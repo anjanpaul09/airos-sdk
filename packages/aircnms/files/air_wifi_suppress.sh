@@ -20,6 +20,11 @@ mkdir -p "$STATE_DIR"
 
 case "$ACTION" in
     suppress)
+        # Policy check: Wi-Fi suppression during cloud outage is opt-in (disabled by default)
+        if [ "$(uci -q get aircnms.onboarding.wifi_suppress_on_cloud_loss)" != "1" ]; then
+            logger -t air-wifi-suppress "Suppression skipped: policy disabled (aircnms.onboarding.wifi_suppress_on_cloud_loss != 1)"
+            exit 0
+        fi
         [ -f "$FLAG" ] && exit 0
         logger -t air-wifi-suppress "Cloud outage grace expired (60s): corporate Wi-Fi suppressed (radios quiet)"
         
@@ -41,7 +46,9 @@ case "$ACTION" in
         
         if [ "$changed" = 1 ]; then
             uci commit wireless
-            wifi reload >/dev/null 2>&1 || true
+            logger -t air-wifi "[WIFI_RELOAD_START] $(date '+%Y-%m-%d %H:%M:%S') caller='air_wifi_suppress' action='$ACTION' pid=$$"
+            wifi reload
+            logger -t air-wifi "[WIFI_RELOAD_END] $(date '+%Y-%m-%d %H:%M:%S') caller='air_wifi_suppress' status=$?"
         fi
         ;;
 
@@ -56,7 +63,9 @@ case "$ACTION" in
             cp -p "$BACKUP" /etc/config/wireless
             rm -f "$BACKUP"
             uci commit wireless
-            wifi reload >/dev/null 2>&1 || true
+            logger -t air-wifi "[WIFI_RELOAD_START] $(date '+%Y-%m-%d %H:%M:%S') caller='air_wifi_suppress' action='$ACTION' pid=$$"
+            wifi reload
+            logger -t air-wifi "[WIFI_RELOAD_END] $(date '+%Y-%m-%d %H:%M:%S') caller='air_wifi_suppress' status=$?"
         else
             # Backup was consumed or updated by netconfd, just ensure disabled=0
             changed=0
@@ -71,7 +80,9 @@ case "$ACTION" in
             done
             if [ "$changed" = 1 ]; then
                 uci commit wireless
-                wifi reload >/dev/null 2>&1 || true
+                logger -t air-wifi "[WIFI_RELOAD_START] $(date '+%Y-%m-%d %H:%M:%S') caller='air_wifi_suppress' action='$ACTION' pid=$$"
+                wifi reload
+                logger -t air-wifi "[WIFI_RELOAD_END] $(date '+%Y-%m-%d %H:%M:%S') caller='air_wifi_suppress' status=$?"
             fi
         fi
         ;;

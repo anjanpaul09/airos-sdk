@@ -17,6 +17,11 @@ struct ubus_context;
 #define ONBD_DHCP_WAIT_LIMIT 12
 #define ONBD_DHCP_RETRY_LIMIT 3
 #define ONBD_CLOUD_GRACE_TICKS 12 /* 12 * 5s = 60s grace period before suppressing SSIDs */
+#define ONBD_CLOUD_PROBE_CONNECT_TIMEOUT_MS 3000L /* 3s connect timeout */
+#define ONBD_CLOUD_PROBE_TOTAL_TIMEOUT_MS   5000L /* 5s total probe timeout */
+#define ONBD_CLOUD_FAIL_THRESHOLD           3     /* 3 consecutive failures to declare down */
+#define ONBD_CLOUD_OK_THRESHOLD             2     /* 2 consecutive successes to declare up */
+#define ONBD_PROBE_COUNTER_SATURATE         10    /* Saturate counters to prevent overflow */
 
 typedef enum {
     ONBD_LIFECYCLE_INIT = 0,
@@ -77,7 +82,11 @@ typedef struct {
     bool cloud_available;
     bool fallback_active;
     bool wifi_suppressed;
+    bool wifi_suppress_policy_enabled;
+    uint8_t cloud_fail_count;
+    uint8_t cloud_ok_count;
     uint32_t cloud_down_ticks;
+    uint32_t cloud_down_duration_sec;
     uint32_t dhcp_wait_ticks;
     uint32_t dhcp_retry_count;
     uint32_t recovery_bad_ticks;

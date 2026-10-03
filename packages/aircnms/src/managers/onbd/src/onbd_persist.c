@@ -72,6 +72,7 @@ bool onbd_persist_init(onbd_state_t *state)
             !uci_set_path(ctx, "aircnms.onboarding.applied_revision", "0") ||
             !uci_set_path(ctx, "aircnms.onboarding.last_good_revision", "0") ||
             !uci_set_path(ctx, "aircnms.onboarding.recovery_ssid_enabled", "0") ||
+            !uci_set_path(ctx, "aircnms.onboarding.wifi_suppress_on_cloud_loss", "0") ||
             !uci_set_path(ctx, "aircnms.onboarding.last_failure_code", "") ||
             uci_commit(ctx, &pkg, false) != UCI_OK)
             goto out;
@@ -104,6 +105,9 @@ bool onbd_persist_init(onbd_state_t *state)
     if (!uci_lookup_option_string(ctx, section, "last_good_revision")) {
         changed |= uci_set_path(ctx, "aircnms.onboarding.last_good_revision", "0");
     }
+    if (!uci_lookup_option_string(ctx, section, "wifi_suppress_on_cloud_loss")) {
+        changed |= uci_set_path(ctx, "aircnms.onboarding.wifi_suppress_on_cloud_loss", "0");
+    }
     if (changed && uci_commit(ctx, &pkg, false) != UCI_OK)
         goto out;
     if (changed) {
@@ -129,6 +133,7 @@ bool onbd_persist_init(onbd_state_t *state)
     state->recovery_apply_enabled = atoi(uci_get_option(ctx, section, "recovery_apply_enabled", "1")) != 0;
     state->operational_once = atoi(uci_get_option(ctx, section, "operational_once", "0")) != 0;
     state->recovery_ssid_enabled = atoi(uci_get_option(ctx, section, "recovery_ssid_enabled", "0")) != 0;
+    state->wifi_suppress_policy_enabled = atoi(uci_get_option(ctx, section, "wifi_suppress_on_cloud_loss", "0")) != 0;
     state->lifecycle = parse_lifecycle(uci_get_option(ctx, section, "lifecycle", "init"));
     state->desired_revision = strtoull(uci_get_option(ctx, section, "desired_revision", "0"), NULL, 10);
     state->applied_revision = strtoull(uci_get_option(ctx, section, "applied_revision", "0"), NULL, 10);
@@ -177,7 +182,9 @@ bool onbd_persist_runtime_state(const onbd_state_t *state)
     json_object_object_add(root, "shadow_mode", json_object_new_boolean(state->shadow_mode));
     json_object_object_add(root, "fallback_active", json_object_new_boolean(state->fallback_active));
     json_object_object_add(root, "wifi_suppressed", json_object_new_boolean(state->wifi_suppressed));
+    json_object_object_add(root, "wifi_suppress_policy_enabled", json_object_new_boolean(state->wifi_suppress_policy_enabled));
     json_object_object_add(root, "cloud_down_ticks", json_object_new_int((int)state->cloud_down_ticks));
+    json_object_object_add(root, "cloud_down_duration_sec", json_object_new_int((int)state->cloud_down_duration_sec));
     json_object_object_add(root, "recovery_bad_ticks", json_object_new_int((int)state->recovery_bad_ticks));
     json_object_object_add(root, "recovery_good_ticks", json_object_new_int((int)state->recovery_good_ticks));
     json_object_object_add(root, "cloud_host", json_object_new_string(state->cloud_host));

@@ -204,6 +204,24 @@ void airui_mode_add_snapshot(struct blob_buf *b, struct ubus_context *ctx)
     blobmsg_add_u8(b, "registered", state.registered);
     blobmsg_add_u8(b, "online", state.online);
     blobmsg_add_string(b, "device_id", state.device_id);
+
+    FILE *fp = fopen("/run/air-onbd/state.json", "r");
+    if (fp) {
+        char buf[2048];
+        size_t n = fread(buf, 1, sizeof(buf) - 1, fp);
+        fclose(fp);
+        buf[n] = '\0';
+        struct json_object *obj = json_tokener_parse(buf);
+        if (obj) {
+            struct json_object *val;
+            if (json_object_object_get_ex(obj, "visible_state", &val))
+                blobmsg_add_string(b, "visible_state", json_object_get_string(val));
+            if (json_object_object_get_ex(obj, "cloud_down_duration_sec", &val))
+                blobmsg_add_u32(b, "cloud_down_duration_sec", json_object_get_int(val));
+            json_object_put(obj);
+        }
+    }
+
     blobmsg_close_table(b, mode);
 }
 

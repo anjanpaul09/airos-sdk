@@ -22,13 +22,16 @@ static void read_legacy_uci(onbd_state_t *state)
         goto out;
     uci_foreach_element(&pkg->sections, element) {
         struct uci_section *section = uci_to_section(element);
-        const char *device_id, *online;
-        if (strcmp(section->type, "aircnms")) continue;
-        device_id = uci_lookup_option_string(ctx, section, "device_id");
-        online = uci_lookup_option_string(ctx, section, "online");
-        state->stored_identity_valid = onbd_valid_device_id(device_id);
-        state->legacy_online = online && !strcmp(online, "1");
-        break;
+        const char *device_id, *online, *suppress_opt;
+        if (!strcmp(section->type, "aircnms")) {
+            device_id = uci_lookup_option_string(ctx, section, "device_id");
+            online = uci_lookup_option_string(ctx, section, "online");
+            state->stored_identity_valid = onbd_valid_device_id(device_id);
+            state->legacy_online = online && !strcmp(online, "1");
+        } else if (!strcmp(section->type, "onboarding") || (section->e.name && !strcmp(section->e.name, "onboarding"))) {
+            suppress_opt = uci_lookup_option_string(ctx, section, "wifi_suppress_on_cloud_loss");
+            state->wifi_suppress_policy_enabled = suppress_opt && !strcmp(suppress_opt, "1");
+        }
     }
 out:
     if (pkg) uci_unload(ctx, pkg);

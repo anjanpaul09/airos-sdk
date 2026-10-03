@@ -127,6 +127,15 @@ bool netconf_queue_append_item(netconf_item_t **qitem, netconf_response_t *res)
     
     LOG(INFO, "QUEUE_PUT seq=%u type=%s msglen=%zu qlen=%d", 
         queue_num, data_type_str, qi->size, g_netconf_queue.length + 1);
+
+    if (qi->req.data_type == NETCONF_DATA_CONF && qi->buf && qi->size > 0) {
+        netconf_job_snapshot_t snapshot;
+        bool duplicate = false;
+        if (netconf_job_submit(qi->buf, qi->size, &snapshot, &duplicate)) {
+            snprintf(qi->job_id, sizeof(qi->job_id), "%s", snapshot.job_id);
+            LOG(INFO, "JOB_SUBMITTED job_id=%s duplicate=%d", qi->job_id, duplicate);
+        }
+    }
     
     ds_dlist_insert_tail(&g_netconf_queue.queue, qi);
     g_netconf_queue.length++;

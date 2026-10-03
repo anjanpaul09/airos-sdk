@@ -200,8 +200,8 @@ static bool cloud_https_probe(const char *host)
     snprintf(url, sizeof(url), "https://%s/health", host && host[0] ? host : "api.cloud.netstream.net.in");
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 1500L);
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 1000L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, ONBD_CLOUD_PROBE_TOTAL_TIMEOUT_MS);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, ONBD_CLOUD_PROBE_CONNECT_TIMEOUT_MS);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "air-onbd/1");
@@ -214,6 +214,12 @@ static bool cloud_https_probe(const char *host)
 void onbd_probe_network(onbd_state_t *state)
 {
     bool has_ip;
+    bool raw_cloud_probe;
+    static bool s_last_cloud_avail = false;
+    static bool s_last_gw_avail = false;
+    static bool s_last_dns_avail = false;
+    static bool s_first_probe = true;
+
     if (!state) return;
     read_cloud_host(state->cloud_host, sizeof(state->cloud_host));
     state->carrier_available = carrier_present();
@@ -238,12 +244,35 @@ void onbd_probe_network(onbd_state_t *state)
     state->dns_available = dns_configured();
     state->dns_resolved = state->dns_available && dns_resolves(state->cloud_host);
     state->internet_available = state->gateway_reachable && tcp_probe("1.1.1.1", 443);
-    state->cloud_available = state->internet_available && state->dns_resolved && cloud_https_probe(state->cloud_host);
 
-    static bool s_last_cloud_avail = false;
-    static bool s_last_gw_avail = false;
-    static bool s_last_dns_avail = false;
-    static bool s_first_probe = true;
+    raw_cloud_probe = state->internet_available && state->dns_resolved && cloud_https_probe(state->cloud_host);
+
+    /* Debounce cloud probing with saturating counters */
+    if (s_first_probe) {
+        /* Initialize immediately on first boot probe to avoid black hole delay */
+        state->cloud_available = raw_cloud_probe;
+        if (raw_cloud_probe) {
+            state->cloud_ok_count = 1;
+            state->cloud_fail_count = 0;
+        } else {
+            state->cloud_ok_count = 0;
+            state->cloud_fail_count = 1;
+        }
+    } else {
+        if (raw_cloud_probe) {
+            if (state->cloud_ok_count < ONBD_PROBE_COUNTER_SATURATE)
+                state->cloud_ok_count++;
+            state->cloud_fail_count = 0;
+            if (state->cloud_ok_count >= ONBD_CLOUD_OK_THRESHOLD)
+                state->cloud_available = true;
+        } else {
+            if (state->cloud_fail_count < ONBD_PROBE_COUNTER_SATURATE)
+                state->cloud_fail_count++;
+            state->cloud_ok_count = 0;
+            if (state->cloud_fail_count >= ONBD_CLOUD_FAIL_THRESHOLD)
+                state->cloud_available = false;
+        }
+    }
 
     if (s_first_probe ||
         state->cloud_available != s_last_cloud_avail ||

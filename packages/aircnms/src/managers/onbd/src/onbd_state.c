@@ -247,9 +247,10 @@ void onbd_derive_shadow_state(onbd_state_t *state)
     /* 3. Evaluate Lifecycle State Machine */
     onbd_fsm_lifecycle(state);
 
-    /* 4. Provisioned AP Wi-Fi suppression during cloud outage (60s grace period) */
+    /* 4. Provisioned AP Wi-Fi suppression policy */
     if (state->connectivity == ONBD_CONN_ONLINE) {
         state->cloud_down_ticks = 0;
+        state->cloud_down_duration_sec = 0;
         if (state->wifi_suppressed) {
             state->wifi_suppressed = false;
             system("/usr/sbin/air_wifi_suppress.sh restore >/dev/null 2>&1");
@@ -257,7 +258,15 @@ void onbd_derive_shadow_state(onbd_state_t *state)
     } else if (state->operational_once) {
         if (state->cloud_down_ticks < UINT32_MAX)
             state->cloud_down_ticks++;
-        if (state->cloud_down_ticks >= ONBD_CLOUD_GRACE_TICKS && !state->wifi_suppressed) {
+        state->cloud_down_duration_sec = state->cloud_down_ticks * 5;
+
+        /* Dynamic policy check: if currently suppressed but policy is disabled, restore immediately */
+        if (state->wifi_suppressed && !state->wifi_suppress_policy_enabled) {
+            state->wifi_suppressed = false;
+            system("/usr/sbin/air_wifi_suppress.sh restore >/dev/null 2>&1");
+        } else if (state->wifi_suppress_policy_enabled &&
+                   state->cloud_down_ticks >= ONBD_CLOUD_GRACE_TICKS &&
+                   !state->wifi_suppressed) {
             state->wifi_suppressed = true;
             system("/usr/sbin/air_wifi_suppress.sh suppress >/dev/null 2>&1");
         }
@@ -281,8 +290,11 @@ const char *onbd_visible_state(const onbd_state_t *state)
     }
 
     /* Priority 2: Operational AP */
-    if (state->operational_once && state->lifecycle == ONBD_LIFECYCLE_OPERATIONAL)
+    if (state->operational_once && state->lifecycle == ONBD_LIFECYCLE_OPERATIONAL) {
+        if (state->connectivity != ONBD_CONN_ONLINE)
+            return "OPERATIONAL_DEGRADED";
         return "OPERATIONAL";
+    }
 
     /* Priority 3: Claim / Enrollment Required */
     if (!strcmp(state->reason_code, "PENDING_CLAIM") ||

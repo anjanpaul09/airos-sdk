@@ -623,6 +623,9 @@ function buildDashboardPage(data) {
 		var modeStatusText = '';
 		var modeActionContent = '';
 
+		var visibleState = payload.mode && payload.mode.visible_state || '';
+		var cloudDowntime = payload.mode && payload.mode.cloud_down_duration_sec || 0;
+
 		if (isCloud) {
 			if (isFallback) {
 				modePillText = _('Fallback Active');
@@ -645,6 +648,13 @@ function buildDashboardPage(data) {
 				modePillClass = 'is-positive';
 				modeStatusText = _('Connected to Cloud Controller');
 				modeActionContent = _('None (Cloud synchronised)');
+			} else if (visibleState === 'OPERATIONAL_DEGRADED') {
+				modePillText = _('Operational (Cloud Offline)');
+				modePillClass = 'is-warning';
+				modeStatusText = cloudDowntime > 0 ?
+					_('Local AP Active - Cloud Offline (%ds)').format(cloudDowntime) :
+					_('Local AP Active - Cloud Offline');
+				modeActionContent = _('Local Wi-Fi and routing operational. Check WAN uplink / cloud reachability.');
 			} else if (!isRegistered) {
 				modePillText = _('Unclaimed');
 				modePillClass = 'is-warning';
