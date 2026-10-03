@@ -12,7 +12,7 @@ struct ubus_context;
 #define ONBD_REASON_LEN 64
 #define ONBD_ID_LEN 64
 #define ONBD_HOST_LEN 128
-#define ONBD_RECOVERY_BAD_LIMIT 3
+#define ONBD_RECOVERY_BAD_LIMIT 6 /* 6 ticks * 5s = 30s debounce before entering recovery */
 #define ONBD_RECOVERY_GOOD_LIMIT 2
 #define ONBD_DHCP_WAIT_LIMIT 12
 #define ONBD_DHCP_RETRY_LIMIT 3

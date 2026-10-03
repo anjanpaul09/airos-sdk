@@ -228,8 +228,7 @@ void onbd_probe_network(onbd_state_t *state)
             state->dhcp_wait_ticks = 0;
             if (state->dhcp_retry_count < ONBD_DHCP_RETRY_LIMIT) {
                 state->dhcp_retry_count++;
-                system("ifup lan >/dev/null 2>&1");
-                LOG(NOTICE, "DHCP_PROBE: retry %u/%d triggered",
+                LOG(NOTICE, "DHCP_PROBE: waiting for lease (attempt %u/%d)...",
                     state->dhcp_retry_count, ONBD_DHCP_RETRY_LIMIT);
             }
         }
