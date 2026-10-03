@@ -10,11 +10,11 @@
 #include "cgw_state_mgr.h"
 #include "log.h"
 
-//wss://api.new.cloud.netstream.net.in/ws/
-#define WEBSOCKET_URL "api.new.cloud.netstream.net.in"
+#define WEBSOCKET_DEFAULT_HOST "api.cloud.netstream.net.in"
 #define WEBSOCKET_PORT 443
-#define WEBSOCKET_PATH "/ws/AIR1231212"
 #define UCI_BUF_LEN 256
+
+static char ws_host[128] = WEBSOCKET_DEFAULT_HOST;
 
 // Global variables for WebSocket context and timers
 static struct lws_context *ws_context = NULL;
@@ -28,7 +28,7 @@ static int callback_websocket(struct lws *wsi, enum lws_callback_reasons reason,
                              void *user, void *in, size_t len) {
     switch (reason) {
         case LWS_CALLBACK_CLIENT_ESTABLISHED:
-            LOG(INFO, "Connected to ws://%s", WEBSOCKET_URL);
+            LOG(INFO, "Connected to ws://%s", ws_host);
             // Stop the reconnect timer since we're now connected
             ev_timer_stop(ws_loop, &ws_reconnect_timer);
             // Start the service timer for ongoing WebSocket operations
@@ -122,7 +122,25 @@ static void ws_reconnect_cb(EV_P_ ev_timer *w, int revents)
     char websocket_path[128];
     snprintf(websocket_path, sizeof(websocket_path), "/ws/%s", serial);
 
-    LOG(DEBUG, "Reconnection attempt – websocket path: %s", websocket_path);
+    /* ------------------------------------------------------------------ */
+    /* Step 1b: Get WebSocket Host from UCI cloud_url                     */
+    /* ------------------------------------------------------------------ */
+    char raw_cloud_url[256] = {0};
+    if (cmd_buf("uci get aircnms.@aircnms[0].cloud_url", raw_cloud_url, sizeof(raw_cloud_url)) == 0 &&
+        strlen(raw_cloud_url) > 0)
+    {
+        char *start = raw_cloud_url;
+        raw_cloud_url[strcspn(raw_cloud_url, "\r\n \t")] = 0;
+        if (strncmp(start, "https://", 8) == 0) start += 8;
+        else if (strncmp(start, "http://", 7) == 0) start += 7;
+        size_t n = strcspn(start, "/:");
+        if (n > 0 && n < sizeof(ws_host)) {
+            memcpy(ws_host, start, n);
+            ws_host[n] = '\0';
+        }
+    }
+
+    LOG(DEBUG, "Reconnection attempt – host: %s, websocket path: %s", ws_host, websocket_path);
 
     /* ------------------------------------------------------------------ */
     /* Step 2: Stop timers before rebuild                                 */
@@ -170,12 +188,12 @@ static void ws_reconnect_cb(EV_P_ ev_timer *w, int revents)
     memset(&ccinfo, 0, sizeof(ccinfo));
 
     ccinfo.context  = ws_context;
-    ccinfo.address  = WEBSOCKET_URL;
+    ccinfo.address  = ws_host;
     ccinfo.port     = WEBSOCKET_PORT;
     ccinfo.path     = websocket_path;
 
-    ccinfo.host     = WEBSOCKET_URL;
-    ccinfo.origin   = WEBSOCKET_URL;
+    ccinfo.host     = ws_host;
+    ccinfo.origin   = ws_host;
 
     ccinfo.ssl_connection = LCCSCF_USE_SSL |
                             LCCSCF_ALLOW_INSECURE;  // remove if CA is real

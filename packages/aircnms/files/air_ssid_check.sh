@@ -53,11 +53,21 @@ apply_ssid_config() {
 
     uci set wireless.wlan1.ssid="$default_ssid"
     uci set wireless.wlan1.network="nat_network"
+    uci set wireless.wlan1.disabled="0"
     uci set wireless.wlan2.ssid="$default_ssid"
     uci set wireless.wlan2.network="nat_network"
+    uci set wireless.wlan2.disabled="0"
+
+    # Defensively ensure secondary factory VAPs are disabled on un-enrolled AP
+    for ifc in wlan3 wlan4 wlan5 wlan6 wlan7 wlan8; do
+        if uci get wireless.$ifc >/dev/null 2>&1; then
+            uci set wireless.$ifc.disabled="1"
+        fi
+    done
+
     uci commit wireless
 
-    log "SSID configured: $default_ssid"
+    log "SSID configured: $default_ssid (primary VAPs only, secondary VAPs disabled)"
     wifi reload
 }
 

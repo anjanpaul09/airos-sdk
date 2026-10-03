@@ -68,9 +68,13 @@ int run_command(const char *command, char *output, size_t size)
 }
 
 
+#define FW_UPGRADE_DEFAULT_BASE_URL "https://api.cloud.netstream.net.in"
+#define FW_UPGRADE_ENDPOINT         "/api/device_registration/v1/file/download"
+
 int target_cmd_device_upgrade() 
 {
-    const char *url = DM_FW_UPGRADE_URL;   
+    char base_url[128] = {0};
+    char url[256];   
     const char *output_tar = FW_OUTPUT_TAR;  
     const char *extracted_folder = FW_EXTRACTED_FOLDER; // e.g., "/tmp/air-image"
     char cmd[256];
@@ -78,6 +82,23 @@ int target_cmd_device_upgrade()
     char bin_md5sum[128];
     char bin_filename[128];
     char json_request[256];
+    size_t blen;
+
+    if (run_command("uci get aircnms.@aircnms[0].cloud_url", base_url, sizeof(base_url)) != 0 ||
+        strlen(base_url) == 0) {
+        snprintf(base_url, sizeof(base_url), "%s", FW_UPGRADE_DEFAULT_BASE_URL);
+    }
+    base_url[strcspn(base_url, "\r\n \t")] = 0;
+    if (base_url[0] == '\0') {
+        snprintf(base_url, sizeof(base_url), "%s", FW_UPGRADE_DEFAULT_BASE_URL);
+    }
+
+    /* Strip trailing slashes */
+    blen = strlen(base_url);
+    while (blen > 0 && base_url[blen - 1] == '/') {
+        base_url[--blen] = '\0';
+    }
+    snprintf(url, sizeof(url), "%s%s", base_url, FW_UPGRADE_ENDPOINT);
     
     sprintf(json_request, "{\"device_firmware_id\": \"%s\"}", fw_id);
 

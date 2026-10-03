@@ -82,11 +82,23 @@ apply_state() {
         fi
 
         remove_legacy_recovery_network
-        remove_legacy_recovery_ifaces
-        ensure_wifi_iface "airrec2g" "$r2" "Airpro_${suffix}" 0
-        ensure_wifi_iface "airrec5g" "$r5" "Airpro_${suffix}" 0
-        uci commit wireless
-        wifi reload >/dev/null 2>&1 || true
+
+        # If primary interfaces wlan1 and wlan2 are already broadcasting Airpro_<MAC>,
+        # do not spawn duplicate airrec2g and airrec5g VAPs.
+        local wlan1_ssid="$(uciq get wireless.wlan1.ssid)"
+        local wlan1_dis="$(uciq get wireless.wlan1.disabled)"
+        if [ "$wlan1_ssid" = "Airpro_${suffix}" ] && [ "$wlan1_dis" != "1" ]; then
+            remove_legacy_recovery_ifaces
+            uci commit wireless
+            log "recovery enable=1: default SSID Airpro_$suffix already active on primary interfaces, duplicate VAPs avoided"
+        else
+            remove_legacy_recovery_ifaces
+            ensure_wifi_iface "airrec2g" "$r2" "Airpro_${suffix}" 0
+            ensure_wifi_iface "airrec5g" "$r5" "Airpro_${suffix}" 0
+            uci commit wireless
+            wifi reload >/dev/null 2>&1 || true
+            log "recovery enable=1: recovery SSIDs created airrec2g/airrec5g ssid=Airpro_$suffix"
+        fi
 
         # Check if WAN already has an active IP from DHCP
         local current_wan_ip=""
@@ -112,9 +124,16 @@ apply_state() {
             log "recovery enable=1 applied recovery_ip=$RECOVERY_IP wan_if=$WAN_IF wan_fallback_ip=$WAN_FALLBACK_IP ssid=Airpro_$suffix"
         fi
     else
+        # Disable recovery: remove any recovery interfaces without touching operational VAPs
+        local had_rec=0
+        if uciq get wireless.airrec2g >/dev/null || uciq get wireless.airrec5g >/dev/null || \
+           uciq get wireless.aironbd2g >/dev/null || uciq get wireless.aironbd5g >/dev/null; then
+            had_rec=1
+        fi
+
         remove_legacy_recovery_ifaces
         uci commit wireless
-        wifi reload >/dev/null 2>&1 || true
+        [ "$had_rec" = 1 ] && (wifi reload >/dev/null 2>&1 || true)
 
         if ! operational_once; then
             if [ "$(uciq get network.$WAN_IF.proto)" = "static" ] && [ "$(uciq get network.$WAN_IF.ipaddr)" = "$WAN_FALLBACK_IP" ]; then

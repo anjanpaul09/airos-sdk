@@ -125,7 +125,7 @@ static bool dns_resolves(const char *host)
     int rc;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    rc = getaddrinfo(host && host[0] ? host : "api.new.cloud.netstream.net.in", NULL, &hints, &result);
+    rc = getaddrinfo(host && host[0] ? host : "api.cloud.netstream.net.in", NULL, &hints, &result);
     if (result) freeaddrinfo(result);
     return rc == 0;
 }
@@ -167,7 +167,7 @@ static void read_cloud_host(char *host, size_t host_len)
     struct uci_context *ctx = uci_alloc_context();
     struct uci_package *pkg = NULL;
     struct uci_element *element;
-    snprintf(host, host_len, "%s", "api.new.cloud.netstream.net.in");
+    snprintf(host, host_len, "%s", "api.cloud.netstream.net.in");
     if (!ctx || uci_load(ctx, "aircnms", &pkg) != UCI_OK) goto out;
     uci_foreach_element(&pkg->sections, element) {
         struct uci_section *section = uci_to_section(element);
@@ -197,7 +197,7 @@ static bool cloud_https_probe(const char *host)
     long code = 0;
     curl = curl_easy_init();
     if (!curl) return false;
-    snprintf(url, sizeof(url), "https://%s/health", host && host[0] ? host : "api.new.cloud.netstream.net.in");
+    snprintf(url, sizeof(url), "https://%s/health", host && host[0] ? host : "api.cloud.netstream.net.in");
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 1500L);

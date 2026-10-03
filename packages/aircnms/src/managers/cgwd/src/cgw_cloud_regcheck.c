@@ -46,21 +46,31 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb, void *us
 }
 
 
+#define CGW_DEFAULT_CLOUD_BASE_URL "https://api.cloud.netstream.net.in"
+#define CGW_REGCHECK_ENDPOINT      "/api/device_registration/v1/devices-check"
+
 /* Perform HTTP POST request */
 static int get_device_check_url(char *url, size_t size)
 {
-    char registration[256] = {0};
-    char *slash;
-    if (cmd_buf("uci get aircnms.@aircnms[0].cloud_url", registration, sizeof(registration)) != 0)
-        return -1;
-    registration[strcspn(registration, "\r\n")] = 0;
-    if (strncmp(registration, "https://", 8) != 0)
-        return -1;
-    slash = strrchr(registration, '/');
-    if (!slash || strcmp(slash + 1, "devices") != 0)
-        return -1;
-    *slash = 0;
-    return snprintf(url, size, "%s/devices-check", registration) < (int)size ? 0 : -1;
+    char base_url[128] = {0};
+    size_t len;
+
+    if (cmd_buf("uci get aircnms.@aircnms[0].cloud_url", base_url, sizeof(base_url)) != 0 ||
+        strlen(base_url) == 0) {
+        snprintf(base_url, sizeof(base_url), "%s", CGW_DEFAULT_CLOUD_BASE_URL);
+    }
+    base_url[strcspn(base_url, "\r\n \t")] = 0;
+    if (base_url[0] == '\0') {
+        snprintf(base_url, sizeof(base_url), "%s", CGW_DEFAULT_CLOUD_BASE_URL);
+    }
+
+    /* Strip trailing slashes */
+    len = strlen(base_url);
+    while (len > 0 && base_url[len - 1] == '/') {
+        base_url[--len] = '\0';
+    }
+
+    return snprintf(url, size, "%s%s", base_url, CGW_REGCHECK_ENDPOINT) < (int)size ? 0 : -1;
 }
 
 static char *post_device_check(const char *json_payload)

@@ -145,6 +145,8 @@ define Package/aircnms/install
 	$(INSTALL_DIR) $(1)/etc/chilli/www
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib/aircnms
+	$(INSTALL_BIN) ./files/air_mode_helper.sh $(1)/usr/lib/aircnms/
 
 	$(INSTALL_BIN) ./files/aircgwd $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/airnetstatsd $(1)/etc/init.d

@@ -279,12 +279,20 @@ static int restore_option(struct uci_context *uci, struct uci_package *package,
 
 static bool apply_service_mode(const char *mode)
 {
-    if (strcmp(mode, "cloud") == 0)
-        return command_ok("/etc/init.d/aircgwd enable >/dev/null 2>&1") &&
-               command_ok("/etc/init.d/aircgwd restart >/dev/null 2>&1");
-
-    return command_ok("/etc/init.d/aircgwd stop >/dev/null 2>&1") &&
-           command_ok("/etc/init.d/aircgwd disable >/dev/null 2>&1");
+    bool ok;
+    if (strcmp(mode, "cloud") == 0) {
+        ok = command_ok("/etc/init.d/aircgwd enable >/dev/null 2>&1") &&
+             command_ok("/etc/init.d/aircgwd restart >/dev/null 2>&1") &&
+             command_ok("/etc/init.d/aironbd enable >/dev/null 2>&1") &&
+             command_ok("/etc/init.d/aironbd restart >/dev/null 2>&1");
+    } else {
+        ok = command_ok("/etc/init.d/aircgwd stop >/dev/null 2>&1") &&
+             command_ok("/etc/init.d/aircgwd disable >/dev/null 2>&1") &&
+             command_ok("/etc/init.d/aironbd stop >/dev/null 2>&1") &&
+             command_ok("/etc/init.d/aironbd disable >/dev/null 2>&1");
+    }
+    command_ok("/sbin/reload_config >/dev/null 2>&1");
+    return ok;
 }
 
 int airui_mode_controller_set(struct ubus_context *ctx,

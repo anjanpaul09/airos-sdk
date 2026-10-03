@@ -30,8 +30,10 @@ int main()
     }
 
 
-    /* Send VIF info event on startup */
-	stamonitord_send_vif_info();
+    /* Send VIF info event on startup if cloud enrolled */
+    if (stamonitord_is_cloud_enrolled()) {
+        stamonitord_send_vif_info();
+    }
  
     /* Start nl80211 generic netlink listener for station connect/disconnect events */
     if (stamonitord_nl80211_start(loop) < 0) {

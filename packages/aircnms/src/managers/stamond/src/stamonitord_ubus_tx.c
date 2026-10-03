@@ -233,6 +233,11 @@ void stamonitord_publish_info_event(void *buf, size_t size)
         return;
     }
 
+    if (!stamonitord_is_cloud_enrolled()) {
+        LOG(DEBUG, "Not cloud enrolled; skipping publish to cgwd");
+        return;
+    }
+
     // Log event type for debugging
     if (size >= sizeof(info_event_type_t)) {
         info_event_type_t event_type = *(info_event_type_t *)buf;

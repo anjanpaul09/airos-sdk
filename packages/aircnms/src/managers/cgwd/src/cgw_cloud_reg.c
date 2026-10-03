@@ -129,6 +129,7 @@ static bool cgw_process_initial_data_attempt(char *data, const char *attempt_id)
  memcpy(air_dev.device_id,device_id,sizeof(device_id)); memcpy(air_dev.netwrk_id,network_id,sizeof(network_id)); memcpy(air_dev.org_id,org_id,sizeof(org_id));
  memcpy(air_dev.username,username,sizeof(username)); memcpy(air_dev.password,password,sizeof(password)); cgw_topic_lst=new_topics; stats_topic=new_stats; ok=true;
  LOG(INFO,"Registration configuration committed: device_id=%s broker=%s port=%s topics=%d",device_id,broker,port,new_topics.n_topic);
+ system("/sbin/reload_config >/dev/null 2>&1");
 out:
  if(password[0]) OPENSSL_cleanse(password,sizeof(password));
  if(cfg_json) free(cfg_json);
@@ -315,24 +316,34 @@ void get_device_details(struct DeviceInfo *device)
     device->type = 1;
 }
 
+#define CGW_DEFAULT_CLOUD_BASE_URL "https://api.cloud.netstream.net.in"
+#define CGW_REGISTRATION_ENDPOINT  "/api/device_registration/v1/devices"
+
 int get_cloud_url(char *cloud_url) 
 {
     char buf[UCI_BUF_LEN];
+    char base_url[128];
     size_t len;
     int rc;
 
     memset(buf, 0, sizeof(buf));
     rc = cmd_buf("uci get aircnms.@aircnms[0].cloud_url", buf, sizeof(buf));
-    if (rc != 0) {
-        LOG(ERR, "Failed to execute UCI command for cloud_url");
-        return -1;
+    if (rc != 0 || strlen(buf) == 0) {
+        LOG(NOTICE, "No UCI value found for cloud_url, using default: %s", CGW_DEFAULT_CLOUD_BASE_URL);
+        snprintf(base_url, sizeof(base_url), "%s", CGW_DEFAULT_CLOUD_BASE_URL);
+    } else {
+        if (sscanf(buf, "%127s", base_url) != 1) {
+            snprintf(base_url, sizeof(base_url), "%s", CGW_DEFAULT_CLOUD_BASE_URL);
+        }
     }
-    len = strlen(buf);
-    if (len == 0) {
-        LOG(ERR, "No UCI value found for cloud_url");
-        return -1;
+
+    /* Strip trailing slashes */
+    len = strlen(base_url);
+    while (len > 0 && base_url[len - 1] == '/') {
+        base_url[--len] = '\0';
     }
-    sscanf(buf, "%127s", cloud_url);
+
+    snprintf(cloud_url, 256, "%s%s", base_url, CGW_REGISTRATION_ENDPOINT);
     return 0;
 }
 
@@ -399,7 +410,7 @@ static bool send_request_internal(const char *existing_attempt_id)
 {
     struct DeviceInfo device;
     struct curl_buffer response = { .data = calloc(1, 1), .size = 0 };
-    char cloud_url[128];
+    char cloud_url[256];
     struct curl_slist *headers = NULL;
     CURL *curl = NULL;
     CURLcode res;

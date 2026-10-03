@@ -26,6 +26,11 @@ start_service()
     config_foreach start_instance aircnms
 }
 
+service_triggers()
+{
+    procd_add_reload_trigger aircnms
+}
+
 # stop_service() is not needed - procd handles stopping automatically
 
 restart_service()

@@ -18,6 +18,30 @@ static struct ev_timer  stamonitord_mqtt_timer;
 static double           stamonitord_mqtt_timer_interval = 10;
 static bool             stamonitord_device_info_initial_sync_done = false;
 
+bool stamonitord_is_cloud_enrolled(void)
+{
+    char mode[32] = {0};
+    char dev_id[64] = {0};
+
+    if (cmd_buf("uci get aircnms.@aircnms[0].mode", mode, sizeof(mode)) != 0) {
+        return false;
+    }
+    mode[strcspn(mode, "\r\n \t")] = '\0';
+    if (strcmp(mode, "cloud") != 0) {
+        return false;
+    }
+
+    if (cmd_buf("uci get aircnms.@aircnms[0].device_id", dev_id, sizeof(dev_id)) != 0) {
+        return false;
+    }
+    dev_id[strcspn(dev_id, "\r\n \t")] = '\0';
+    if (dev_id[0] == '\0' || strcmp(dev_id, "XXXXXXXXXX") == 0) {
+        return false;
+    }
+
+    return true;
+}
+
 bool stamonitord_get_current_change(device_info_event_t *conf) 
 {
     char cur_fw_version[UCI_BUF_LEN] = {0};
@@ -175,6 +199,10 @@ bool stamonitord_check_device_config(device_info_event_t *curr_conf)
 
 int stamonitord_monitor_device_info_change()
 {
+    if (!stamonitord_is_cloud_enrolled()) {
+        return 0;
+    }
+
     device_info_event_t current_config;
     stamonitord_get_current_change(&current_config);
 

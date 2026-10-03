@@ -15,6 +15,11 @@ start_service()
     procd_close_instance
 }
 
+service_triggers()
+{
+    procd_add_reload_trigger aircnms
+}
+
 # stop_service() is not needed - procd handles stopping automatically
 
 restart_service()
