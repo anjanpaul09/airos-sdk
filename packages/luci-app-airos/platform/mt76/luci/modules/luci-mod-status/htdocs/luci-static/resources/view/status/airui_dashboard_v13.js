@@ -386,6 +386,31 @@ function kpi(label, value, subtext, active) {
 	]);
 }
 
+function modeKpi(label, value, statusText, actionContent, pillText, pillClass) {
+	var actionNodes = [
+		E('span', { 'style': 'color:#8c8c8c;font-weight:600;' }, _('Action Required: '))
+	];
+	if (Array.isArray(actionContent)) {
+		for (var i = 0; i < actionContent.length; i++)
+			actionNodes.push(actionContent[i]);
+	} else if (actionContent != null) {
+		actionNodes.push(actionContent);
+	}
+
+	return E('div', { 'class': 'card kpi', 'role': 'group', 'aria-label': label }, [
+		pillText ? E('span', { 'class': 'air-status-pill ' + (pillClass || 'is-positive') + ' kpi-status' }, pillText) : '',
+		E('div', { 'class': 'label' }, label),
+		E('div', { 'class': 'value' }, value || '-'),
+		E('div', { 'class': 'sub', 'style': 'display:flex;flex-direction:column;gap:5px;font-size:11px;line-height:1.4;margin-top:auto;width:100%;text-align:left;' }, [
+			E('div', { 'style': 'color:#333;' }, [
+				E('span', { 'style': 'color:#8c8c8c;font-weight:600;' }, _('Status: ')),
+				statusText
+			]),
+			E('div', { 'style': 'color:#333;' }, actionNodes)
+		])
+	]);
+}
+
 function statusFooter() {
 	return E('footer', { 'class': 'status-page-footer' }, _('© AirPro Technology India Ltd. All rights reserved.'));
 }
@@ -581,8 +606,84 @@ function buildDashboardPage(data) {
 		var version = (cachedVersionInfo && cachedVersionInfo.version) || '1.2';
 		var load = info.load && info.load.length ? (info.load[0] / 65536).toFixed(2) : '0.00';
 		var currentMode = payload.mode && payload.mode.current || _('Standalone');
-		var modeSubtext = String(currentMode).toLowerCase().indexOf('cloud') > -1 ?
-			_('Cloud managed') : _('Local management');
+		var isCloud = String(currentMode).toLowerCase().indexOf('cloud') > -1;
+		var isOnline = payload.mode && (payload.mode.online === true || payload.mode.online === 1 || payload.mode.online === '1');
+		var devId = payload.mode && payload.mode.device_id || '';
+		var isRegistered = payload.mode && (payload.mode.registered === true || payload.mode.registered === 1 || payload.mode.controller_state === 'registered' || (devId && devId !== 'XXXXXXXXXX' && devId.length === 10));
+		var netValues = uciValues(payload.network || {}, 'uci') || (payload.network && payload.network.values) || {};
+		var lanNet = netValues.lan || {};
+		var lanIface = payload.interfaces && payload.interfaces.lan || {};
+		var lanIp = lanIface.ipaddr || (lanIface['ipv4-address'] && lanIface['ipv4-address'][0] && lanIface['ipv4-address'][0].address) || lanNet.ipaddr || '';
+		var isFallback = (lanIp === '192.168.188.253') || (lanNet.in_fallback === '1' || lanNet.in_fallback === 1);
+		var lanProto = lanNet.proto || lanIface.proto || '';
+		var isDhcpPending = (lanProto === 'dhcp') && (!lanIp || lanIp === '0.0.0.0') && !isFallback;
+
+		var modePillText = _('Active');
+		var modePillClass = 'is-positive';
+		var modeStatusText = '';
+		var modeActionContent = '';
+
+		if (isCloud) {
+			if (isFallback) {
+				modePillText = _('Fallback Active');
+				modePillClass = 'is-warning';
+				modeStatusText = _('Recovery IP 192.168.188.253 Active');
+				modeActionContent = [
+					_('Configure static IP or a '),
+					E('a', {
+						'href': L.url('admin/maintenance/system_maintenance') + '#maintenance-reboot',
+						'style': 'color:#0066cc;text-decoration:underline;font-weight:600;display:inline;'
+					}, _('reboot'))
+				];
+			} else if (isDhcpPending) {
+				modePillText = _('DHCP Pending');
+				modePillClass = 'is-warning';
+				modeStatusText = _('Acquiring IP via DHCP (waiting up to 3 min)');
+				modeActionContent = _('Connect uplink cable to live DHCP network or await fallback IP');
+			} else if (isOnline) {
+				modePillText = _('Online');
+				modePillClass = 'is-positive';
+				modeStatusText = _('Connected to Cloud Controller');
+				modeActionContent = _('None (Cloud synchronised)');
+			} else if (!isRegistered) {
+				modePillText = _('Unclaimed');
+				modePillClass = 'is-warning';
+				modeStatusText = _('Awaiting Cloud Enrollment');
+				modeActionContent = _('Claim device on Cloud Controller using Serial / MAC');
+			} else {
+				modePillText = _('Disconnected');
+				modePillClass = 'is-danger';
+				modeStatusText = _('Cloud Controller Unreachable');
+				modeActionContent = _('Check internet uplink / firewall port 35930');
+			}
+		} else {
+			var hasCustomSsid = false;
+			for (var r = 0; r < radios.length; r++) {
+				var s = (radios[r].ssid || '');
+				if (s && s !== 'Airpro' && s.indexOf('Airpro_') !== 0 && s.indexOf('Airpro2g') !== 0 && s.indexOf('Airpro5g') !== 0) {
+					hasCustomSsid = true;
+					break;
+				}
+			}
+
+			if (hasCustomSsid) {
+				modePillText = _('Active');
+				modePillClass = 'is-positive';
+				modeStatusText = _('Local AP Mode Operational');
+				modeActionContent = _('None (Operating normally)');
+			} else {
+				modePillText = _('Unconfigured');
+				modePillClass = 'is-neutral';
+				modeStatusText = _('Running Factory Default Wi-Fi');
+				modeActionContent = [
+					_('Configure wireless SSIDs and passwords in '),
+					E('a', {
+						'href': L.url('admin/network/wireless'),
+						'style': 'color:#0066cc;text-decoration:underline;font-weight:600;'
+					}, _('Network settings'))
+				];
+			}
+		}
 
 		var page;
 		var refresh = function() {
@@ -667,7 +768,7 @@ function buildDashboardPage(data) {
 				kpi(_('Clients'), String(clients), _('Wi-Fi associated'), clients > 0),
 				kpi(_('Wireless Interfaces'), _('%d active of %d').format(activeRadios, radios.length || 0), _('Configured wireless interfaces'), activeRadios > 0),
 				kpi(_('Uptime'), fmtUptime(info.uptime), _('Since last boot'), false),
-				kpi(_('Current Mode'), currentMode, modeSubtext, false)
+				modeKpi(_('Current Mode'), currentMode, modeStatusText, modeActionContent, modePillText, modePillClass)
 			]) : '',
 			live ? E('section', { 'class': 'metrics' }, [
 				donutCard('airdash-cpu', _('CPU Utilisation'), cpuPct, _('Load: %s').format(load), [

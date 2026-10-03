@@ -6,10 +6,7 @@ MODE="$2"
 STATE_DIR="/run/air-onbd"
 INTENT="$STATE_DIR/recovery.intent"
 APPLIED="$STATE_DIR/recovery.applied"
-NET="nat_network"
-RECOVERY_IP="192.168.23.1"
 WAN_IF="lan"
-WAN_FALLBACK_DEV="br-lan"
 WAN_FALLBACK_IP="192.168.188.253"
 WAN_FALLBACK_NETMASK="255.255.255.0"
 
@@ -20,132 +17,72 @@ operational_once() {
     [ "$(uci -q get aircnms.onboarding.operational_once 2>/dev/null)" = "1" ]
 }
 
-mac_suffix() {
-    local mac=""
-    for ifc in eth0 br-lan phy0-ap0; do
-        [ -r "/sys/class/net/$ifc/address" ] && { mac=$(cat "/sys/class/net/$ifc/address"); break; }
-    done
-    [ -n "$mac" ] || mac="00:00:00:00:00:00"
-    echo "$mac" | awk -F: '{print toupper($4$5$6)}'
+get_dhcp_ip() {
+    ubus call network.interface.lan status 2>/dev/null | jsonfilter -e '@["ipv4-address"][0].address' 2>/dev/null
 }
 
-first_radio() {
-    local band="$1" r hw
-    for r in $(uci -q show wireless | sed -n "s/^wireless\.\([^.=]*\)=wifi-device/\1/p"); do
-        hw=$(uciq get wireless.$r.band)
-        [ -z "$hw" ] && hw=$(uciq get wireless.$r.hwmode)
-        case "$band:$hw" in
-            2g:*2g*|2g:*11g*|2g:*11n*) echo "$r"; return 0 ;;
-            5g:*5g*|5g:*11a*|5g:*11ac*|5g:*11ax*) echo "$r"; return 0 ;;
-        esac
-    done
-    [ "$band" = 2g ] && echo wifi1 || echo wifi0
-}
-
-ensure_wifi_iface() {
-    local section="$1" radio="$2" ssid="$3" disabled="$4"
-    uciq get wireless.$section >/dev/null || uci set wireless.$section=wifi-iface
-    uci set wireless.$section.device="$radio"
-    uci set wireless.$section.mode='ap'
-    uci set wireless.$section.network="$NET"
-    uci set wireless.$section.ssid="$ssid"
-    uci set wireless.$section.encryption='none'
-    uci set wireless.$section.hidden='0'
-    uci set wireless.$section.disabled="$disabled"
-}
-
-remove_legacy_recovery_ifaces() {
-    uciq delete wireless.airrec2g || true
-    uciq delete wireless.airrec5g || true
-    uciq delete wireless.aironbd2g || true
-    uciq delete wireless.aironbd5g || true
-}
-
-remove_legacy_recovery_network() {
-    uciq delete network.airrecovery || true
-    uciq delete dhcp.airrecovery || true
+has_active_dhcp_ip() {
+    local ip
+    ip="$(get_dhcp_ip)"
+    [ -n "$ip" ] && [ "$ip" != "$WAN_FALLBACK_IP" ]
 }
 
 apply_state() {
-    local enable="$1" suffix r2 r5
-    suffix=$(mac_suffix)
-    r2=$(first_radio 2g)
-    r5=$(first_radio 5g)
-
-    if [ "$enable" = 1 ]; then
-        if operational_once; then
-            log "recovery enable=1 suppressed reason=operational_once"
-            remove_legacy_recovery_ifaces
-            uci commit wireless
-            wifi reload >/dev/null 2>&1 || true
-            return 0
-        fi
-
-        remove_legacy_recovery_network
-
-        # If primary interfaces wlan1 and wlan2 are already broadcasting Airpro_<MAC>,
-        # do not spawn duplicate airrec2g and airrec5g VAPs.
-        local wlan1_ssid="$(uciq get wireless.wlan1.ssid)"
-        local wlan1_dis="$(uciq get wireless.wlan1.disabled)"
-        if [ "$wlan1_ssid" = "Airpro_${suffix}" ] && [ "$wlan1_dis" != "1" ]; then
-            remove_legacy_recovery_ifaces
-            uci commit wireless
-            log "recovery enable=1: default SSID Airpro_$suffix already active on primary interfaces, duplicate VAPs avoided"
-        else
-            remove_legacy_recovery_ifaces
-            ensure_wifi_iface "airrec2g" "$r2" "Airpro_${suffix}" 0
-            ensure_wifi_iface "airrec5g" "$r5" "Airpro_${suffix}" 0
-            uci commit wireless
-            wifi reload >/dev/null 2>&1 || true
-            log "recovery enable=1: recovery SSIDs created airrec2g/airrec5g ssid=Airpro_$suffix"
-        fi
-
-        # Check if WAN already has an active IP from DHCP
-        local current_wan_ip=""
-        for dev in "$WAN_FALLBACK_DEV" eth0 wan; do
-            if [ -d "/sys/class/net/$dev" ]; then
-                current_wan_ip=$(ip -4 -o addr show dev "$dev" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -n1)
-                [ -n "$current_wan_ip" ] && break
+    case "$1" in
+        1)
+            if operational_once; then
+                log "recovery enable=1 suppressed reason=operational_once"
+                return 0
             fi
-        done
 
-        if [ -n "$current_wan_ip" ] && [ "$current_wan_ip" != "$WAN_FALLBACK_IP" ]; then
-            log "recovery enable=1 applied: WAN already has active IP ($current_wan_ip), keeping DHCP; recovery Wi-Fi activated ssid=Airpro_$suffix"
-        else
-            # Only set static fallback if WAN has NO IP (DHCP timed out)
+            if has_active_dhcp_ip; then
+                log "DHCP active ($(get_dhcp_ip)); fallback IP not required"
+                if [ "$(uciq get aircnms.onboarding.in_fallback)" = "1" ]; then
+                    uciq delete aircnms.onboarding.in_fallback
+                    uciq commit aircnms
+                fi
+                return 0
+            fi
+
+            # Check if lan is already configured with fallback IP
             if [ "$(uciq get network.$WAN_IF.proto)" != "static" ] || [ "$(uciq get network.$WAN_IF.ipaddr)" != "$WAN_FALLBACK_IP" ]; then
+                # Tag this static IP as temporary recovery fallback
+                uci set aircnms.onboarding.in_fallback='1'
+                uci commit aircnms
+
                 uci set network.$WAN_IF.proto='static'
                 uci set network.$WAN_IF.ipaddr="$WAN_FALLBACK_IP"
                 uci set network.$WAN_IF.netmask="$WAN_FALLBACK_NETMASK"
                 uciq delete network.wan_fallback || true
                 uci commit network
-                ifup "$WAN_IF" >/dev/null 2>&1 || /etc/init.d/network reload >/dev/null 2>&1 || true
+
+                /sbin/ifup "$WAN_IF" >/dev/null 2>&1 || true
+                log "recovery enable=1 applied: lan switched to static fallback $WAN_FALLBACK_IP in UCI"
             fi
-            log "recovery enable=1 applied recovery_ip=$RECOVERY_IP wan_if=$WAN_IF wan_fallback_ip=$WAN_FALLBACK_IP ssid=Airpro_$suffix"
-        fi
-    else
-        # Disable recovery: remove any recovery interfaces without touching operational VAPs
-        local had_rec=0
-        if uciq get wireless.airrec2g >/dev/null || uciq get wireless.airrec5g >/dev/null || \
-           uciq get wireless.aironbd2g >/dev/null || uciq get wireless.aironbd5g >/dev/null; then
-            had_rec=1
-        fi
+            ;;
+        0)
+            # Revert to DHCP if we were in recovery fallback
+            local was_fallback=0
+            if [ "$(uciq get aircnms.onboarding.in_fallback)" = "1" ] || \
+               ([ "$(uciq get network.$WAN_IF.proto)" = "static" ] && [ "$(uciq get network.$WAN_IF.ipaddr)" = "$WAN_FALLBACK_IP" ]); then
+                was_fallback=1
+            fi
 
-        remove_legacy_recovery_ifaces
-        uci commit wireless
-        [ "$had_rec" = 1 ] && (wifi reload >/dev/null 2>&1 || true)
-
-        if ! operational_once; then
-            if [ "$(uciq get network.$WAN_IF.proto)" = "static" ] && [ "$(uciq get network.$WAN_IF.ipaddr)" = "$WAN_FALLBACK_IP" ]; then
+            if [ "$was_fallback" = "1" ]; then
                 uci set network.$WAN_IF.proto='dhcp'
-                uciq delete network.$WAN_IF.ipaddr || true
-                uciq delete network.$WAN_IF.netmask || true
+                uciq delete network.$WAN_IF.ipaddr
+                uciq delete network.$WAN_IF.netmask
+                uciq delete network.wan_fallback || true
                 uci commit network
-                ifup "$WAN_IF" >/dev/null 2>&1 || /etc/init.d/network reload >/dev/null 2>&1 || true
+
+                uciq delete aircnms.onboarding.in_fallback
+                uci commit aircnms
+
+                /sbin/ifup "$WAN_IF" >/dev/null 2>&1 || true
+                log "recovery enable=0 applied: lan reverted to dhcp in UCI"
             fi
-        fi
-        log "recovery enable=0 applied"
-    fi
+            ;;
+    esac
 }
 
 mkdir -p "$STATE_DIR"

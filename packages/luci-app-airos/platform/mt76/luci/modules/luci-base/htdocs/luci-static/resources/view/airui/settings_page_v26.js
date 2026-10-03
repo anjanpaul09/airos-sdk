@@ -1528,6 +1528,11 @@ function renderMaintenance(page, payload, selectedKey) {
 		var rebootView = renderMaintenance(pages.reboot, payload, 'reboot');
 		var factoryView = renderMaintenance(pages.factory_default, payload, 'factory_default');
 
+		var hashTab = (window.location.hash || '').replace(/^#/, '');
+		var isReboot = (hashTab === 'maintenance-reboot' || hashTab === 'reboot');
+		var isFactory = (hashTab === 'maintenance-factory' || hashTab === 'factory_default');
+		var isFirmware = !isReboot && !isFactory;
+
 		return E('div', { 'class': 'air-page air-settings-page air-maintenance-page air-system-maintenance' }, [
 			E('section', { 'class': 'air-settings-hero' }, [
 				E('div', {}, [
@@ -1540,25 +1545,25 @@ function renderMaintenance(page, payload, selectedKey) {
 				'aria-label': _('System maintenance sections'),
 				'keydown': navigateMaintenanceTabs
 			}, [
-				E('a', { 'class': 'is-active', 'role': 'tab', 'aria-selected': 'true', 'aria-controls': 'maintenance-firmware', 'tabindex': '0', 'href': '#maintenance-firmware', 'click': selectMaintenanceTab }, _('Firmware Upgrade')),
-				E('a', { 'role': 'tab', 'aria-selected': 'false', 'aria-controls': 'maintenance-reboot', 'tabindex': '-1', 'href': '#maintenance-reboot', 'click': selectMaintenanceTab }, _('Reboot')),
-				E('a', { 'role': 'tab', 'aria-selected': 'false', 'aria-controls': 'maintenance-factory', 'tabindex': '-1', 'href': '#maintenance-factory', 'click': selectMaintenanceTab }, _('Factory Reset'))
+				E('a', { 'class': isFirmware ? 'is-active' : '', 'role': 'tab', 'aria-selected': isFirmware ? 'true' : 'false', 'aria-controls': 'maintenance-firmware', 'tabindex': isFirmware ? '0' : '-1', 'href': '#maintenance-firmware', 'click': selectMaintenanceTab }, _('Firmware Upgrade')),
+				E('a', { 'class': isReboot ? 'is-active' : '', 'role': 'tab', 'aria-selected': isReboot ? 'true' : 'false', 'aria-controls': 'maintenance-reboot', 'tabindex': isReboot ? '0' : '-1', 'href': '#maintenance-reboot', 'click': selectMaintenanceTab }, _('Reboot')),
+				E('a', { 'class': isFactory ? 'is-active' : '', 'role': 'tab', 'aria-selected': isFactory ? 'true' : 'false', 'aria-controls': 'maintenance-factory', 'tabindex': isFactory ? '0' : '-1', 'href': '#maintenance-factory', 'click': selectMaintenanceTab }, _('Factory Reset'))
 			]),
-			E('section', { 'id': 'maintenance-firmware', 'class': 'air-maintenance-group is-active', 'role': 'tabpanel' }, [
+			E('section', { 'id': 'maintenance-firmware', 'class': 'air-maintenance-group' + (isFirmware ? ' is-active' : ''), 'role': 'tabpanel', 'hidden': isFirmware ? null : 'hidden' }, [
 				E('div', { 'class': 'air-maintenance-group-head' }, [
 					E('h2', {}, _('Firmware Upgrade')),
 					E('p', {}, _('Validate and install a compatible system image.'))
 				]),
 				firmwareView.querySelector('.air-settings-grid')
 			]),
-			E('section', { 'id': 'maintenance-reboot', 'class': 'air-maintenance-group', 'role': 'tabpanel', 'hidden': 'hidden' }, [
+			E('section', { 'id': 'maintenance-reboot', 'class': 'air-maintenance-group' + (isReboot ? ' is-active' : ''), 'role': 'tabpanel', 'hidden': isReboot ? null : 'hidden' }, [
 				E('div', { 'class': 'air-maintenance-group-head' }, [
 					E('h2', {}, _('Reboot')),
 					E('p', {}, _('Restart the access point while preserving its configuration.'))
 				]),
 				rebootView.querySelector('.air-settings-grid')
 			]),
-			E('section', { 'id': 'maintenance-factory', 'class': 'air-maintenance-group is-danger', 'role': 'tabpanel', 'hidden': 'hidden' }, [
+			E('section', { 'id': 'maintenance-factory', 'class': 'air-maintenance-group is-danger' + (isFactory ? ' is-active' : ''), 'role': 'tabpanel', 'hidden': isFactory ? null : 'hidden' }, [
 				E('div', { 'class': 'air-maintenance-group-head' }, [
 					E('h2', {}, _('Factory Reset')),
 					E('p', {}, _('Erase the configuration and restore the access point to factory defaults.'))

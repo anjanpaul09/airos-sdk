@@ -2,44 +2,138 @@
 
 START=19
 
+get_base_mac() {
+    local mac=""
+    mac=$(uci -q get aircnms.@aircnms[0].macaddr 2>/dev/null || true)
+    if [ -n "$mac" ] && [ "$mac" != "XXXXXXXXXX" ]; then
+        echo "$mac"
+        return 0
+    fi
+    for ifc in eth0 wan eth1 lan; do
+        [ -r "/sys/class/net/$ifc/address" ] && { mac=$(cat "/sys/class/net/$ifc/address"); [ -n "$mac" ] && { echo "$mac"; return 0; }; }
+    done
+    return 1
+}
+
+is_factory_ssid_needed() {
+    # If already seeded or enrolled, do not touch SSIDs
+    [ "$(uci -q get aircnms.onboarding.factory_ssid_seeded 2>/dev/null)" = "1" ] && return 1
+    [ "$(uci -q get aircnms.onboarding.operational_once 2>/dev/null)" = "1" ] && return 1
+    return 0
+}
+
+seed_factory_ssid() {
+    local ifc="$1" default_ssid="$2"
+    local cur_ssid="$(uci -q get wireless.$ifc.ssid)"
+    case "$cur_ssid" in
+        ""|"OpenWrt"*|"Airpro"|"Airpro_"*|"Airpro2g"*|"Airpro5g"*)
+            uci set wireless.$ifc.ssid="$default_ssid"
+            uci set wireless.$ifc.network='nat_network'
+            uci set wireless.$ifc.disabled='0'
+            wl_changed=1
+            ;;
+        *)
+            # Custom SSID already present; preserve untouched
+            ;;
+    esac
+}
+
 boot() {
-    local op_once
-    op_once="$(uci -q get aircnms.onboarding.operational_once 2>/dev/null)"
-    if [ "$op_once" != "1" ]; then
-        # Ensure WAN/lan starts as DHCP client on boot for un-enrolled AP
-        local net_changed=0
-        if [ "$(uci -q get network.lan.proto)" = "static" ] && [ "$(uci -q get network.lan.ipaddr)" = "192.168.188.253" ]; then
-            uci set network.lan.proto='dhcp'
-            uci -q delete network.lan.ipaddr
-            uci -q delete network.lan.netmask
-            net_changed=1
-        fi
+    local net_changed=0
+    local wl_changed=0
 
-        # Ensure mgmt is on physical port lan with 192.168.33.33 and DHCP disabled
-        if [ "$(uci -q get network.mgmt.ipaddr)" != "192.168.33.33" ] || [ "$(uci -q get network.mgmt.device)" != "lan" ]; then
-            uci -q delete network.br_mgmt
-            uci -q delete network.@device[1]
-            uci set network.mgmt.device='lan'
-            uci set network.mgmt.proto='static'
-            uci set network.mgmt.ipaddr='192.168.33.33'
-            uci set network.mgmt.netmask='255.255.255.0'
-            uci -q set dhcp.mgmt.ignore='1'
-            uci -q commit dhcp
-            net_changed=1
-        fi
-        [ "$net_changed" = "1" ] && uci commit network
+    # ==============================================================
+    # Phase 1: Global Schema & Legacy Migrations (runs on ALL APs)
+    # ==============================================================
 
-        # Clean up any stale recovery SSIDs from wireless before wireless starts
-        local wl_changed=0
-        if uci -q get wireless.airrec2g >/dev/null 2>&1; then
-            uci -q delete wireless.airrec2g
+    # 1. Revert recovery fallback static IP in network.lan to DHCP before netifd starts
+    local was_fallback=0
+    if [ "$(uci -q get aircnms.onboarding.in_fallback)" = "1" ] || \
+       ([ "$(uci -q get network.lan.proto)" = "static" ] && [ "$(uci -q get network.lan.ipaddr)" = "192.168.188.253" ]); then
+        was_fallback=1
+    fi
+
+    if [ "$was_fallback" = "1" ]; then
+        uci set network.lan.proto='dhcp'
+        uci -q delete network.lan.ipaddr
+        uci -q delete network.lan.netmask
+        net_changed=1
+
+        if [ "$(uci -q get aircnms.onboarding.in_fallback)" = "1" ]; then
+            uci -q delete aircnms.onboarding.in_fallback
+            uci -q commit aircnms
+        fi
+    fi
+
+    # 2. Clean up any obsolete wan_fallback interface section if present
+    if uci -q get network.wan_fallback >/dev/null 2>&1; then
+        uci -q delete network.wan_fallback
+        net_changed=1
+    fi
+
+    # 3. Ensure mgmt is on physical port lan with 192.168.33.33 and DHCP disabled
+    if [ "$(uci -q get network.mgmt.ipaddr)" != "192.168.33.33" ] || [ "$(uci -q get network.mgmt.device)" != "lan" ]; then
+        uci -q delete network.br_mgmt
+        uci -q delete network.@device[1]
+        uci set network.mgmt.device='lan'
+        uci set network.mgmt.proto='static'
+        uci set network.mgmt.ipaddr='192.168.33.33'
+        uci set network.mgmt.netmask='255.255.255.0'
+        uci -q set dhcp.mgmt.ignore='1'
+        uci -q commit dhcp
+        net_changed=1
+    fi
+    [ "$net_changed" = "1" ] && uci commit network
+
+    # 4. Prune dead legacy recovery VAPs completely across all fleets
+    for ifc in airrec2g airrec5g aironbd2g aironbd5g; do
+        if uci -q get wireless.$ifc >/dev/null 2>&1; then
+            uci -q delete wireless.$ifc
             wl_changed=1
         fi
-        if uci -q get wireless.airrec5g >/dev/null 2>&1; then
-            uci -q delete wireless.airrec5g
+    done
+
+    # 5. Sanitize LED triggers in system config (prevent kernel ABBA deadlock in S96led)
+    local sys_changed=0
+    if [ "$(uci -q get system.led_lan.trigger)" = "netdev" ]; then
+        uci set system.led_lan.trigger='none'
+        sys_changed=1
+    fi
+    if [ "$(uci -q get system.led_wan.trigger)" = "netdev" ]; then
+        uci set system.led_wan.trigger='none'
+        sys_changed=1
+    fi
+    [ "$sys_changed" = "1" ] && uci commit system
+
+    # 6. Sanitize corrupted wireless macaddr entries (e.g. invalid string length != 17)
+    for ifc in $(uci show wireless 2>/dev/null | grep "=wifi-iface" | cut -d. -f2 | cut -d= -f1); do
+        local cur_mac
+        cur_mac=$(uci -q get wireless.$ifc.macaddr)
+        if [ -n "$cur_mac" ] && [ ${#cur_mac} -ne 17 ]; then
+            uci -q delete wireless.$ifc.macaddr
             wl_changed=1
         fi
-        [ "$wl_changed" = "1" ] && uci commit wireless
+    done
+
+    # ==============================================================
+    # Phase 2: State-Based Factory SSID Seeding (First boot only)
+    # ==============================================================
+    if is_factory_ssid_needed; then
+        local base_mac
+        base_mac=$(get_base_mac)
+        if [ -n "$base_mac" ]; then
+            local mac_suffix
+            mac_suffix=$(echo "$base_mac" | tr -d ':' | awk '{print toupper(substr($0, length($0)-5, 6))}')
+            if [ -n "$mac_suffix" ]; then
+                local default_ssid="Airpro_$mac_suffix"
+                seed_factory_ssid "wlan1" "$default_ssid"
+                seed_factory_ssid "wlan2" "$default_ssid"
+            fi
+        fi
+
+        # Mark factory SSID as seeded so airboot never touches wireless on future reboots
+        uci set aircnms.onboarding.factory_ssid_seeded='1'
+        uci commit aircnms
 
         # Reset stale recovery lifecycle in aircnms so onboarding starts fresh
         if [ "$(uci -q get aircnms.onboarding.lifecycle)" = "recovery" ]; then
@@ -47,6 +141,8 @@ boot() {
             uci commit aircnms
         fi
     fi
+
+    [ "$wl_changed" = "1" ] && uci commit wireless
 }
 
 start() {

@@ -201,7 +201,9 @@ void airui_mode_add_snapshot(struct blob_buf *b, struct ubus_context *ctx)
     blobmsg_add_string(b, "management",
                        strcmp(state.mode, "cloud") == 0 ? "Cloud management" : "Local management");
     blobmsg_add_string(b, "controller_state", state.state);
+    blobmsg_add_u8(b, "registered", state.registered);
     blobmsg_add_u8(b, "online", state.online);
+    blobmsg_add_string(b, "device_id", state.device_id);
     blobmsg_close_table(b, mode);
 }
 

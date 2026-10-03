@@ -7,19 +7,17 @@ log() {
     logger -t "$NAME" "$1"
 }
 
-# Get last 3 bytes / 6 hex digits from the base AP MAC.
-# Both 2G and 5G default SSIDs intentionally use the same base suffix.
 get_base_mac_suffix() {
     local mac_address=""
 
-    mac_address=$(uci get aircnms.@aircnms[0].macaddr 2>/dev/null || true)
+    mac_address=$(uci -q get aircnms.@aircnms[0].macaddr 2>/dev/null || true)
     if [ -n "$mac_address" ] && [ "$mac_address" != "XXXXXXXXXX" ]; then
         echo "$mac_address" | tr -d ':' | awk '{print toupper(substr($0, length($0)-5, 6))}'
         return 0
     fi
 
-    for iface in wan eth1 lan eth0 phy0-ap0 phy1-ap0; do
-        [ -e "/sys/class/net/$iface/address" ] || continue
+    for iface in eth0 wan eth1 lan; do
+        [ -r "/sys/class/net/$iface/address" ] || continue
         mac_address=$(cat "/sys/class/net/$iface/address")
         [ -n "$mac_address" ] || continue
         echo "$mac_address" | tr -d ':' | awk '{print toupper(substr($0, length($0)-5, 6))}'
@@ -31,17 +29,20 @@ get_base_mac_suffix() {
 
 check_device_id() {
     local device_id
-    device_id=$(uci get aircnms.@aircnms[0].device_id 2>/dev/null)
+    device_id=$(uci -q get aircnms.@aircnms[0].device_id 2>/dev/null)
     [ "$device_id" = "$TARGET_DEVICE_ID" ]
 }
 
-apply_ssid_config() {
-    if ! check_device_id; then
-        log "Device ID does not match. Skipping SSID config."
+validate_ssid_config() {
+    if [ "$(uci -q get aircnms.onboarding.operational_once 2>/dev/null)" = "1" ]; then
+        log "Device operational_once=1. Validation complete (enrolled mode)."
         return 0
     fi
 
-    sleep 3
+    if ! check_device_id; then
+        log "Device ID does not match target. Skipping SSID validation."
+        return 0
+    fi
 
     local mac_suffix
     mac_suffix=$(get_base_mac_suffix) || {
@@ -50,25 +51,14 @@ apply_ssid_config() {
     }
 
     local default_ssid="Airpro_$mac_suffix"
+    local wlan1_ssid="$(uci -q get wireless.wlan1.ssid)"
+    local wlan2_ssid="$(uci -q get wireless.wlan2.ssid)"
 
-    uci set wireless.wlan1.ssid="$default_ssid"
-    uci set wireless.wlan1.network="nat_network"
-    uci set wireless.wlan1.disabled="0"
-    uci set wireless.wlan2.ssid="$default_ssid"
-    uci set wireless.wlan2.network="nat_network"
-    uci set wireless.wlan2.disabled="0"
-
-    # Defensively ensure secondary factory VAPs are disabled on un-enrolled AP
-    for ifc in wlan3 wlan4 wlan5 wlan6 wlan7 wlan8; do
-        if uci get wireless.$ifc >/dev/null 2>&1; then
-            uci set wireless.$ifc.disabled="1"
-        fi
-    done
-
-    uci commit wireless
-
-    log "SSID configured: $default_ssid (primary VAPs only, secondary VAPs disabled)"
-    wifi reload
+    if [ "$wlan1_ssid" != "$default_ssid" ] || [ "$wlan2_ssid" != "$default_ssid" ]; then
+        log "INFO: Current SSIDs (wlan1=$wlan1_ssid wlan2=$wlan2_ssid) differ from default ($default_ssid)"
+    else
+        log "SSID validation OK: factory default $default_ssid active on primary VAPs"
+    fi
 }
 
-apply_ssid_config
+validate_ssid_config
