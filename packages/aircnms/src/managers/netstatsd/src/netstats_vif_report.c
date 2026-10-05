@@ -1,3 +1,5 @@
+#define MODULE_ID LOG_MODULE_ID_STATS
+
 #include <unistd.h>
 #include <time.h>
 #include <sys/types.h>
@@ -134,7 +136,7 @@ void netstats_vif_report(EV_P_ ev_timer *w, int revents)
     size_t msglen = netstats_put_vif(report_ctx);
     
     LOG(INFO,
-        "msgtype=vif vaps=%d radios=%d ethernet=%d msglen=%zu",
+        "NETSTATSD->CGWD: msgtype=vif vaps=%d radios=%d ethernet=%d msglen=%zu",
         report_ctx->record.stats.n_vif, 
         report_ctx->record.stats.n_radio,
         report_ctx->record.stats.n_ethernet,

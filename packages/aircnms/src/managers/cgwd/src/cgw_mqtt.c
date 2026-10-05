@@ -32,7 +32,7 @@ bool cgw_parse_device_info_json(device_info_event_t *device_info, char *data, ui
 void cgw_restart_mqtt_worker(void);
 void free_netstats_stats(netstats_stats_t *stats);  // Forward declaration
 
-#define MODULE_ID LOG_MODULE_ID_MAIN
+#define MODULE_ID LOG_MODULE_ID_MQTT
 #define MQTT_BROKER_TOPIC       "test"
 
 #define STATS_MQTT_PORT         1883
@@ -726,8 +726,7 @@ void cgw_mqtt_reconnect()
                     cgw_mqtt_reconnect_ts = ticks() + TICKS_S(delay_sec);
                     int num_ladder_steps = (int)(sizeof(s_reconnect_backoff_ladder)/sizeof(s_reconnect_backoff_ladder[0]));
                     s_reconnect_ladder_idx = (s_reconnect_ladder_idx + 1) % num_ladder_steps;
-                    LOG(INFO, "[MQTT] Connection failed, retrying in %ds (next ladder level %d)", delay_sec, s_reconnect_ladder_idx);
-                    LOGE("Connecting.\n");
+                    LOG(WARN, "Connect failed; retry in %ds", delay_sec);
                     return;
                 }
                 else

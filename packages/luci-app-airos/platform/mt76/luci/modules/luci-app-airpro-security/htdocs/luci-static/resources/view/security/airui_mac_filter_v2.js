@@ -2,6 +2,7 @@
 'require view';
 'require ui';
 'require rpc';
+'require airui.apply_status_v2 as applyStatus';
 
 var selectedSection = null;
 
@@ -49,6 +50,20 @@ function rpcError(res, fallback) {
 	if (res && res.errors && res.errors[0] && res.errors[0].message)
 		return res.errors[0].message;
 	return fallback || _('Request failed');
+}
+
+function isApplyTransportError(err) {
+	var message = err && (err.message || err.toString && err.toString()) || '';
+
+	return /XHR request (?:timed out|aborted by browser)|network error|failed to fetch|timeout/i.test(message);
+}
+
+function recoverMacApply(message) {
+	applyStatus.show('applying', _('Wireless services are restarting. Checking backend status...'));
+	return applyStatus.terminalStatus(_('MAC filter configuration')).then(function() {
+		ui.addNotification(null, E('p', {}, message || _('MAC filter configuration applied.')), 'info');
+		return { ok: true };
+	});
 }
 
 function stat(iconName, label, value, sub, tone) {
@@ -250,7 +265,12 @@ function applyPolicy(section, enabled, mode) {
 			return Promise.reject(new Error(rpcError(dry)));
 		}
 
-		return callSet(section, enabled, mode, false).then(function(res) {
+		return callSet(section, enabled, mode, false).catch(function(err) {
+			if (isApplyTransportError(err))
+				return recoverMacApply(_('MAC filter policy applied.'));
+
+			throw err;
+		}).then(function(res) {
 			if (!res || res.ok === false) {
 				notifyError(res, _('MAC filter policy was not saved'));
 				return Promise.reject(new Error(rpcError(res)));
@@ -303,7 +323,12 @@ function addEntries(sections, mac, label) {
 					if (!dry || dry.ok === false)
 						return Promise.reject(new Error(rpcError(dry, _('MAC entry did not validate'))));
 
-					return callEntryAdd(section, mac, label, false).then(function(res) {
+					return callEntryAdd(section, mac, label, false).catch(function(err) {
+						if (isApplyTransportError(err))
+							return recoverMacApply(_('MAC filter entry added.'));
+
+						throw err;
+					}).then(function(res) {
 						if (!res || res.ok === false)
 							return Promise.reject(new Error(rpcError(res, _('MAC entry was not added'))));
 					});
@@ -401,7 +426,12 @@ function deleteEntry(section, mac) {
 			return;
 		}
 
-		return callEntryDelete(section, mac, false).then(function(res) {
+		return callEntryDelete(section, mac, false).catch(function(err) {
+			if (isApplyTransportError(err))
+				return recoverMacApply(_('MAC filter entry deleted.'));
+
+			throw err;
+		}).then(function(res) {
 			if (!res || res.ok === false) {
 				notifyError(res, _('MAC entry was not deleted'));
 				return;

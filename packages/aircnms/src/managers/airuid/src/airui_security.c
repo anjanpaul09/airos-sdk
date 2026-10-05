@@ -13,6 +13,7 @@
 #include <libubox/blobmsg.h>
 #include <libubox/blobmsg_json.h>
 
+#include "airui_apply_status.h"
 #include "airui_response.h"
 #include "airui_ubus_client.h"
 
@@ -618,6 +619,7 @@ int airui_security_mac_filter_set(struct ubus_context *ctx,
     if (!dry_run) {
         void *values;
 
+        airui_apply_begin("mac_filter");
         blob_buf_init(&uci_set, 0);
         blobmsg_add_string(&uci_set, "config", "wireless");
         blobmsg_add_string(&uci_set, "section", section);
@@ -628,6 +630,7 @@ int airui_security_mac_filter_set(struct ubus_context *ctx,
         ret = airui_ubus_call_json(ctx, "uci", "set", &uci_set, &set);
         blob_buf_free(&uci_set);
         if (ret) {
+            airui_apply_failed("Unable to update MAC filter policy");
             airui_reply_error(ctx, req, "backend_unavailable", "uci",
                               ubus_strerror(ret));
             return 0;
@@ -635,6 +638,7 @@ int airui_security_mac_filter_set(struct ubus_context *ctx,
 
         ret = commit_and_reload(ctx, &commit, &reload);
         if (ret) {
+            airui_apply_failed("Unable to reload MAC filter policy");
             airui_ubus_result_free(&set);
             airui_reply_error(ctx, req, "backend_unavailable", NULL,
                               ubus_strerror(ret));
@@ -647,6 +651,8 @@ int airui_security_mac_filter_set(struct ubus_context *ctx,
     data.reload_json = reload.json;
     airui_reply_ok_schema(ctx, req, mac_action_builder, &data, "uci",
                           "airui.security.mac_filter.v1");
+    if (!dry_run)
+        airui_apply_success("MAC filter policy applied");
     airui_ubus_result_free(&set);
     airui_ubus_result_free(&commit);
     airui_ubus_result_free(&reload);
@@ -742,6 +748,7 @@ static int update_mac_entry(struct ubus_context *ctx,
     if (!dry_run) {
         void *uci_values;
 
+        airui_apply_begin("mac_filter");
         blob_buf_init(&uci_set, 0);
         blobmsg_add_string(&uci_set, "config", "wireless");
         blobmsg_add_string(&uci_set, "section", section);
@@ -752,6 +759,7 @@ static int update_mac_entry(struct ubus_context *ctx,
         ret = airui_ubus_call_json(ctx, "uci", "set", &uci_set, &set);
         blob_buf_free(&uci_set);
         if (ret) {
+            airui_apply_failed("Unable to update MAC filter entry");
             airui_ubus_result_free(&uci);
             json_object_put(values);
             airui_reply_error(ctx, req, "backend_unavailable", "uci",
@@ -761,6 +769,7 @@ static int update_mac_entry(struct ubus_context *ctx,
 
         ret = commit_and_reload(ctx, &commit, &reload);
         if (ret) {
+            airui_apply_failed("Unable to reload MAC filter entry");
             airui_ubus_result_free(&uci);
             airui_ubus_result_free(&set);
             json_object_put(values);
@@ -775,6 +784,9 @@ static int update_mac_entry(struct ubus_context *ctx,
     data.reload_json = reload.json;
     airui_reply_ok_schema(ctx, req, mac_action_builder, &data, "uci",
                           "airui.security.mac_filter.v1");
+    if (!dry_run)
+        airui_apply_success(add ? "MAC filter entry added" :
+                                  "MAC filter entry deleted");
 
     airui_ubus_result_free(&uci);
     airui_ubus_result_free(&set);
@@ -1462,6 +1474,7 @@ int airui_security_access_control_set(struct ubus_context *ctx,
         return 0;
     }
 
+    airui_apply_begin("access_control");
     snprintf(command, sizeof(command),
              "uci -q delete uhttpd.main.listen_http;"
              "uci -q delete uhttpd.main.listen_https;"
@@ -1498,6 +1511,7 @@ int airui_security_access_control_set(struct ubus_context *ctx,
 
     if (ret) {
         restore_access_control();
+        airui_apply_rolled_back("Access control apply failed; previous configuration restored");
         airui_reply_error(ctx, req, "apply_rolled_back", NULL,
                           "Access control apply failed; previous configuration restored");
         return 0;
@@ -1507,5 +1521,6 @@ int airui_security_access_control_set(struct ubus_context *ctx,
     data.changed = true;
     airui_reply_ok_schema(ctx, req, access_control_builder, &data, "system",
                           "airui.security.access_control.v1");
+    airui_apply_success("Access control configuration applied");
     return 0;
 }

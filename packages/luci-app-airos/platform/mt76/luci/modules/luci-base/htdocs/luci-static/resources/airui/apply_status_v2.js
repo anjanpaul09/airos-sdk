@@ -176,6 +176,7 @@ return baseclass.extend({
 	show: show,
 	track: track,
 	run: run,
+	terminalStatus: terminalStatus,
 	dataState: dataState,
 	isRunning: function(key) { return !!running[key || 'configuration']; }
 });

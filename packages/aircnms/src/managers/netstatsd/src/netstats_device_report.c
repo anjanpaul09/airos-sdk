@@ -1,3 +1,5 @@
+#define MODULE_ID LOG_MODULE_ID_STATS
+
 #include <unistd.h>
 #include <time.h>
 #include <sys/types.h>
@@ -165,7 +167,7 @@ void netstats_device_report(EV_P_ ev_timer *w, int revents)
     size_t msglen = netstats_put_device(report_ctx);
     
     LOG(INFO,
-        "msgtype=device msglen=%zu uptime=%u mem=%u/%u cpu=%u",
+        "NETSTATSD->CGWD: msgtype=device msglen=%zu uptime=%u mem=%u/%u cpu=%u",
         msglen,
         report_ctx->record.uptime,
         report_ctx->record.mem_util.mem_used,

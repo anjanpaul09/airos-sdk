@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <libubox/blobmsg.h>
 #include <sys/socket.h>
+#include <syslog.h>
 
 enum {
     LOG_MSG,
@@ -122,18 +123,20 @@ static void handle_log_entry(struct blob_attr *attr)
     warn[0] = '\0';
     if (!logd_filter_rate_check(tag, warn, sizeof(warn))) {
         if (warn[0] != '\0') {
-            size_t wlen = logd_filter_format(line, sizeof(line), ts, "air-logd", 4 /* WARN */, warn);
+            size_t wlen = logd_filter_format(line, sizeof(line), ts, false, LOG_USER | LOG_WARNING, warn);
             if (wlen > 0) logd_rotate_write(line, wlen);
         }
         return;
     }
 
     if (warn[0] != '\0') {
-        size_t wlen = logd_filter_format(line, sizeof(line), ts, "air-logd", 5 /* NOTICE */, warn);
+        size_t wlen = logd_filter_format(line, sizeof(line), ts, false, LOG_USER | LOG_NOTICE, warn);
         if (wlen > 0) logd_rotate_write(line, wlen);
     }
 
-    size_t fmt_len = logd_filter_format(line, sizeof(line), ts, tag, prio, body);
+    /* Keep normalized tags for filtering, but preserve the original name/PID in output. */
+    bool kernel = tb[LOG_SOURCE] && blobmsg_get_u32(tb[LOG_SOURCE]) == 0;
+    size_t fmt_len = logd_filter_format(line, sizeof(line), ts, kernel, prio, msg);
     if (fmt_len > 0) {
         logd_rotate_write(line, fmt_len);
     }

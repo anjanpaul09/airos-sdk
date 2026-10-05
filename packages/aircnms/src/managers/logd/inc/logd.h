@@ -12,7 +12,7 @@
 #include <libubox/blobmsg_json.h>
 
 #define LOGD_VERSION              "1.0.0"
-#define LOGD_DEFAULT_DIR          "/tmp/log/airos"
+#define LOGD_DEFAULT_DIR          "/tmp/logs/airos"
 #define LOGD_DEFAULT_FILE         "airos.log"
 #define LOGD_DEFAULT_MAX_SIZE     (256 * 1024)   /* 256 KB */
 #define LOGD_DEFAULT_MAX_BACKUPS  3

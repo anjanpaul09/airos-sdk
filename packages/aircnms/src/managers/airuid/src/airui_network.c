@@ -1165,6 +1165,7 @@ int airui_network_wireless_add(struct ubus_context *ctx,
     data.changed = !dry_run;
 
     if (!dry_run) {
+        airui_apply_begin("wireless");
         blob_buf_init(&uci_add, 0);
         blobmsg_add_string(&uci_add, "config", "wireless");
         blobmsg_add_string(&uci_add, "type", type);
@@ -1177,6 +1178,7 @@ int airui_network_wireless_add(struct ubus_context *ctx,
         ret = airui_ubus_call_json(ctx, "uci", "add", &uci_add, &add);
         blob_buf_free(&uci_add);
         if (ret) {
+            airui_apply_failed("Unable to add wireless configuration");
             airui_reply_error(ctx, req, "backend_unavailable", "uci",
                               ubus_strerror(ret));
             return 0;
@@ -1184,6 +1186,7 @@ int airui_network_wireless_add(struct ubus_context *ctx,
 
         ret = commit_and_reload(ctx, &commit, &reload);
         if (ret) {
+            airui_apply_failed("Unable to commit or reload wireless configuration");
             airui_ubus_result_free(&add);
             airui_reply_error(ctx, req, "backend_unavailable", NULL,
                               ubus_strerror(ret));
@@ -1195,6 +1198,8 @@ int airui_network_wireless_add(struct ubus_context *ctx,
     data.uci_commit_json = commit.json;
     data.reload_json = reload.json;
     airui_reply_ok(ctx, req, wireless_set_builder, &data);
+    if (!dry_run)
+        airui_apply_success("Wireless configuration applied");
 
     airui_ubus_result_free(&add);
     airui_ubus_result_free(&commit);
@@ -1247,6 +1252,7 @@ int airui_network_wireless_delete(struct ubus_context *ctx,
     data.changed = !dry_run;
 
     if (!dry_run) {
+        airui_apply_begin("wireless");
         blob_buf_init(&uci_delete, 0);
         blobmsg_add_string(&uci_delete, "config", "wireless");
         blobmsg_add_string(&uci_delete, "section", section);
@@ -1254,6 +1260,7 @@ int airui_network_wireless_delete(struct ubus_context *ctx,
         ret = airui_ubus_call_json(ctx, "uci", "delete", &uci_delete, &del);
         blob_buf_free(&uci_delete);
         if (ret) {
+            airui_apply_failed("Unable to delete wireless configuration");
             airui_reply_error(ctx, req, "backend_unavailable", "uci",
                               ubus_strerror(ret));
             return 0;
@@ -1261,6 +1268,7 @@ int airui_network_wireless_delete(struct ubus_context *ctx,
 
         ret = commit_and_reload(ctx, &commit, &reload);
         if (ret) {
+            airui_apply_failed("Unable to commit or reload wireless configuration");
             airui_ubus_result_free(&del);
             airui_reply_error(ctx, req, "backend_unavailable", NULL,
                               ubus_strerror(ret));
@@ -1272,6 +1280,8 @@ int airui_network_wireless_delete(struct ubus_context *ctx,
     data.uci_commit_json = commit.json;
     data.reload_json = reload.json;
     airui_reply_ok(ctx, req, wireless_set_builder, &data);
+    if (!dry_run)
+        airui_apply_success("Wireless configuration applied");
 
     airui_ubus_result_free(&del);
     airui_ubus_result_free(&commit);

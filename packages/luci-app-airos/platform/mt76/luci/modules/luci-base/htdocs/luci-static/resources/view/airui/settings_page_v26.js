@@ -411,6 +411,20 @@ function responseError(payload, fallback) {
 	return fallback || _('Request failed');
 }
 
+function isApplyTransportError(err) {
+	var message = err && (err.message || err.toString && err.toString()) || '';
+
+	return /XHR request (?:timed out|aborted by browser)|network error|failed to fetch|timeout/i.test(message);
+}
+
+function recoverApplyStatus(operation, successMessage) {
+	applyStatus.show('applying', _('The request was interrupted. Checking backend status...'));
+	return applyStatus.terminalStatus(operation).then(function() {
+		if (successMessage)
+			ui.addNotification(null, E('p', {}, successMessage), 'info');
+	});
+}
+
 function updateWanProtoFields(root) {
 	var proto = root.querySelector('[data-wan-field="proto"]:checked') || root.querySelector('[data-wan-field="proto"]');
 	var staticFields = root.querySelector('[data-wan-static-fields]');
@@ -621,6 +635,10 @@ function saveWanManagementRequest(apply) {
 		if (result.data && result.data.connectivity_verified !== true)
 			throw new Error(_('The backend did not verify management connectivity'));
 	}).catch(function(err) {
+		if (apply && isApplyTransportError(err))
+			return recoverApplyStatus(_('WAN management configuration'),
+				_('WAN Management configuration applied. The web UI may reconnect on the new address.'));
+
 		ui.addNotification(null, E('p', {}, _('Unable to save WAN Management configuration: %s').format(err.message || err)), 'danger');
 		throw err;
 	});

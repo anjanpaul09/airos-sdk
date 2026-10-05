@@ -3,6 +3,7 @@
 'require ui';
 'require rpc';
 'require dom';
+'require airui.apply_status_v2 as applyStatus';
 
 var SERVICES = [
 	{ key: 'https', label: 'HTTPS', port: '443', proto: 'tcp', hint: 'Secure web management.' },
@@ -19,6 +20,11 @@ var callSet = rpc.declare({
 
 function responseData(r) { return r && r.data ? r.data : {}; }
 function responseError(r, fallback) { return r && r.errors && r.errors[0] ? r.errors[0].message || fallback : fallback; }
+function isApplyTransportError(err) {
+	var message = err && (err.message || err.toString && err.toString()) || '';
+
+	return /XHR request (?:timed out|aborted by browser)|network error|failed to fetch|timeout/i.test(message);
+}
 
 return view.extend({
 	busy: false,
@@ -88,7 +94,17 @@ return view.extend({
 			ui.addNotification(null, E('p', {}, apply ? _('Access controls applied.') : _('Access controls saved.')), 'info');
 			this.busy = false;
 			return this.refresh();
-		}, this)).catch(function(e) { ui.addNotification(null, E('p', {}, e.message), 'error'); })
+		}, this)).catch(L.bind(function(e) {
+			if (isApplyTransportError(e)) {
+				applyStatus.show('applying', _('Access services are restarting. Checking backend status...'));
+				return applyStatus.terminalStatus(_('Access control configuration')).then(L.bind(function() {
+					ui.addNotification(null, E('p', {}, _('Access controls applied.')), 'info');
+					return this.refresh();
+				}, this));
+			}
+
+			ui.addNotification(null, E('p', {}, e.message), 'error');
+		}, this))
 			.finally(L.bind(function() { this.busy = false; button.disabled = false; button.textContent = apply ? _('Save & Apply') : _('Save'); }, this));
 	},
 	renderPage: function() {

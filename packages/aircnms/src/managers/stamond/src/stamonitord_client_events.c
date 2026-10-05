@@ -110,17 +110,59 @@ static void enrich_client_identity(client_info_event_t *client)
     fill_client_identity_from_leases_and_arp(client);
 }
 
-#define CLIENT_CONNECT_TIMEOUT_SEC 5.0
+#define CLIENT_IDENTITY_RETRY_SEC   1.0
+#define CLIENT_IDENTITY_TIMEOUT_SEC 10
 
 typedef struct pending_connect {
     uint8_t macaddr[6];
     char ifname[32];
     uint64_t timestamp_ms;
+    unsigned int identity_checks;
     ev_timer timer;
     struct pending_connect *next;
 } pending_connect_t;
 
 static pending_connect_t *g_pending_connects = NULL;
+
+static bool identity_value_known(const char *value, const char *unknown)
+{
+    return value && value[0] && (!unknown || strcmp(value, unknown) != 0);
+}
+
+/*
+ * An IP address plus a captured DHCP fingerprint is enough to publish early.
+ * Hostname is intentionally optional because many clients never provide one.
+ */
+static bool client_identity_ready(const uint8_t *macaddr)
+{
+    char ipaddr[IPADDR_MAX_LEN] = {0};
+    char hostname[HOSTNAME_MAX_LEN] = {0};
+    char dhcp_options[128] = {0};
+    char dhcp_vendor[64] = {0};
+
+    if (!macaddr)
+        return false;
+
+    stamonitord_history_lookup_client_identity(macaddr,
+                                               ipaddr,
+                                               sizeof(ipaddr),
+                                               hostname,
+                                               sizeof(hostname),
+                                               dhcp_options,
+                                               sizeof(dhcp_options),
+                                               dhcp_vendor,
+                                               sizeof(dhcp_vendor));
+
+    if (!identity_value_known(ipaddr, "0.0.0.0")) {
+        stamonitord_history_fill_identity_from_leases_and_arp(macaddr,
+                                                             ipaddr,
+                                                             sizeof(ipaddr),
+                                                             hostname,
+                                                             sizeof(hostname));
+    }
+
+    return identity_value_known(ipaddr, "0.0.0.0") && dhcp_options[0];
+}
 
 static pending_connect_t *find_pending_connect(const uint8_t *macaddr)
 {
@@ -160,7 +202,8 @@ static void cancel_pending_connect(const uint8_t *macaddr)
     }
 }
 
-static void dispatch_client_connect(const uint8_t *macaddr, const char *ifname, uint64_t timestamp_ms)
+static void dispatch_client_connect(const uint8_t *macaddr, const char *ifname,
+                                    uint64_t timestamp_ms, const char *trigger)
 {
     if (!macaddr)
         return;
@@ -179,6 +222,23 @@ static void dispatch_client_connect(const uint8_t *macaddr, const char *ifname, 
     }
 
     client_info.is_connected = true;
+
+    bool ip_known = identity_value_known(client_info.ipaddr, "0.0.0.0");
+    bool hostname_known = identity_value_known(client_info.hostname, "unknown") &&
+                          strcmp(client_info.hostname, "*") != 0;
+    bool os_known = identity_value_known(client_info.osinfo, "unknown");
+    uint64_t now_ms = get_timestamp_ms();
+    uint64_t wait_ms = now_ms >= timestamp_ms ? now_ms - timestamp_ms : 0;
+
+    LOG(INFO,
+        "CLIENT_IDENTITY: mac=%02x:%02x:%02x:%02x:%02x:%02x wait_ms=%" PRIu64
+        " trigger=%s ip=%s hostname=%s os=%s",
+        macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5],
+        wait_ms,
+        trigger ? trigger : "unknown",
+        ip_known ? "resolved" : "missing",
+        hostname_known ? "resolved" : "not_provided",
+        os_known ? "resolved" : "fingerprint_unavailable");
 
     // Send client info event
     LOG(INFO, "STA_CONNECTED: mac=%02x:%02x:%02x:%02x:%02x:%02x ifname=%s ssid='%s' band=%s ch=%u ip=%s host='%s' os='%s' phy=%s bw=%s roaming=%s",
@@ -208,6 +268,12 @@ static void pending_connect_timer_cb(EV_P_ ev_timer *w, int revents)
     if (!p)
         return;
 
+    p->identity_checks++;
+    bool ready = client_identity_ready(p->macaddr);
+
+    if (!ready && p->identity_checks < CLIENT_IDENTITY_TIMEOUT_SEC)
+        return;
+
     uint8_t mac[6];
     char ifname[32];
     uint64_t timestamp_ms = p->timestamp_ms;
@@ -218,7 +284,8 @@ static void pending_connect_timer_cb(EV_P_ ev_timer *w, int revents)
 
     remove_pending_connect(p);
 
-    dispatch_client_connect(mac, ifname, timestamp_ms);
+    dispatch_client_connect(mac, ifname, timestamp_ms,
+                            ready ? "identity_ready" : "timeout");
 }
 
 /* Notification when DHCP IP/identity is resolved for a station */
@@ -231,6 +298,9 @@ void stamonitord_client_events_on_dhcp_resolved(const uint8_t *macaddr)
     if (!p)
         return;
 
+    if (!client_identity_ready(macaddr))
+        return;
+
     uint8_t mac[6];
     char ifname[32];
     uint64_t timestamp_ms = p->timestamp_ms;
@@ -241,7 +311,7 @@ void stamonitord_client_events_on_dhcp_resolved(const uint8_t *macaddr)
 
     remove_pending_connect(p);
 
-    dispatch_client_connect(mac, ifname, timestamp_ms);
+    dispatch_client_connect(mac, ifname, timestamp_ms, "dhcp");
 }
 
 /* Clean up pending connect timers on daemon exit */
@@ -267,14 +337,20 @@ void stamonitord_handle_client_connect(const uint8_t *macaddr, const char *ifnam
         p = calloc(1, sizeof(*p));
         if (!p) {
             LOG(ERR, "Failed to allocate pending connect");
-            dispatch_client_connect(macaddr, ifname, timestamp_ms);
+            dispatch_client_connect(macaddr, ifname, timestamp_ms,
+                                    "allocation_failure");
             return;
         }
         memcpy(p->macaddr, macaddr, 6);
         p->next = g_pending_connects;
         g_pending_connects = p;
     } else {
-        ev_timer_stop(EV_DEFAULT, &p->timer);
+        /* Coalesce duplicate NEW_STATION/FRAME_TX_STATUS notifications. */
+        if (ifname && ifname[0]) {
+            strncpy(p->ifname, ifname, sizeof(p->ifname) - 1);
+            p->ifname[sizeof(p->ifname) - 1] = '\0';
+        }
+        return;
     }
 
     strncpy(p->ifname, ifname ? ifname : "unknown", sizeof(p->ifname) - 1);
@@ -282,7 +358,8 @@ void stamonitord_handle_client_connect(const uint8_t *macaddr, const char *ifnam
     p->timestamp_ms = timestamp_ms;
     p->timer.data = p;
 
-    ev_timer_init(&p->timer, pending_connect_timer_cb, CLIENT_CONNECT_TIMEOUT_SEC, 0.);
+    ev_timer_init(&p->timer, pending_connect_timer_cb,
+                  CLIENT_IDENTITY_RETRY_SEC, CLIENT_IDENTITY_RETRY_SEC);
     ev_timer_start(EV_DEFAULT, &p->timer);
 }
 

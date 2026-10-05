@@ -37,7 +37,7 @@ Configuration is consolidated within the central `/etc/config/aircnms` UCI file 
 ```sh
 config logd 'logd'
     option enabled '1'
-    option log_dir '/tmp/log/airos'
+    option log_dir '/tmp/logs/airos'
     option log_file 'airos.log'
     option max_size_kb '256'
     option max_backups '3'
@@ -123,7 +123,7 @@ Object Name: **`air.log`**
      ```json
      {
        "enabled": true,
-       "active_file": "/tmp/log/airos/airos.log",
+       "active_file": "/tmp/logs/airos/airos.log",
        "active_size_bytes": 142100,
        "max_size_bytes": 262144,
        "backup_count": 3,
@@ -170,7 +170,7 @@ start_service() {
     local enabled=$(uci -q get aircnms.logd.enabled || echo "1")
     [ "$enabled" = "1" ] || return 0
 
-    local log_dir=$(uci -q get aircnms.logd.log_dir || echo "/tmp/log/airos")
+    local log_dir=$(uci -q get aircnms.logd.log_dir || echo "/tmp/logs/airos")
     mkdir -p "$log_dir"
 
     procd_open_instance
@@ -187,7 +187,7 @@ service_triggers() {
 
 stop_service() {
     # Optional shutdown crash hook: save last archive to persistent storage if clean shutdown
-    local log_dir=$(uci -q get aircnms.logd.log_dir || echo "/tmp/log/airos")
+    local log_dir=$(uci -q get aircnms.logd.log_dir || echo "/tmp/logs/airos")
     if [ -f "$log_dir/airos.log.1.gz" ]; then
         mkdir -p /overlay/etc/airos/log_backup 2>/dev/null || true
         cp -f "$log_dir/airos.log.1.gz" /overlay/etc/airos/log_backup/last_boot.log.gz 2>/dev/null || true
@@ -230,7 +230,7 @@ In `packages/aircnms/Makefile`:
    - Kill process with `kill -9`; confirm procd restarts daemon within 5 seconds.
 2. **Ingestion & Tag Filtering**:
    - Emit test log: `logger -t air-onbd "Test onboarding log message"`
-   - Confirm message appears in `/tmp/log/airos/airos.log`.
+   - Confirm message appears in `/tmp/logs/airos/airos.log`.
    - Emit non-matching log: `logger -t random_app "Ignored message"`
    - Confirm message is discarded.
 3. **Rotation Stress Test**:

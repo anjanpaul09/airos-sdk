@@ -192,6 +192,14 @@ function safeCall(fn) {
 	return Promise.resolve().then(fn).catch(featureNotReady);
 }
 
+function recoverWirelessApply() {
+	applyStatus.show('applying', _('Wireless services are restarting. Checking backend status...'));
+	return applyStatus.terminalStatus(_('Wireless configuration')).then(function() {
+		ui.addNotification(null, E('p', {}, _('Wireless configuration saved and applied.')), 'info');
+		window.setTimeout(function() { window.location.reload(); }, 2500);
+	});
+}
+
 function valuesFromEnvelope(env) {
 	return env && env.ok !== false && env.data && env.data.uci && env.data.uci.values
 		? env.data.uci.values
@@ -1287,7 +1295,7 @@ function saveWirelessRequest(apply) {
 		}
 
 		return Promise.all(sections.map(function(section) {
-			return callSetPayload(makePayload(section, false)).catch(featureNotReady);
+			return callSetPayload(makePayload(section, false));
 		})).then(function(applied) {
 			for (var j = 0; j < applied.length; j++) {
 				if (applied[j].feature_not_ready) {
@@ -1306,6 +1314,11 @@ function saveWirelessRequest(apply) {
 				: _('Wireless configuration saved.')), 'info');
 
 			return refreshWireless();
+		}).catch(function(err) {
+			if (apply && isReloadTransportError(err))
+				return recoverWirelessApply();
+
+			throw err;
 		});
 	});
 

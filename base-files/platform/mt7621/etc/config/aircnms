@@ -33,7 +33,7 @@ config onboarding 'onboarding'
 
 config logd 'logd'
         option enabled '1'
-        option log_dir '/tmp/log/airos'
+        option log_dir '/tmp/logs/airos'
         option log_file 'airos.log'
         option max_size_kb '256'
         option max_backups '3'

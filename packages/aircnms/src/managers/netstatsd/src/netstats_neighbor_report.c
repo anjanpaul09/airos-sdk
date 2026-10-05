@@ -1,3 +1,5 @@
+#define MODULE_ID LOG_MODULE_ID_STATS
+
 #include <sys/types.h>
 #include <errno.h>
 #include <stdio.h>
@@ -95,7 +97,7 @@ static void netstats_neighbor_report_stats(netstats_neighbor_ctx_t *neighbor_ctx
         size_t msglen = netstats_put_neighbor(report_ctx);
         
         LOG(INFO,
-            "msgtype=neighbor entries=%d msglen=%zu",
+            "NETSTATSD->CGWD: msgtype=neighbor entries=%d msglen=%zu",
             report_ctx->n_entry,
             msglen);
     } 
@@ -172,4 +174,3 @@ bool netstats_neighbor_report_request(netstats_request_t *request)
 
     return true;
 }
-

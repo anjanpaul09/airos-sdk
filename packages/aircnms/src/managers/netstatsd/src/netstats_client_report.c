@@ -1,3 +1,5 @@
+#define MODULE_ID LOG_MODULE_ID_STATS
+
 #include <sys/types.h>
 #include <errno.h>
 #include <stdio.h>
@@ -280,7 +282,7 @@ static void netstats_client_report_stats(netstats_client_ctx_t *client_ctx)
         size_t msglen = netstats_put_client(result_ctx);
     
         LOG(INFO,
-            "msgtype=client clients=%d msglen=%zu",
+            "NETSTATSD->CGWD: msgtype=client clients=%d msglen=%zu",
             result_ctx->n_client,
             msglen);
     }

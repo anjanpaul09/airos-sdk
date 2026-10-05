@@ -4,6 +4,9 @@
 #include <ctype.h>
 #include <time.h>
 
+#define SYSLOG_NAMES
+#include <syslog.h>
+
 #define MAX_RATE_BUCKETS 64
 
 typedef struct rate_bucket {
@@ -17,9 +20,14 @@ typedef struct rate_bucket {
 
 static rate_bucket_t s_buckets[MAX_RATE_BUCKETS];
 
-static const char *s_severity_names[] = {
-    "EMERG", "ALERT", "CRIT", "ERR", "WARN", "NOTICE", "INFO", "DEBUG"
-};
+/* Use the same libc syslog names as OpenWrt logread. */
+static const char *syslog_code_name(int value, const CODE *table)
+{
+    for (; table->c_val != -1; table++) {
+        if (table->c_val == value) return table->c_name;
+    }
+    return "<unknown>";
+}
 
 void logd_filter_init(void)
 {
@@ -123,7 +131,7 @@ bool logd_filter_rate_check(const char *tag, char *warning_buf, size_t warning_s
         if (b->dropped_count > 0 && (now - b->last_warning_time) > 5.0) {
             if (warning_buf && warning_sz > 0) {
                 snprintf(warning_buf, warning_sz,
-                         "[air-logd] Tag '%s' resumed normal rate (suppressed %u burst messages)",
+                         "air-logd: Tag '%s' resumed normal rate (suppressed %u burst messages)",
                          tag, b->dropped_count);
             }
             b->dropped_count = 0;
@@ -138,7 +146,7 @@ bool logd_filter_rate_check(const char *tag, char *warning_buf, size_t warning_s
     if ((now - b->last_warning_time) > 10.0) {
         if (warning_buf && warning_sz > 0) {
             snprintf(warning_buf, warning_sz,
-                     "[air-logd] Message flood detected for tag '%s', suppressing further burst logs",
+                     "air-logd: Message flood detected for tag '%s', suppressing further burst logs",
                      tag);
         }
         b->last_warning_time = now;
@@ -148,25 +156,22 @@ bool logd_filter_rate_check(const char *tag, char *warning_buf, size_t warning_s
 }
 
 size_t logd_filter_format(char *out, size_t out_sz, int64_t timestamp_sec,
-                          const char *tag, int priority, const char *msg)
+                          bool kernel, int priority, const char *msg)
 {
     if (!out || out_sz == 0) return 0;
 
     time_t t = (time_t)timestamp_sec;
-    struct tm tm_buf;
     if (t <= 0) t = time(NULL);
-    localtime_r(&t, &tm_buf);
 
-    char time_str[32];
-    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &tm_buf);
+    char time_str[26];
+    if (!ctime_r(&t, time_str)) return 0;
+    time_str[strcspn(time_str, "\n")] = '\0';
 
-    int sev = priority & 7;
-    const char *sev_str = (sev >= 0 && sev <= 7) ? s_severity_names[sev] : "INFO";
-
-    int written = snprintf(out, out_sz, "%s [%s] [%s] %s\n",
+    int written = snprintf(out, out_sz, "%s %s.%s%s %s\n",
                            time_str,
-                           tag ? tag : "system",
-                           sev_str,
+                           syslog_code_name(LOG_FAC(priority) << 3, facilitynames),
+                           syslog_code_name(LOG_PRI(priority), prioritynames),
+                           kernel ? " kernel:" : "",
                            msg ? msg : "");
     if (written < 0) return 0;
     if ((size_t)written >= out_sz) {

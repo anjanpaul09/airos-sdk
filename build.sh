@@ -119,6 +119,61 @@ enable_wpa3_hostapd() {
     echo 'CONFIG_PACKAGE_hostapd-openssl=y' >> .config
 }
 
+ensure_diagnostic_packages() {
+    echo "Ensuring diagnostic packages: iperf3, tcpdump, libpcap..."
+
+    if [ ! -x "./scripts/feeds" ]; then
+        echo "ERROR: ./scripts/feeds not found or not executable"
+        return 1
+    fi
+
+    if [ ! -e "package/feeds/packages/iperf3" ]; then
+        echo "iperf3 package link missing; ensuring packages feed is available..."
+
+        ./scripts/feeds update packages || {
+            echo "ERROR: Failed to update packages feed"
+            return 1
+        }
+
+        ./scripts/feeds install iperf3 || {
+            echo "ERROR: Failed to install iperf3 from packages feed"
+            return 1
+        }
+    fi
+
+    touch .config
+
+    sed -i \
+        -e '/^CONFIG_PACKAGE_tcpdump-mini=/d' \
+        -e '/^# CONFIG_PACKAGE_tcpdump-mini is not set/d' \
+        .config
+
+    echo '# CONFIG_PACKAGE_tcpdump-mini is not set' >> .config
+
+    for pkg in tcpdump libpcap iperf3; do
+        sed -i \
+            -e "/^CONFIG_PACKAGE_${pkg}=/d" \
+            -e "/^# CONFIG_PACKAGE_${pkg} is not set/d" \
+            .config
+
+        echo "CONFIG_PACKAGE_${pkg}=y" >> .config
+    done
+}
+
+verify_diagnostic_packages() {
+    echo "Verifying diagnostic packages in .config..."
+
+    for pkg in tcpdump libpcap iperf3; do
+        if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
+            echo "ERROR: CONFIG_PACKAGE_${pkg} was removed by Kconfig"
+            return 1
+        fi
+    done
+
+    echo "Diagnostic packages successfully verified in .config"
+}
+
+
 # Check arguments
 if [ $# -lt 1 ] || [ $# -gt 3 ]; then
     echo ""
@@ -245,6 +300,7 @@ mkdir -p $OUTPUT_DIR/images $OUTPUT_DIR/logs $OUTPUT_DIR/cloud
 if [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
     enable_airui_luci_packages
     enable_wpa3_hostapd
+    ensure_diagnostic_packages || exit 1
 fi
 
 # =============================================================================
@@ -253,6 +309,10 @@ fi
 
 echo "Running make defconfig..."
 make defconfig
+
+if [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
+    verify_diagnostic_packages || exit 1
+fi
 
 echo "Running make..."
 make -j$(nproc) V=s 2>&1 | tee $OUTPUT_DIR/logs/build-${BUILD_DATETIME}.log

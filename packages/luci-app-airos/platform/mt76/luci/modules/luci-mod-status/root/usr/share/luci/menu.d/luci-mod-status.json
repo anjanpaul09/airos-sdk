@@ -4,7 +4,7 @@
 		"order": 1,
 		"action": {
 			"type": "view",
-			"path": "status/airui_dashboard_v13"
+			"path": "status/airui_dashboard_v14"
 		},
 		"depends": {
 			"acl": [ "airui-status" ]
@@ -16,7 +16,7 @@
 		"order": 2,
 		"action": {
 			"type": "view",
-			"path": "status/airui_device_status_v13"
+			"path": "status/airui_device_status_v14"
 		},
 		"depends": {
 			"acl": [ "airui-status" ]
@@ -28,7 +28,7 @@
 		"order": 3,
 		"action": {
 			"type": "view",
-			"path": "status/airui_device_statistics_v10"
+			"path": "status/airui_device_statistics_v11"
 		},
 		"depends": {
 			"acl": [ "airui-status" ]
@@ -40,7 +40,7 @@
 		"order": 5,
 		"action": {
 			"type": "view",
-			"path": "status/airui_clients_v19"
+			"path": "status/airui_clients_v20"
 		},
 		"depends": {
 			"acl": [ "airui-status" ]
