@@ -3,6 +3,7 @@
 #include "stamonitord.h"
 #include "stamonitord_ubus_tx.h"
 #include "stamonitord_vif_info.h"
+#include "stamonitord_vif_monitor.h"
 #include "stamonitord_device_info.h"
 #include "stamonitord_nl80211.h"
 #include "stamonitord_client_events.h"
@@ -30,10 +31,8 @@ int main()
     }
 
 
-    /* Send VIF info event on startup if cloud enrolled */
-    if (stamonitord_is_cloud_enrolled()) {
-        stamonitord_send_vif_info();
-    }
+    /* Initialize production VIF info subsystem with libev */
+    stamonitord_vif_info_init(loop);
  
     /* Start nl80211 generic netlink listener for station connect/disconnect events */
     if (stamonitord_nl80211_start(loop) < 0) {
@@ -46,6 +45,11 @@ int main()
     //     LOG(WARN, "hostapd_events_start failed; continuing without hostapd events");
     // }
 
+    /* Start production VIF monitor (UBUS events, CSA/RF netlink events, debouncer) */
+    if (!stamonitord_vif_monitor_start(loop)) {
+        LOG(WARN, "Failed to start VIF monitor; continuing");
+    }
+
     if (stamonitord_history_start(loop) < 0) {
         fprintf(stderr, "failed to start ap history\n");
         //return 1;
@@ -57,6 +61,8 @@ int main()
 
 cleanup:
 	/* Cleanup */
+    stamonitord_vif_info_cleanup();
+    stamonitord_vif_monitor_stop();
     stamonitord_client_events_cleanup();
     stamonitord_history_stop();
     stamonitord_nl80211_stop();

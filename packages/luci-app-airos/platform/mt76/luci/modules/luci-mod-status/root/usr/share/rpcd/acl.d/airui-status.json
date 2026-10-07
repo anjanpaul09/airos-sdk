@@ -5,7 +5,7 @@
 			"ubus": {
 				"airui.system": [ "health", "capabilities" ],
 				"airui.status": [ "snapshot", "summary", "overview", "device_status", "clients", "statistics" ],
-				"stamond": [ "client.identity" ]
+				"stamond": [ "client.identity", "get_stainfo", "get_all_stainfo" ]
 			},
 			"uci": [ "version", "aircnms" ]
 		},

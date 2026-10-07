@@ -6,7 +6,7 @@
 
 var callStatusClients = rpc.declare({ object: 'airui.status', method: 'clients', expect: { '': {} } });
 var callClientDisconnect = rpc.declare({ object: 'airui.status', method: 'client_disconnect', params: [ 'macaddr' ], expect: { '': {} } });
-var callClientIdentity = rpc.declare({ object: 'stamond', method: 'client.identity', params: [ 'macaddr' ], expect: { '': {} } });
+var callClientIdentity = rpc.declare({ object: 'stamond', method: 'get_stainfo', params: [ 'macaddr' ], expect: { '': {} } });
 var clientsGeneration = 0;
 var clientsPollRegistered = false;
 

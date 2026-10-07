@@ -271,7 +271,6 @@ int uciGetSectionNameFromIfName(const char *pkg, char *sec_name, char *ifname)
 
     return ERROR;
 }
-/*
 int uciGetSectionName(const char *pkg, char *sec_type, struct airpro_mgr_get_all_uci_section_names *sec_arr_names)
 {
     struct uci_element *elm = NULL;
@@ -296,7 +295,6 @@ int uciGetSectionName(const char *pkg, char *sec_type, struct airpro_mgr_get_all
 
     return SUCCESS;
 }
-*/
 
 int uciSectionExist(const char *pkg, const char *opt, const char *sectionName)
 {

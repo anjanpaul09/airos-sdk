@@ -1,0 +1,63 @@
+diff --git a/package/network/services/hostapd/files/hostapd.uc b/package/network/services/hostapd/files/hostapd.uc
+index f4f479c0f6..20883a06d1 100644
+--- a/package/network/services/hostapd/files/hostapd.uc
++++ b/package/network/services/hostapd/files/hostapd.uc
+@@ -425,9 +425,50 @@ function iface_reload_config(name, phydev, config, old_config)
+ {
+ 	let phy = phydev.name;
+ 
+-	if (!old_config || !is_equal(old_config.radio, config.radio))
++	if (!old_config)
+ 		return false;
+ 
++	if (!is_equal(old_config.radio, config.radio)) {
++		let match_csa = false;
++		if (old_config.bss && old_config.bss[0]) {
++			let iface_name = old_config.bss[0].ifname;
++			let bss = iface_name ? hostapd.bss[iface_name] : null;
++			if (bss) {
++				let st = bss.ctrl("STATUS");
++				if (st) {
++					let cur_chan = null;
++					for (let l in split(st, "\n")) {
++						let m = match(l, /^channel=(\d+)/);
++						if (m) {
++							cur_chan = m[1];
++							break;
++						}
++					}
++					if (cur_chan && cur_chan == config.radio.channel) {
++						let norm = (data) => {
++							let res = [];
++							for (let l in data) {
++								if (match(l, /^chanlist=/)) continue;
++								if (match(l, /^ht_capab=/)) l = replace(l, /\[HT40[+-]\]/, "[HT40]");
++								push(res, l);
++							}
++							return res;
++						};
++						let old_data = norm(old_config.radio.data);
++						let new_data = norm(config.radio.data);
++						if (is_equal(old_data, new_data)) {
++							hostapd.printf(`Radio ${phy} channel already active at ${config.radio.channel} (CSA) - allowing live reload`);
++							old_config.radio = config.radio;
++							match_csa = true;
++						}
++					}
++				}
++			}
++		}
++		if (!match_csa)
++			return false;
++	}
++
+ 	if (is_equal(old_config.bss, config.bss))
+ 		return true;
+ 
+@@ -1065,4 +1106,4 @@ return {
+ 			hostapd.data.auth_obj.notify("sta_connected", msg, data_cb, null, null, 1000);
+ 		return ret;
+ 	},
+-};
++};
+\ No newline at end of file

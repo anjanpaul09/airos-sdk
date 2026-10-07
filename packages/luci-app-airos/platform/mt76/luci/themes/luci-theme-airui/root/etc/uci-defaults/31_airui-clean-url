@@ -1,0 +1,20 @@
+#!/bin/sh
+
+uci -q set uhttpd.main.max_requests='12'
+uci -q commit uhttpd
+
+printf '%s\n' \
+	'<!doctype html>' \
+	'<html lang="en">' \
+	'<head>' \
+	'<meta charset="utf-8">' \
+	'<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">' \
+	'<meta http-equiv="pragma" content="no-cache">' \
+	'<meta http-equiv="expires" content="0">' \
+	'<meta http-equiv="refresh" content="0; url=/cgi-bin/index.html/">' \
+	'<title>AirPro</title>' \
+	'</head>' \
+	'<body><a href="/cgi-bin/index.html/">AirPro</a></body>' \
+	'</html>' > /www/index.html
+
+exit 0

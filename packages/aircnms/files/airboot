@@ -83,6 +83,31 @@ boot() {
         uci -q commit dhcp
         net_changed=1
     fi
+
+    # 4. Pin br-lan and lan interface MAC to WAN/Base MAC before netifd starts
+    local wan_mac=""
+    for ifc in wan eth0; do
+        if [ -r "/sys/class/net/$ifc/address" ]; then
+            wan_mac=$(cat "/sys/class/net/$ifc/address" 2>/dev/null | tr 'A-F' 'a-f' | tr -d ' \t\r\n')
+            [ -n "$wan_mac" ] && break
+        fi
+    done
+    if [ -z "$wan_mac" ]; then
+        local bmac=$(get_base_mac)
+        [ -n "$bmac" ] && wan_mac=$(echo "$bmac" | tr 'A-F' 'a-f')
+    fi
+    if [ -n "$wan_mac" ]; then
+        local dev_sec=$(uci show network 2>/dev/null | grep "\.name='br-lan'" | cut -d. -f2 | cut -d= -f1)
+        if [ -n "$dev_sec" ] && [ "$(uci -q get network.$dev_sec.macaddr)" != "$wan_mac" ]; then
+            uci set network.$dev_sec.macaddr="$wan_mac"
+            net_changed=1
+        fi
+        if [ "$(uci -q get network.lan.macaddr)" != "$wan_mac" ]; then
+            uci set network.lan.macaddr="$wan_mac"
+            net_changed=1
+        fi
+    fi
+
     [ "$net_changed" = "1" ] && uci commit network
 
     # 4. Prune dead legacy recovery VAPs completely across all fleets
@@ -143,6 +168,11 @@ boot() {
     fi
 
     [ "$wl_changed" = "1" ] && uci commit wireless
+
+    # 7. Apply base MAC series to all SSIDs and network interfaces before netifd starts
+    if [ -x /usr/sbin/air_setmac_ssid.sh ]; then
+        /usr/sbin/air_setmac_ssid.sh --no-reload >/dev/null 2>&1 || true
+    fi
 }
 
 start() {

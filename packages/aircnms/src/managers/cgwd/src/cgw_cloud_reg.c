@@ -160,9 +160,19 @@ char *parse_device_info_to_json_string(struct DeviceInfo device)
         return NULL;
     }
 
+    char raw_version[UCI_BUF_LEN] = {0};
+    char model[64] = {0};
+
     // Get firmware version
-    memset(fw_version, 0, sizeof(fw_version));
-    get_fw_version(fw_version, UCI_BUF_LEN);
+    if (cmd_buf("uci -q get version.@version[0].version || uci -q get version.version.version", raw_version, sizeof(raw_version)) != 0 || raw_version[0] == '\0') {
+        get_fw_version(raw_version, sizeof(raw_version));
+    }
+    snprintf(fw_version, sizeof(fw_version), "Airos-%.240s", raw_version);
+
+    // Get model from uci show version
+    if (cmd_buf("uci -q get version.@version[0].model || uci -q get version.version.model", model, sizeof(model)) != 0 || model[0] == '\0') {
+        strncpy(model, "AP520", sizeof(model) - 1);
+    }
 
     // Basic device info
     json_object_set_new(json, "serial_number", json_string(device.serial_number));
@@ -172,7 +182,8 @@ char *parse_device_info_to_json_string(struct DeviceInfo device)
         json_object_set_new(json, "mac", json_string(device.mac_address));
     }
     json_object_set_new(json, "fw_info", json_string(fw_version));
-    json_object_set_new(json, "hw_name", json_string("MTK7621"));
+    json_object_set_new(json, "hw_name", json_string(model));
+    json_object_set_new(json, "model", json_string(model));
     json_object_set_new(json, "hw_version", json_string("1.0"));
 
     // Get management IP

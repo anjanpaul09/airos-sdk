@@ -14,8 +14,7 @@
 typedef struct {
     netconf_job_snapshot_t records[NETCONF_JOB_LEDGER_SIZE];
     size_t next_slot;
-    uint64_t revision;
-    uint64_t highest_cloud_revision;
+    uint64_t revision; /* local sequence only */
     uint64_t generation;
 } netconf_job_ledger_t;
 
@@ -101,7 +100,6 @@ static bool journal_write(void)
         goto out;
     json_object_object_add(root, "schema", json_object_new_string("air.netconfd.journal.v1"));
     json_object_object_add(root, "revision", json_object_new_uint64(ledger.revision));
-    json_object_object_add(root, "highest_cloud_revision", json_object_new_uint64(ledger.highest_cloud_revision));
     json_object_object_add(root, "generation", json_object_new_uint64(ledger.generation));
     for (i = 0; i < NETCONF_JOB_LEDGER_SIZE; i++) {
         netconf_job_snapshot_t *r = &ledger.records[i];
@@ -114,8 +112,6 @@ static bool journal_write(void)
         json_object_object_add(item, "config_hash", json_object_new_string(r->config_hash));
         json_object_object_add(item, "reason_code", json_object_new_string(r->reason_code));
         json_object_object_add(item, "revision", json_object_new_uint64(r->revision));
-        json_object_object_add(item, "cloud_revision", json_object_new_uint64(r->cloud_revision));
-        json_object_object_add(item, "has_cloud_revision", json_object_new_boolean(r->has_cloud_revision));
         json_object_object_add(item, "generation", json_object_new_uint64(r->generation));
         json_object_object_add(item, "state", json_object_new_int((int)r->state));
         json_object_array_add(records, item);
@@ -177,8 +173,6 @@ static bool journal_load(void)
         goto out;
     if (json_object_object_get_ex(root, "revision", &value))
         ledger.revision = json_object_get_uint64(value);
-    if (json_object_object_get_ex(root, "highest_cloud_revision", &value))
-        ledger.highest_cloud_revision = json_object_get_uint64(value);
     if (json_object_object_get_ex(root, "generation", &value))
         ledger.generation = json_object_get_uint64(value);
     count = json_object_array_length(records);
@@ -195,10 +189,6 @@ static bool journal_load(void)
             !json_object_object_get_ex(item, "revision", &value))
             goto out;
         r->revision = json_object_get_uint64(value);
-        if (json_object_object_get_ex(item, "cloud_revision", &value))
-            r->cloud_revision = json_object_get_uint64(value);
-        if (json_object_object_get_ex(item, "has_cloud_revision", &value))
-            r->has_cloud_revision = json_object_get_boolean(value);
         if (!json_object_object_get_ex(item, "generation", &value)) goto out;
         r->generation = json_object_get_uint64(value);
         if (!json_object_object_get_ex(item, "state", &value)) goto out;
@@ -274,47 +264,41 @@ void netconf_job_init(void)
         journal_healthy = false;
 }
 
-netconf_job_submit_result_t netconf_job_submit_revision(
+netconf_job_submit_result_t netconf_job_submit_hash(
                         const void *payload, size_t payload_len,
-                        bool has_cloud_revision, uint64_t cloud_revision,
+                        const char *config_hash,
                         netconf_job_snapshot_t *snapshot)
 {
-    char hash[NETCONF_JOB_HASH_LEN];
     netconf_job_snapshot_t *record;
     size_t i;
 
-    if (!journal_healthy || !snapshot ||
-        (has_cloud_revision && cloud_revision == 0) ||
-        !payload_hash(payload, payload_len, hash))
-        return NETCONF_JOB_SUBMIT_ERROR;
-    if (recovery_required)
-        return NETCONF_JOB_SUBMIT_RECOVERY_REQUIRED;
+    (void)payload;
+    (void)payload_len;
 
-    if (has_cloud_revision) {
-        for (i = 0; i < NETCONF_JOB_LEDGER_SIZE; i++) {
-            record = &ledger.records[i];
-            if (record->state == NETCONF_JOB_EMPTY ||
-                !record->has_cloud_revision ||
-                record->cloud_revision != cloud_revision)
-                continue;
+    if (!journal_healthy || !snapshot || !config_hash || !config_hash[0])
+        return NETCONF_JOB_SUBMIT_ERROR;
+
+    /* Check if an in-flight job (QUEUED or APPLYING) already has the same hash */
+    for (i = 0; i < NETCONF_JOB_LEDGER_SIZE; i++) {
+        record = &ledger.records[i];
+        if (record->state == NETCONF_JOB_EMPTY)
+            continue;
+        if (strcmp(record->config_hash, config_hash) != 0)
+            continue;
+        if (record->state == NETCONF_JOB_QUEUED ||
+            record->state == NETCONF_JOB_APPLYING) {
             *snapshot = *record;
-            return strcmp(record->config_hash, hash) == 0 ?
-                   NETCONF_JOB_SUBMIT_DUPLICATE : NETCONF_JOB_SUBMIT_CONFLICT;
+            return NETCONF_JOB_SUBMIT_DUPLICATE;
         }
-        if (cloud_revision < ledger.highest_cloud_revision)
-            return NETCONF_JOB_SUBMIT_STALE;
-        if (cloud_revision == ledger.highest_cloud_revision &&
-            ledger.highest_cloud_revision != 0)
-            return NETCONF_JOB_SUBMIT_CONFLICT;
-    } else {
-        for (i = 0; i < NETCONF_JOB_LEDGER_SIZE; i++) {
-            record = &ledger.records[i];
-            if (record->state != NETCONF_JOB_EMPTY &&
-                !record->has_cloud_revision &&
-                strcmp(record->config_hash, hash) == 0) {
-                *snapshot = *record;
-                return NETCONF_JOB_SUBMIT_DUPLICATE;
-            }
+    }
+
+    /* Check if the latest completed job is already APPLIED with the exact same hash */
+    netconf_job_snapshot_t latest_job = {0};
+    if (netconf_job_latest(&latest_job)) {
+        if (latest_job.state == NETCONF_JOB_APPLIED &&
+            strcmp(latest_job.config_hash, config_hash) == 0) {
+            *snapshot = latest_job;
+            return NETCONF_JOB_SUBMIT_DUPLICATE;
         }
     }
 
@@ -337,44 +321,39 @@ netconf_job_submit_result_t netconf_job_submit_revision(
         netconf_job_snapshot_t before = *record;
         uint64_t revision_before = ledger.revision;
         uint64_t generation_before = ledger.generation;
-        uint64_t highest_before = ledger.highest_cloud_revision;
         memset(record, 0, sizeof(*record));
-        record->revision = ++ledger.revision;
-        record->cloud_revision = cloud_revision;
-        record->has_cloud_revision = has_cloud_revision;
-        if (has_cloud_revision && cloud_revision > ledger.highest_cloud_revision)
-            ledger.highest_cloud_revision = cloud_revision;
+        record->revision = ++ledger.revision;   /* local AP sequence only */
         record->generation = ++ledger.generation;
         record->state = NETCONF_JOB_QUEUED;
         snprintf(record->job_id, sizeof(record->job_id), "cfg-%llu-%llu",
                  (unsigned long long)record->revision,
                  (unsigned long long)record->generation);
-        snprintf(record->config_hash, sizeof(record->config_hash), "%s", hash);
+        snprintf(record->config_hash, sizeof(record->config_hash), "%s", config_hash);
         snprintf(record->reason_code, sizeof(record->reason_code), "QUEUED");
         if (!journal_write()) {
             *record = before;
             ledger.revision = revision_before;
             ledger.generation = generation_before;
-            ledger.highest_cloud_revision = highest_before;
             journal_healthy = false;
             return NETCONF_JOB_SUBMIT_ERROR;
         }
     }
     *snapshot = *record;
-    netconf_ubus_emit_job(record);
+    /* Do NOT emit QUEUED here; emit only after queue insertion succeeds in ubus handler */
     return NETCONF_JOB_SUBMIT_ACCEPTED;
 }
 
 bool netconf_job_submit(const void *payload, size_t payload_len,
                         netconf_job_snapshot_t *snapshot, bool *duplicate)
 {
+    char hash[NETCONF_JOB_HASH_LEN];
     netconf_job_submit_result_t result;
-    if (!duplicate)
+    if (!duplicate || !payload_hash(payload, payload_len, hash))
         return false;
-    result = netconf_job_submit_revision(payload, payload_len, false, 0, snapshot);
-    *duplicate = result == NETCONF_JOB_SUBMIT_DUPLICATE;
-    return result == NETCONF_JOB_SUBMIT_ACCEPTED ||
-           result == NETCONF_JOB_SUBMIT_DUPLICATE;
+    result = netconf_job_submit_hash(payload, payload_len, hash, snapshot);
+    *duplicate = (result == NETCONF_JOB_SUBMIT_DUPLICATE);
+    return (result == NETCONF_JOB_SUBMIT_ACCEPTED ||
+            result == NETCONF_JOB_SUBMIT_DUPLICATE);
 }
 
 bool netconf_job_transition(const char *job_id, netconf_job_state_t expected,
@@ -411,26 +390,23 @@ bool netconf_job_transition(const char *job_id, netconf_job_state_t expected,
     return false;
 }
 
-size_t netconf_job_supersede_older_queued(uint64_t cloud_revision)
+size_t netconf_job_supersede_older_queued(const char *current_job_id)
 {
     size_t i, count = 0;
     char job_id[NETCONF_JOB_ID_LEN];
 
-    if (!cloud_revision)
+    if (!current_job_id || !current_job_id[0])
         return 0;
     for (i = 0; i < NETCONF_JOB_LEDGER_SIZE; i++) {
         netconf_job_snapshot_t *record = &ledger.records[i];
         if (record->state != NETCONF_JOB_QUEUED ||
-            !record->has_cloud_revision ||
-            record->cloud_revision >= cloud_revision)
+            strcmp(record->job_id, current_job_id) == 0)
             continue;
         snprintf(job_id, sizeof(job_id), "%s", record->job_id);
         if (netconf_job_transition(job_id, NETCONF_JOB_QUEUED,
                                    NETCONF_JOB_SUPERSEDED,
-                                   "NEWER_CLOUD_REVISION"))
+                                   "NEWER_CONFIG_QUEUED"))
             count++;
-        else
-            break;
     }
     return count;
 }

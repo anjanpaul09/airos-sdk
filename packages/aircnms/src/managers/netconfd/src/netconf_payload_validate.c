@@ -177,7 +177,7 @@ static bool validate_vif(json_t *v, size_t i, char *err, size_t n)
 static bool valid_channel(const char *band, const char *s)
 {
     long ch;
-    if (!s || !strcmp(s, "auto")) return s != NULL;
+    if (!s || !*s || !strcmp(s, "auto")) return true;
     if (!integer_string(s, 1, 196, &ch)) return false;
     if (!strcmp(band, "2.4GHz")) return ch >= 1 && ch <= 14;
     /* Valid 20 MHz center channels accepted by this MT7621 target. */
@@ -191,28 +191,73 @@ static bool validate_radio(json_t *r, size_t i, char *err, size_t n)
     static const char *const bands[] = {"2.4GHz", "5GHz", NULL};
     static const char *const modes24[] = {"11B", "11G", "11BGN", "11AX", "11BGN_11AX", NULL};
     static const char *const modes5[] = {"11NA", "11AC", "11AX", "11NA_11AC_11AX", NULL};
-    const char *band, *channel, *tx, *ul, *country, *hwmode;
+    const char *band, *country, *hwmode;
     json_t *j; long width;
     if (!json_is_object(r)) return fail(err, n, "radio[%zu] must be an object", i);
     band = str_field(r, "radioType");
     if (!one_of(band, bands)) return fail(err, n, "radio[%zu].radioType is invalid", i);
     j = json_object_get(r, "status");
-    if (!json_is_integer(j) || json_integer_value(j) < 0 || json_integer_value(j) > 2)
-        return fail(err, n, "radio[%zu].status must be 0, 1, or 2", i);
-    channel = str_field(r, "channel");
-    if (channel && !valid_channel(band, channel)) return fail(err, n, "radio[%zu].channel is invalid", i);
-    tx = str_field(r, "txpower");
-    if (tx && *tx && !integer_string(tx, 0, 30, NULL)) return fail(err, n, "radio[%zu].txpower is invalid", i);
+    if (j) {
+        long st = -1;
+        if (json_is_integer(j)) {
+            st = json_integer_value(j);
+        } else if (json_is_string(j)) {
+            integer_string(json_string_value(j), 0, 10, &st);
+        }
+        if (st < 0 || st > 10)
+            return fail(err, n, "radio[%zu].status must be 0..10", i);
+    }
+    j = json_object_get(r, "channel");
+    if (j) {
+        if (json_is_string(j)) {
+            const char *ch_s = json_string_value(j);
+            if (ch_s && *ch_s && !valid_channel(band, ch_s))
+                return fail(err, n, "radio[%zu].channel is invalid", i);
+        } else if (json_is_integer(j)) {
+            char ch_buf[16];
+            snprintf(ch_buf, sizeof(ch_buf), "%lld", (long long)json_integer_value(j));
+            if (!valid_channel(band, ch_buf))
+                return fail(err, n, "radio[%zu].channel is invalid", i);
+        }
+    }
+    j = json_object_get(r, "txpower");
+    if (j) {
+        if (json_is_string(j)) {
+            const char *tx_s = json_string_value(j);
+            if (tx_s && *tx_s && !integer_string(tx_s, 0, 30, NULL))
+                return fail(err, n, "radio[%zu].txpower is invalid", i);
+        } else if (json_is_integer(j)) {
+            long tx_v = json_integer_value(j);
+            if (tx_v < 0 || tx_v > 30)
+                return fail(err, n, "radio[%zu].txpower is invalid", i);
+        }
+    }
     j = json_object_get(r, "channelWidth");
     if (j) {
-        if (!json_is_integer(j)) return fail(err, n, "radio[%zu].channelWidth must be integer", i);
-        width = json_integer_value(j);
+        width = 0;
+        if (json_is_integer(j)) {
+            width = json_integer_value(j);
+        } else if (json_is_string(j)) {
+            width = atol(json_string_value(j));
+        } else {
+            return fail(err, n, "radio[%zu].channelWidth must be integer", i);
+        }
         if ((!strcmp(band, "2.4GHz") && width != 20 && width != 40) ||
             (!strcmp(band, "5GHz") && width != 20 && width != 40 && width != 80))
             return fail(err, n, "radio[%zu].channelWidth is unsupported", i);
     }
-    ul = str_field(r, "userlimit");
-    if (ul && *ul && !integer_string(ul, 1, 128, NULL)) return fail(err, n, "radio[%zu].userlimit is invalid", i);
+    j = json_object_get(r, "userlimit");
+    if (!j) j = json_object_get(r, "max_sta");
+    if (j) {
+        long ul_val = -1;
+        if (json_is_integer(j)) {
+            ul_val = json_integer_value(j);
+        } else if (json_is_string(j)) {
+            integer_string(json_string_value(j), 1, 128, &ul_val);
+        }
+        if (ul_val < 1 || ul_val > 128)
+            return fail(err, n, "radio[%zu].userlimit is invalid", i);
+    }
     j = json_object_get(r, "disabled");
     if (j && !json_is_boolean(j) && !json_is_integer(j) && !json_is_string(j))
         return fail(err, n, "radio[%zu].disabled has invalid type", i);
@@ -307,4 +352,21 @@ bool netconf_validate_rate_limit_payload(json_t *root, char *err, size_t n)
     if (!integer_string(up, 0, MAX_RATE_MBPS, NULL) || !integer_string(down, 0, MAX_RATE_MBPS, NULL))
         return fail(err, n, "rateLimit values must be integers between 0 and %ld", MAX_RATE_MBPS);
     return true;
+}
+
+bool netconf_validate_config_string(const char *data, size_t len, char *err, size_t n)
+{
+    if (!data || len == 0) return false;
+    while (len > 0 && (data[len - 1] == '\0' || data[len - 1] == '\n' || data[len - 1] == '\r' || data[len - 1] == ' '))
+        len--;
+    if (len == 0) return false;
+    json_error_t jerr;
+    json_t *root = json_loadb(data, len, 0, &jerr);
+    if (!root) {
+        if (err && n) snprintf(err, n, "invalid JSON syntax line %d: %s", jerr.line, jerr.text);
+        return false;
+    }
+    bool ok = netconf_validate_config_payload(root, err, n);
+    json_decref(root);
+    return ok;
 }

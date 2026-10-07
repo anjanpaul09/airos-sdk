@@ -42,6 +42,13 @@ var callMaintenanceConfig = rpc.declare({
 	expect: { '': {} }
 });
 
+var callUciVersion = rpc.declare({
+	object: 'uci',
+	method: 'get',
+	params: [ 'config' ],
+	expect: { 'values': {} }
+});
+
 var callMaintenanceLogs = rpc.declare({
 	object: 'airui.maintenance',
 	method: 'logs',
@@ -1864,9 +1871,16 @@ function renderMaintenance(page, payload, selectedKey) {
 			])
 		];
 	} else {
+		var uciVer = payload && payload.uciVersion;
+		var displayModel = (uciVer && uciVer.model) ?
+			(uciVer.model.indexOf('AirPro') === 0 ? uciVer.model : 'AirPro ' + uciVer.model) :
+			'AirPro AP520';
+		var displayVersion = (uciVer && uciVer.version) || firmware.version || '1.0.0';
+		var displayTimestamp = (uciVer && uciVer.timestamp) || '-';
+
 		summary = [
 			item(_('Name'), device.hostname || '-'),
-			item(_('Model'), device.model || '-'),
+			item(_('Model'), displayModel),
 			item(_('Uptime'), formatUptime(device.uptime)),
 			item(_('Local time'), formatLocalTime(device.localtime))
 		];
@@ -1882,16 +1896,12 @@ function renderMaintenance(page, payload, selectedKey) {
 			]), true),
 			cardSection(_('Device Identity'), E('div', { 'class': 'air-settings-list' }, [
 				item(_('Hostname'), device.hostname || '-'),
-				item(_('Model'), device.model || '-'),
-				item(_('Board'), device.board_name || '-'),
-				item(_('System'), device.system || '-'),
+				item(_('Model'), displayModel),
 				item(_('Timezone'), device.zonename || '-')
 			]), false),
 			cardSection(_('Firmware'), E('div', { 'class': 'air-settings-list' }, [
-				item(_('Version'), firmwareLabel(firmware)),
-				item(_('Kernel'), device.kernel || '-'),
-				item(_('Target'), firmware.target || '-'),
-				item(_('Revision'), firmware.revision || '-')
+				item(_('Version'), displayVersion),
+				item(_('Timestamp'), displayTimestamp)
 			]), false)
 		];
 	}
@@ -2131,12 +2141,28 @@ return view.extend({
 			}
 
 			if (isMaintenanceKey(current)) {
-				return callMaintenanceConfig().then(function(config) {
+				return Promise.all([
+					callMaintenanceConfig(),
+					L.resolveDefault(callUciVersion('version'), null)
+				]).then(function(maintRes) {
+					var config = maintRes[0];
+					var uciVerRes = maintRes[1];
+					var verObj = null;
+					if (uciVerRes) {
+						var vals = uciVerRes.values || uciVerRes;
+						for (var k in vals) {
+							if (vals[k] && (vals[k].version || vals[k].model)) {
+								verObj = vals[k];
+								break;
+							}
+						}
+					}
+
 					if (!config || config.ok !== true)
 						return { unavailable: responseError(config, _('Unable to read Maintenance configuration.')) };
 
 					if (current != 'system_logs')
-						return { config: config };
+						return { config: config, uciVersion: verObj };
 
 					return Promise.all([
 						callMaintenanceLogs().then(function(logs) {
@@ -2155,7 +2181,8 @@ return view.extend({
 							logs: results[0].payload || { data: { entries: [] } },
 							logsError: results[0].error || null,
 							syslog: results[1].payload || { data: {} },
-							syslogError: results[1].error || null
+							syslogError: results[1].error || null,
+							uciVersion: verObj
 						};
 					});
 				});

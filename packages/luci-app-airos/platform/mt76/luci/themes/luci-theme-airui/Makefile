@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=AirUI Theme
 LUCI_DEPENDS:=+luci-base
-PKG_RELEASE:=2
+PKG_RELEASE:=5
 
 PKG_LICENSE:=Apache-2.0
 

@@ -2,9 +2,18 @@
 #define STAMONITORD_VIF_INFO_H
 
 #include <stdbool.h>
+#include <ev.h>
 
-/* Send VIF info event by calling target_info_vif_get */
+/* Initialize VIF info subsystem with libev loop */
+bool stamonitord_vif_info_init(struct ev_loop *loop);
+
+/* Cleanup VIF info subsystem */
+void stamonitord_vif_info_cleanup(void);
+
+/* Send VIF info event (evaluates changes and publishes to cgwd) */
 bool stamonitord_send_vif_info(void);
 
-#endif // STAMONITORD_VIF_INFO_H
+/* Invalidate VIF info cache */
+void stamonitord_invalidate_vif_cache(void);
 
+#endif // STAMONITORD_VIF_INFO_H

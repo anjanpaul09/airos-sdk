@@ -6,6 +6,7 @@
 #include "uci_ops.h"  
 #include "netconf.h"
 #include "portal_manager.h"
+#include "target_apply.h"
 
 #define HOSTAPD_CONTROL_PATH_DEFAULT "/var/run"
 
@@ -185,7 +186,7 @@ bool radio_params_match(const char *radio_name,
 }
 
 
-bool target_config_radio_set(radio_record_t *record)
+bool target_config_radio_set_scoped(radio_record_t *record, const target_apply_ctx_t *ctx)
 {
     struct airpro_mgr_wlan_radio_params rad_params;
     bool do_wifi_reload = false;
@@ -202,7 +203,26 @@ bool target_config_radio_set(radio_record_t *record)
             strcpy(phyname, "5GHz");
         }
 
-        if (record->radio_param[rid].status == RADIO_SETTING_PRIMARY ) {
+        if (ctx && ctx->plan) {
+            uint32_t r_mask = target_radio_name_to_mask(record->radio_param[rid].record_id);
+            bool radio_in_plan = false;
+            for (int d = 0; d < ctx->plan->num_deltas; d++) {
+                if (ctx->plan->deltas[d].radio_mask & r_mask) {
+                    radio_in_plan = true;
+                    break;
+                }
+            }
+            if (!radio_in_plan) {
+                continue;
+            }
+        }
+
+        if (record->radio_param[rid].status == RADIO_SETTING_PRIMARY ||
+            record->radio_param[rid].channel_width[0] != '\0' ||
+            record->radio_param[rid].hwmode[0] != '\0' ||
+            record->radio_param[rid].country[0] != '\0' ||
+            record->radio_param[rid].user_limit[0] != '\0' ||
+            record->radio_param[rid].max_sta[0] != '\0') {
         
             memset(&rad_params, 0, sizeof(struct airpro_mgr_wlan_radio_params));
             
@@ -210,10 +230,56 @@ bool target_config_radio_set(radio_record_t *record)
             strcpy(radio_name, record->radio_param[rid].record_id);
         
             strcpy(rad_params.country, record->radio_param[rid].country);
-        
             strcpy(rad_params.disabled, record->radio_param[rid].disabled);
             strcpy(rad_params.channel_width, record->radio_param[rid].channel_width);
             strcpy(rad_params.hwmode, record->radio_param[rid].hwmode);
+            strcpy(rad_params.user_limit, record->radio_param[rid].user_limit);
+            strcpy(rad_params.max_sta, record->radio_param[rid].max_sta);
+
+            if (!rad_params.channel_width[0]) {
+                char cur_htmode[32] = {0};
+                char cmd[128];
+                snprintf(cmd, sizeof(cmd), "uci -q get wireless.%s.htmode", radio_name);
+                if (execute_uci_command(cmd, cur_htmode, sizeof(cur_htmode)) == 0) {
+                    if (strstr(cur_htmode, "160")) strcpy(rad_params.channel_width, "160");
+                    else if (strstr(cur_htmode, "80")) strcpy(rad_params.channel_width, "80");
+                    else if (strstr(cur_htmode, "40")) strcpy(rad_params.channel_width, "40");
+                    else if (strstr(cur_htmode, "20")) strcpy(rad_params.channel_width, "20");
+                }
+            }
+
+            if (!rad_params.country[0]) {
+                char cmd[128];
+                snprintf(cmd, sizeof(cmd), "uci -q get wireless.%s.country", radio_name);
+                execute_uci_command(cmd, rad_params.country, sizeof(rad_params.country));
+                size_t l = strlen(rad_params.country);
+                while (l > 0 && (rad_params.country[l-1] == '\n' || rad_params.country[l-1] == '\r' || rad_params.country[l-1] == ' '))
+                    rad_params.country[--l] = '\0';
+            }
+
+            if (!rad_params.disabled[0]) {
+                char cmd[128];
+                snprintf(cmd, sizeof(cmd), "uci -q get wireless.%s.disabled", radio_name);
+                execute_uci_command(cmd, rad_params.disabled, sizeof(rad_params.disabled));
+                size_t l = strlen(rad_params.disabled);
+                while (l > 0 && (rad_params.disabled[l-1] == '\n' || rad_params.disabled[l-1] == '\r' || rad_params.disabled[l-1] == ' '))
+                    rad_params.disabled[--l] = '\0';
+            }
+
+            if (!rad_params.hwmode[0]) {
+                char cur_htmode[32] = {0};
+                char cmd[128];
+                snprintf(cmd, sizeof(cmd), "uci -q get wireless.%s.htmode", radio_name);
+                if (execute_uci_command(cmd, cur_htmode, sizeof(cur_htmode)) == 0) {
+                    if (strstr(cur_htmode, "HE")) {
+                        strcpy(rad_params.hwmode, "11AX");
+                    } else if (strstr(cur_htmode, "VHT")) {
+                        strcpy(rad_params.hwmode, "11AC");
+                    } else {
+                        strcpy(rad_params.hwmode, "11BGN");
+                    }
+                }
+            }
 
             char param[20];
             memset(param, 0, sizeof(param));
@@ -237,7 +303,9 @@ bool target_config_radio_set(radio_record_t *record)
             ret = uci_set_radio_params(radio_name, &rad_params);
             if (ret != 0) success = false;
             
-            do_wifi_reload = true;
+            if (!ctx || !ctx->scoped_apply_enabled) {
+                do_wifi_reload = true;
+            }
 #ifdef CONFIG_PLATFORM_MTK_JEDI
             jedi_set_primary_radio_params(radio_name, &rad_params);            
 #endif
@@ -264,31 +332,33 @@ bool target_config_radio_set(radio_record_t *record)
             ret = uci_set_radio_params(radio_name, &rad_params);
             if (ret != 0) success = false;
 
-            if (strcmp(rad_params.channel, "auto") == 0) {
-                do_wifi_reload = true;
-            } else {
-                // Channel switch with error handling
-                printf("Applying channel switch for %s to channel %s\n", radio_name, rad_params.channel);
-                ret = target_chan_switch(radio_name, atoi(rad_params.channel));
+            if (!ctx || !ctx->scoped_apply_enabled) {
+                if (strcmp(rad_params.channel, "auto") == 0) {
+                    do_wifi_reload = true;
+                } else {
+                    // Channel switch with error handling
+                    printf("Applying channel switch for %s to channel %s\n", radio_name, rad_params.channel);
+                    ret = target_chan_switch(radio_name, atoi(rad_params.channel));
+                    if (!ret) {
+                        success = false;
+                        fprintf(stderr, "ERROR: Channel switch failed for %s to channel %s\n", 
+                                radio_name, rad_params.channel);
+                        // Continue to next radio instead of failing completely
+                    } else {
+                        printf("Channel switch successful for %s\n", radio_name);
+                    }
+                }
+                sleep(3); 
+                // TX power setting with error handling
+                printf("Applying TX power for %s to %s dBm\n", radio_name, rad_params.txpower);
+                ret = hostapd_set_txpower(radio_name, atoi(rad_params.txpower));
                 if (!ret) {
                     success = false;
-                    fprintf(stderr, "ERROR: Channel switch failed for %s to channel %s\n", 
-                            radio_name, rad_params.channel);
-                    // Continue to next radio instead of failing completely
+                    fprintf(stderr, "ERROR: TX power setting failed for %s to %s dBm\n",
+                            radio_name, rad_params.txpower);
                 } else {
-                    printf("Channel switch successful for %s\n", radio_name);
+                    printf("TX power setting successful for %s\n", radio_name);
                 }
-            }
-            sleep(3); 
-            // TX power setting with error handling
-            printf("Applying TX power for %s to %s dBm\n", radio_name, rad_params.txpower);
-            ret = hostapd_set_txpower(radio_name, atoi(rad_params.txpower));
-            if (!ret) {
-                success = false;
-                fprintf(stderr, "ERROR: TX power setting failed for %s to %s dBm\\n",
-                        radio_name, rad_params.txpower);
-            } else {
-                printf("TX power setting successful for %s\\n", radio_name);
             }
 
 #ifdef CONFIG_PLATFORM_MTK_JEDI
@@ -298,10 +368,7 @@ bool target_config_radio_set(radio_record_t *record)
         }
     }
 
-    if (do_wifi_reload) {
-        //memset(cmd, 0, sizeof(cmd));
-        //sprintf(cmd, "wifi");
-
+    if (do_wifi_reload && (!ctx || !ctx->scoped_apply_enabled)) {
         int rc = system("wifi");
         if (rc == 0) {
             sleep(3);
@@ -311,6 +378,11 @@ bool target_config_radio_set(radio_record_t *record)
     }
 
     return success;
+}
+
+bool target_config_radio_set(radio_record_t *record)
+{
+    return target_config_radio_set_scoped(record, NULL);
 }
 
 /* Day-name → 3-letter UCI abbreviation */
@@ -433,7 +505,7 @@ static bool target_verify_vif_runtime(const char *vif_name, bool enabled)
     return false;
 }
 
-bool target_config_vif_set(vif_record_t *record)
+bool target_config_vif_set_scoped(vif_record_t *record, const target_apply_ctx_t *ctx)
 {
     struct airpro_mgr_wlan_vap_params vif_params;
     char cmd[256];
@@ -445,6 +517,27 @@ bool target_config_vif_set(vif_record_t *record)
     char pending_portals[16][64] = {{0}};
     int n_pending_portals = 0;
 
+    /* Handle VIF removals if plan specifies any */
+    if (ctx && ctx->plan) {
+        bool uci_deleted = false;
+        for (int i = 0; i < ctx->plan->num_deltas; i++) {
+            if (ctx->plan->deltas[i].type == TARGET_DELTA_VIF_REMOVE) {
+                const char *obj = ctx->plan->deltas[i].object_name;
+                if (strncmp(obj, "wlan", 4) == 0 && obj[4] >= '1' && obj[4] <= '8' && obj[5] == '\0') {
+                    snprintf(cmd, sizeof(cmd), "uci -q set wireless.%s.disabled='1'", obj);
+                } else {
+                    snprintf(cmd, sizeof(cmd), "uci -q delete wireless.%s", obj);
+                }
+                system(cmd);
+                uci_deleted = true;
+                wifi_changed = true;
+            }
+        }
+        if (uci_deleted) {
+            system("uci commit wireless");
+        }
+    }
+
     for (vid = 0; vid < record->n_vif; vid++) {
         
         if ( record->vif_param[vid].status == VIF_ADD ) {
@@ -454,6 +547,14 @@ bool target_config_vif_set(vif_record_t *record)
             
             strlcpy(vif_name, record->vif_param[vid].record_id, sizeof(vif_name));
             strlcpy(vif_params.record_id, record->vif_param[vid].record_id, sizeof(vif_params.record_id));
+            strlcpy(vif_params.device, record->vif_param[vid].device, sizeof(vif_params.device));
+            if (!strcmp(record->vif_param[vid].device, "5GHz") || !strcmp(record->vif_param[vid].device, "wifi0")) {
+                strlcpy(vif_params.wifi_device, "wifi0", sizeof(vif_params.wifi_device));
+            } else {
+                strlcpy(vif_params.wifi_device, "wifi1", sizeof(vif_params.wifi_device));
+            }
+            strlcpy(vif_params.opmode, "ap", sizeof(vif_params.opmode));
+            strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
             
             strlcpy(vif_params.ssid, record->vif_param[vid].ssid, sizeof(vif_params.ssid));
             strlcpy(vif_params.mobility_id, record->vif_param[vid].mobility_id, sizeof(vif_params.mobility_id));
@@ -526,14 +627,18 @@ bool target_config_vif_set(vif_record_t *record)
            snprintf(vif_params.ft_psk_generate_local, sizeof(vif_params.ft_psk_generate_local), "%d",ft_local);
 
 #ifdef CONFIG_PLATFORM_MTK 
-            if (!vif_params.is_auth && strcmp(vif_params.forward_type, "Bridge") == 0) {
-                int vlan = atoi(record->vif_param[vid].vlan_id);
-                if (vlan == 0) {
+            if (!vif_params.is_auth) {
+                if (strcmp(vif_params.forward_type, "Bridge") == 0) {
+                    int vlan = atoi(record->vif_param[vid].vlan_id);
+                    if (vlan == 0) {
+                        check_existing_vlan(vif_name);
+                    } else if (vlan > 0) {
+                        check_existing_vlan(vif_name);
+                        set_vlan_network(vlan, vif_name);
+                        strlcpy(vif_params.vlan_id, record->vif_param[vid].vlan_id, sizeof(vif_params.vlan_id));
+                    }
+                } else {
                     check_existing_vlan(vif_name);
-                } else if (vlan > 0) {
-                    check_existing_vlan(vif_name);
-                    set_vlan_network(vlan, vif_name);
-                    strlcpy(vif_params.vlan_id, record->vif_param[vid].vlan_id, sizeof(vif_params.vlan_id));
                 }
             }
 #endif
@@ -598,11 +703,31 @@ bool target_config_vif_set(vif_record_t *record)
         
         } else if( record->vif_param[vid].status == VIF_MODIFY ) {
             //MODIFY 3
+            if (ctx && ctx->plan) {
+                bool vif_in_plan = false;
+                for (int d = 0; d < ctx->plan->num_deltas; d++) {
+                    if (strcmp(ctx->plan->deltas[d].object_name, record->vif_param[vid].record_id) == 0) {
+                        vif_in_plan = true;
+                        break;
+                    }
+                }
+                if (!vif_in_plan) {
+                    continue;
+                }
+            }
             memset(vif_name, 0, sizeof(vif_name));
             memset(&vif_params, 0, sizeof(vif_params));
             
             strlcpy(vif_name, record->vif_param[vid].record_id, sizeof(vif_name));
             strlcpy(vif_params.record_id, record->vif_param[vid].record_id, sizeof(vif_params.record_id));
+            strlcpy(vif_params.device, record->vif_param[vid].device, sizeof(vif_params.device));
+            if (!strcmp(record->vif_param[vid].device, "5GHz") || !strcmp(record->vif_param[vid].device, "wifi0")) {
+                strlcpy(vif_params.wifi_device, "wifi0", sizeof(vif_params.wifi_device));
+            } else if (record->vif_param[vid].device[0]) {
+                strlcpy(vif_params.wifi_device, "wifi1", sizeof(vif_params.wifi_device));
+            }
+            strlcpy(vif_params.opmode, "ap", sizeof(vif_params.opmode));
+            strlcpy(vif_params.network, "lan", sizeof(vif_params.network));
             
             strlcpy(vif_params.ssid, record->vif_param[vid].ssid, sizeof(vif_params.ssid));
             strlcpy(vif_params.mobility_id, record->vif_param[vid].mobility_id, sizeof(vif_params.mobility_id));
@@ -674,14 +799,18 @@ bool target_config_vif_set(vif_record_t *record)
            snprintf(vif_params.ft_psk_generate_local, sizeof(vif_params.ft_psk_generate_local), "%d",ft_local);
 
 #ifdef CONFIG_PLATFORM_MTK 
-            if (!vif_params.is_auth && strcmp(record->vif_param[vid].forward_type, "Bridge") == 0) {
-                int vlan = atoi(record->vif_param[vid].vlan_id);
-                if (vlan == 0) {
+            if (!vif_params.is_auth) {
+                if (strcmp(record->vif_param[vid].forward_type, "Bridge") == 0) {
+                    int vlan = atoi(record->vif_param[vid].vlan_id);
+                    if (vlan == 0) {
+                        check_existing_vlan(vif_name);
+                    } else if (vlan > 0) {
+                        check_existing_vlan(vif_name);
+                        set_vlan_network(vlan, vif_name);
+                        strlcpy(vif_params.vlan_id, record->vif_param[vid].vlan_id, sizeof(vif_params.vlan_id));
+                    }
+                } else {
                     check_existing_vlan(vif_name);
-                } else if (vlan > 0) {
-                    check_existing_vlan(vif_name);
-                    set_vlan_network(vlan, vif_name);
-                    strlcpy(vif_params.vlan_id, record->vif_param[vid].vlan_id, sizeof(vif_params.vlan_id));
                 }
             }
 
@@ -726,38 +855,77 @@ bool target_config_vif_set(vif_record_t *record)
         }
     }
 
-    if (wifi_changed) {
-        rc = system("wifi reload");
-        if (rc == 0)
-            sleep(3);
-        else
-            success = false;
-
-        for (vid = 0; vid < record->n_vif; vid++) {
-            bool enabled = record->vif_param[vid].status != VIF_DISABLE;
-            if (!target_verify_vif_runtime(record->vif_param[vid].record_id,
-                                           enabled))
+    if (!ctx || !ctx->scoped_apply_enabled) {
+        if (wifi_changed) {
+            rc = system("wifi reload");
+            if (rc == 0)
+                sleep(3);
+            else
                 success = false;
-#ifdef CONFIG_PLATFORM_MTK
-            if (enabled) {
-                if (!air_interface_rate_limit(record->vif_param[vid].record_id,
-                        record->vif_param[vid].is_uprate ? record->vif_param[vid].uprate : 0,
-                        record->vif_param[vid].is_downrate ? record->vif_param[vid].downrate : 0,
-                        "wlan"))
+
+            for (vid = 0; vid < record->n_vif; vid++) {
+                bool enabled = record->vif_param[vid].status != VIF_DISABLE;
+                if (!target_verify_vif_runtime(record->vif_param[vid].record_id,
+                                               enabled))
                     success = false;
-                /* Per-user limits are installed by client-specific commands. */
-            }
+#ifdef CONFIG_PLATFORM_MTK
+                if (enabled) {
+                    if (!air_interface_rate_limit(record->vif_param[vid].record_id,
+                            record->vif_param[vid].is_uprate ? record->vif_param[vid].uprate : 0,
+                            record->vif_param[vid].is_downrate ? record->vif_param[vid].downrate : 0,
+                            "wlan"))
+                        success = false;
+                    /* Per-user limits are installed by client-specific commands. */
+                }
 #endif
+            }
+        }
+
+#ifdef CONFIG_PLATFORM_MTK
+        for (int i = 0; i < n_pending_portals; i++) {
+            if (portal_manager_start(pending_portals[i]) != 0)
+                return false;
+        }
+#endif
+    }
+
+    return success;
+}
+
+bool target_config_vif_set(vif_record_t *record)
+{
+    return target_config_vif_set_scoped(record, NULL);
+}
+
+bool target_config_vif_post_apply(vif_record_t *record)
+{
+    if (!record) return true;
+    bool success = true;
+#ifdef CONFIG_PLATFORM_MTK
+    char pending_portals[16][64] = {{0}};
+    int n_pending_portals = 0;
+
+    for (int vid = 0; vid < record->n_vif; vid++) {
+        bool enabled = record->vif_param[vid].status != VIF_DISABLE;
+        if (enabled) {
+            if (!air_interface_rate_limit(record->vif_param[vid].record_id,
+                    record->vif_param[vid].is_uprate ? record->vif_param[vid].uprate : 0,
+                    record->vif_param[vid].is_downrate ? record->vif_param[vid].downrate : 0,
+                    "wlan")) {
+                success = false;
+            }
+        }
+        if (record->vif_param[vid].is_auth && record->vif_param[vid].portal_id[0]) {
+            add_pending_portal(pending_portals, &n_pending_portals, 16,
+                               record->vif_param[vid].portal_id);
         }
     }
 
-#ifdef CONFIG_PLATFORM_MTK
     for (int i = 0; i < n_pending_portals; i++) {
         if (portal_manager_start(pending_portals[i]) != 0)
             return false;
     }
 #endif
-
     return success;
 }
 

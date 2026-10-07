@@ -1,4 +1,3 @@
-#include "netconf_snapshot.h"
 #include "ds.h"
 #include "ds_dlist.h"
 #include "os_time.h"
@@ -128,15 +127,6 @@ bool netconf_queue_append_item(netconf_item_t **qitem, netconf_response_t *res)
     LOG(INFO, "QUEUE_PUT seq=%u type=%s msglen=%zu qlen=%d", 
         queue_num, data_type_str, qi->size, g_netconf_queue.length + 1);
 
-    if (qi->req.data_type == NETCONF_DATA_CONF && qi->buf && qi->size > 0) {
-        netconf_job_snapshot_t snapshot;
-        bool duplicate = false;
-        if (netconf_job_submit(qi->buf, qi->size, &snapshot, &duplicate)) {
-            snprintf(qi->job_id, sizeof(qi->job_id), "%s", snapshot.job_id);
-            LOG(INFO, "JOB_SUBMITTED job_id=%s duplicate=%d", qi->job_id, duplicate);
-        }
-    }
-    
     ds_dlist_insert_tail(&g_netconf_queue.queue, qi);
     g_netconf_queue.length++;
     g_netconf_queue.size += qi->size;
@@ -265,37 +255,25 @@ bool netconf_queue_msg_process()
             default: break;
         }
         
-        LOG(INFO, "QUEUE_DEQUEUE type=%s msglen=%zu qlen=%d", 
+        LOG(DEBUG, "QUEUE_DEQUEUE type=%s msglen=%zu qlen=%d", 
             data_type_str, qi->size, g_netconf_queue.length);
         
-        if (qi->job_id[0] && !netconf_snapshot_create(qi->job_id)) {
-            LOG(ERR, "JOB_SKIPPED job_id=%s reason=snapshot_failed", qi->job_id);
-            netconf_job_transition(qi->job_id, NETCONF_JOB_QUEUED,
-                                   NETCONF_JOB_FAILED, "SNAPSHOT_FAILED");
-            netconf_queue_remove(qi);
-            continue;
-        }
         if (qi->job_id[0] &&
             !netconf_job_transition(qi->job_id, NETCONF_JOB_QUEUED,
                                     NETCONF_JOB_APPLYING, "APPLYING")) {
-            LOG(WARNING, "JOB_SKIPPED job_id=%s reason=not_queued", qi->job_id);
+            LOG(WARNING, "[NETCONF] Job %s skipped (state mismatch)", qi->job_id);
             netconf_queue_remove(qi);
             continue;
         }
         bool applied = netconf_process_msg(qi);
         if (!applied) {
-            LOG(ERR, "QUEUE_DROP type=%s reason=processing_rejected msglen=%zu",
-                data_type_str, qi->size);
+            LOG(ERR, "[NETCONF] Failed to apply configuration (Job ID: %s)", qi->job_id);
             if (qi->job_id[0]) {
-                if (netconf_snapshot_restore(qi->job_id))
-                    netconf_job_transition(qi->job_id, NETCONF_JOB_APPLYING,
-                                           NETCONF_JOB_FAILED, "PROCESSING_REJECTED_ROLLED_BACK");
-                else
-                    netconf_job_transition(qi->job_id, NETCONF_JOB_APPLYING,
-                                           NETCONF_JOB_FAILED, "PROCESSING_REJECTED_ROLLBACK_FAILED");
+                netconf_job_transition(qi->job_id, NETCONF_JOB_APPLYING,
+                                       NETCONF_JOB_FAILED, "PROCESSING_REJECTED");
             }
         } else {
-            LOG(INFO, "QUEUE_APPLIED type=%s msglen=%zu", data_type_str, qi->size);
+            LOG(INFO, "[NETCONF] Config applied successfully (Job ID: %s)", qi->job_id);
             if (qi->job_id[0])
                 netconf_job_transition(qi->job_id, NETCONF_JOB_APPLYING,
                                        NETCONF_JOB_APPLIED, "APPLIED");

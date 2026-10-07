@@ -23,4 +23,5 @@ int uciAddSection(const char *pkg , const char *opt, const char *sectionName);
 int uciDeleteSection(const char *pkg , const char *sectionName);
 int uciGetSectionNameFromRVID(const char *pkg, char *sec_name, int radio_idx, int vap_idx);
 int uciGetList(const char *pkg, char *sec, char *opt, char *val);
-//int uciGetSectionName(const char *pkg, char *sec_type, struct airpro_mgr_get_all_uci_section_names *sec_arr_names);
+struct airpro_mgr_get_all_uci_section_names;
+int uciGetSectionName(const char *pkg, char *sec_type, struct airpro_mgr_get_all_uci_section_names *sec_arr_names);

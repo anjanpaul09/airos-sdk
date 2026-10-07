@@ -7,7 +7,6 @@
 
 int execute_uci_command(const char *command, char *result, size_t result_size) 
 {
-    printf("Executing command: %s\n", command);
     FILE *fp;
     char buffer[128];
 
@@ -23,6 +22,13 @@ int execute_uci_command(const char *command, char *result, size_t result_size)
     }
 
     pclose(fp);
+
+    /* Strip trailing newline/carriage return/whitespace */
+    size_t l = strlen(result);
+    while (l > 0 && (result[l - 1] == '\n' || result[l - 1] == '\r' || result[l - 1] == ' ')) {
+        result[--l] = '\0';
+    }
+
     return 0;
 }
 
@@ -71,7 +77,7 @@ void add_vlan_to_firewall(int vlan)
     rc = system(cmd);
 
     rc = system("uci commit firewall");
-    rc = system("/etc/init.d/firewall restart");
+    rc = system("/etc/init.d/firewall reload");
     if (rc != 0) {
         fprintf(stderr, "Failed to commit firewall changes\n");
     }
@@ -93,7 +99,7 @@ void del_vlan_frm_firewall(int vlan)
     rc = system(cmd);
 
     rc = system("uci commit firewall");
-    rc = system("/etc/init.d/firewall restart");
+    rc = system("/etc/init.d/firewall reload");
     if (rc != 0) {
         fprintf(stderr, "Failed to commit firewall changes\n");
     }
@@ -134,7 +140,7 @@ void del_vlan_frm_network(int vlan)
     rc = system(cmd);
 
     rc = system("uci commit network");
-    rc = system("/etc/init.d/network restart");
+    rc = system("ubus call network reload");
     if (rc != 0) {
         fprintf(stderr, "Failed to commit Network changes\n");
     }
@@ -216,7 +222,10 @@ void add_vlan_to_network(int vlan, char *section_name)
     rc = system(cmd);
 
     rc = system("uci commit network");
-    rc = system("/etc/init.d/network restart");
+    rc = system("ubus call network reload");
+    memset(cmd, 0, sizeof(cmd));
+    snprintf(cmd, sizeof(cmd), "ifup %d", vlan);
+    system(cmd);
     if (rc != 0) {
         fprintf(stderr, "Failed to commit Network changes\n");
     }

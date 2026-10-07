@@ -2,6 +2,7 @@
 #include <libubox/blobmsg.h>
 #include <libubox/blobmsg_json.h>
 #include <json-c/json.h>
+#include <openssl/evp.h>
 #include <ev.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +12,8 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "netconf.h"
+
+bool netconf_validate_config_string(const char *data, size_t len, char *error, size_t error_len);
 
 static struct ubus_context *ctx = NULL;
 static struct ev_loop *loop = NULL;
@@ -121,8 +124,7 @@ static int ubus_reply_config(struct ubus_context *ctx,
         blobmsg_add_string(&reply, "schema", "air.netconfd.job.v1");
         blobmsg_add_string(&reply, "job_id", job->job_id);
         blobmsg_add_u64(&reply, "revision", job->revision);
-        if (job->has_cloud_revision)
-            blobmsg_add_u64(&reply, "cloud_revision", job->cloud_revision);
+        blobmsg_add_u64(&reply, "local_seq", job->revision);
         blobmsg_add_string(&reply, "config_hash", job->config_hash);
         blobmsg_add_string(&reply, "reason_code", job->reason_code);
         blobmsg_add_u8(&reply, "duplicate", duplicate);
@@ -132,42 +134,129 @@ static int ubus_reply_config(struct ubus_context *ctx,
     return accepted ? UBUS_STATUS_OK : UBUS_STATUS_INVALID_ARGUMENT;
 }
 
-static bool payload_cloud_revision(const void *data, size_t length,
-                                   bool *has_revision, uint64_t *revision)
+static int compare_json_keys(const void *a, const void *b)
 {
-    struct json_tokener *tokener;
-    struct json_object *root = NULL, *value = NULL;
+    const char * const *sa = a;
+    const char * const *sb = b;
+    return strcmp(*sa, *sb);
+}
+
+static struct json_object *canonicalize_json(struct json_object *obj)
+{
+    if (!obj) return NULL;
+    enum json_type type = json_object_get_type(obj);
+
+    if (type == json_type_object) {
+        struct json_object *canon = json_object_new_object();
+        int count = 0;
+        json_object_object_foreach(obj, k1, v1) {
+            (void)k1; (void)v1;
+            count++;
+        }
+        if (count == 0) return canon;
+
+        const char **keys = malloc(count * sizeof(const char *));
+        if (!keys) return canon;
+
+        int idx = 0;
+        json_object_object_foreach(obj, k2, v2) {
+            (void)v2;
+            keys[idx++] = k2;
+        }
+
+        qsort(keys, count, sizeof(const char *), compare_json_keys);
+
+        for (int i = 0; i < count; i++) {
+            struct json_object *child = json_object_object_get(obj, keys[i]);
+            json_object_object_add(canon, keys[i], canonicalize_json(child));
+        }
+        free(keys);
+        return canon;
+    } else if (type == json_type_array) {
+        struct json_object *canon = json_object_new_array();
+        size_t len = json_object_array_length(obj);
+        for (size_t i = 0; i < len; i++) {
+            struct json_object *elem = json_object_array_get_idx(obj, i);
+            json_object_array_add(canon, canonicalize_json(elem));
+        }
+        return canon;
+    }
+
+    /* Clone scalar values via string serialization to avoid json-c / jansson symbol conflict */
+    const char *s = json_object_to_json_string_ext(obj, JSON_C_TO_STRING_PLAIN);
+    return s ? json_tokener_parse(s) : NULL;
+}
+
+static bool payload_managed_config_hash(const void *data, size_t length,
+                                        char out[NETCONF_JOB_HASH_LEN])
+{
+    static const char *managed_keys[] = { "natConfig", "network", "radio", "vif" };
+    struct json_tokener *tokener = NULL;
+    struct json_object *root = NULL;
+    struct json_object *managed = NULL;
+    struct json_object *canonical = NULL;
     enum json_tokener_error error;
-    int64_t signed_revision;
+    const char *canon_str;
+    size_t canon_len;
+    EVP_MD_CTX *evp_ctx = NULL;
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int digest_len = 0;
     bool ok = false;
 
-    if (!data || !length || !has_revision || !revision)
-        return false;
-    *has_revision = false;
-    *revision = 0;
+    if (!data || !length || !out) return false;
+
     tokener = json_tokener_new();
-    if (!tokener)
-        return false;
+    if (!tokener) return false;
+
     root = json_tokener_parse_ex(tokener, data, (int)length);
     error = json_tokener_get_error(tokener);
     if (error != json_tokener_success || !root ||
-        json_object_get_type(root) != json_type_object)
-        goto out;
-    if (!json_object_object_get_ex(root, "revision", &value)) {
-        ok = true; /* Compatibility: initial/legacy configuration. */
+        json_object_get_type(root) != json_type_object) {
         goto out;
     }
-    if (json_object_get_type(value) != json_type_int)
+
+    managed = json_object_new_object();
+    if (!managed) goto out;
+
+    /* Extract managed blocks only, in sorted key order */
+    for (size_t i = 0; i < ARRAY_SIZE(managed_keys); i++) {
+        struct json_object *val = NULL;
+        if (json_object_object_get_ex(root, managed_keys[i], &val)) {
+            const char *val_str = json_object_to_json_string_ext(val, JSON_C_TO_STRING_PLAIN);
+            if (val_str) {
+                struct json_object *val_clone = json_tokener_parse(val_str);
+                if (val_clone)
+                    json_object_object_add(managed, managed_keys[i], val_clone);
+            }
+        }
+    }
+
+    canonical = canonicalize_json(managed);
+    if (!canonical) goto out;
+
+    canon_str = json_object_to_json_string_ext(canonical, JSON_C_TO_STRING_PLAIN);
+    if (!canon_str) goto out;
+    canon_len = strlen(canon_str);
+
+    evp_ctx = EVP_MD_CTX_new();
+    if (!evp_ctx || EVP_DigestInit_ex(evp_ctx, EVP_sha256(), NULL) != 1 ||
+        EVP_DigestUpdate(evp_ctx, canon_str, canon_len) != 1 ||
+        EVP_DigestFinal_ex(evp_ctx, digest, &digest_len) != 1 || digest_len != 32) {
         goto out;
-    signed_revision = json_object_get_int64(value);
-    if (signed_revision <= 0)
-        goto out;
-    *has_revision = true;
-    *revision = (uint64_t)signed_revision;
+    }
+
+    memcpy(out, "sha256:", 7);
+    for (size_t i = 0; i < digest_len; i++)
+        snprintf(out + 7 + i * 2, 3, "%02x", digest[i]);
+    out[71] = '\0';
     ok = true;
+
 out:
+    if (evp_ctx) EVP_MD_CTX_free(evp_ctx);
+    if (canonical) json_object_put(canonical);
+    if (managed) json_object_put(managed);
     if (root) json_object_put(root);
-    json_tokener_free(tokener);
+    if (tokener) json_tokener_free(tokener);
     return ok;
 }
 
@@ -190,8 +279,7 @@ static int ubus_netconf_config_handler(struct ubus_context *ctx,
     int actual_size;
     netconf_job_snapshot_t job = {0};
     bool duplicate = false;
-    bool has_cloud_revision = false;
-    uint64_t cloud_revision = 0;
+    char config_hash[NETCONF_JOB_HASH_LEN] = {0};
     netconf_job_submit_result_t submit_result;
 
     (void)obj;
@@ -215,27 +303,33 @@ static int ubus_netconf_config_handler(struct ubus_context *ctx,
         return ubus_reply_config(ctx, req, false, "invalid payload size", NULL, false);
     }
 
-    if (!payload_cloud_revision(data, declared_size, &has_cloud_revision,
-                                &cloud_revision))
-        return ubus_reply_config(ctx, req, false, "invalid cloud revision", NULL, false);
+    /* Pre-validation safety gate: validate payload schema/values before queueing */
+    char val_err[192] = {0};
+    if (!netconf_validate_config_string((const char *)data, declared_size, val_err, sizeof(val_err))) {
+        LOG(ERR, "[NETCONF] Config rejected: %s", val_err[0] ? val_err : "Invalid configuration");
+        return ubus_reply_config(ctx, req, false, val_err[0] ? val_err : "invalid config payload", NULL, false);
+    }
 
-    submit_result = netconf_job_submit_revision(data, declared_size,
-                                                has_cloud_revision,
-                                                cloud_revision, &job);
-    duplicate = submit_result == NETCONF_JOB_SUBMIT_DUPLICATE;
-    if (submit_result == NETCONF_JOB_SUBMIT_STALE)
-        return ubus_reply_config(ctx, req, false, "stale cloud revision", NULL, false);
-    if (submit_result == NETCONF_JOB_SUBMIT_CONFLICT)
-        return ubus_reply_config(ctx, req, false, "cloud revision conflict",
-                                 job.job_id[0] ? &job : NULL, false);
-    if (submit_result == NETCONF_JOB_SUBMIT_RECOVERY_REQUIRED)
-        return ubus_reply_config(ctx, req, false,
-                                 "recovery required before configuration", NULL, false);
-    if (submit_result == NETCONF_JOB_SUBMIT_ERROR)
+    if (!payload_managed_config_hash(data, declared_size, config_hash)) {
+        LOG(ERR, "[NETCONF] Config rejected: Unable to parse payload JSON");
+        return ubus_reply_config(ctx, req, false, "invalid config payload", NULL, false);
+    }
+
+    submit_result = netconf_job_submit_hash(data, declared_size, config_hash, &job);
+    duplicate = (submit_result == NETCONF_JOB_SUBMIT_DUPLICATE);
+
+    if (duplicate) {
+        const char *reason = (job.state == NETCONF_JOB_APPLIED) ?
+                             "already_applied" : "already_pending";
+        LOG(INFO, "[NETCONF] Config received (Job ID: %s): Identical configuration already active. Skipping apply.",
+            job.job_id);
+        return ubus_reply_config(ctx, req, true, reason, &job, true);
+    }
+
+    if (submit_result != NETCONF_JOB_SUBMIT_ACCEPTED) {
+        LOG(ERR, "[NETCONF] Config rejected: Job creation failed for Job ID: %s", job.job_id[0] ? job.job_id : config_hash);
         return ubus_reply_config(ctx, req, false, "job creation failed", NULL, false);
-    if (duplicate)
-        return ubus_reply_config(ctx, req, true, "duplicate configuration coalesced",
-                                 &job, true);
+    }
 
     qi = CALLOC(1, sizeof(*qi));
     if (!qi) {
@@ -257,21 +351,26 @@ static int ubus_netconf_config_handler(struct ubus_context *ctx,
     qi->size = declared_size;
     qi->req.data_type = NETCONF_DATA_CONF;
     snprintf(qi->job_id, sizeof(qi->job_id), "%s", job.job_id);
+    snprintf(qi->config_hash, sizeof(qi->config_hash), "%s", job.config_hash);
+
     if (!netconf_queue_put(&qi, &res)) {
         if (qi)
             netconf_queue_item_free(qi);
-        LOG(ERR, "Rejected config because queue insertion failed: error=%u",
-            res.error);
+        LOG(ERR, "[NETCONF] Config rejected: Queue insertion failed for Job ID: %s", job.job_id);
         netconf_job_transition(job.job_id, NETCONF_JOB_QUEUED,
                                NETCONF_JOB_FAILED, "QUEUE_REJECTED");
         netconf_job_get(job.job_id, &job);
         return ubus_reply_config(ctx, req, false, "queue rejected request", &job, false);
     }
 
-    if (has_cloud_revision)
-        netconf_job_supersede_older_queued(cloud_revision);
-    LOG(INFO, "MSG_ACCEPTED type=CONF msglen=%u qlen=%d", declared_size,
-        netconf_queue_length());
+    /* Supersede older queued jobs when new config is enqueued */
+    netconf_job_supersede_older_queued(job.job_id);
+
+    /* ONLY emit QUEUED once safely in the queue */
+    netconf_ubus_emit_job(&job);
+
+    LOG(INFO, "[NETCONF] Config received (Job ID: %s, Size: %u bytes)",
+        job.job_id, declared_size);
     return ubus_reply_config(ctx, req, true, "configuration queued", &job, false);
 }
 
@@ -451,9 +550,8 @@ static void ubus_add_job(struct blob_buf *b, const netconf_job_snapshot_t *job)
     blobmsg_add_string(b, "schema", "air.netconfd.job.v1");
     blobmsg_add_string(b, "job_id", job->job_id);
     blobmsg_add_string(b, "status", netconf_job_state_string(job->state));
-    blobmsg_add_u64(b, "revision", job->revision);
-    if (job->has_cloud_revision)
-        blobmsg_add_u64(b, "cloud_revision", job->cloud_revision);
+    blobmsg_add_u64(b, "revision", job->revision); /* rev is legacy; value is AP-local sequence, not cloud revision */
+    blobmsg_add_u64(b, "local_seq", job->revision);
     blobmsg_add_string(b, "config_hash", job->config_hash);
     blobmsg_add_string(b, "reason_code", job->reason_code);
     blobmsg_add_u64(b, "generation", job->generation);

@@ -41,11 +41,33 @@ int iface_count;
  *****************************************************************************/
 int get_channel_from_cmd(const char *iface)
 {
+    if (!iface || !*iface)
+        return -1;
+
     char cmd[256], buf[64];
     FILE *fp;
 
+    // 1. Query iw dev info directly (standard mac80211)
     snprintf(cmd, sizeof(cmd),
-        "iwinfo %s info | sed -n 's/.*Channel: \\([0-9]\\+\\).*/\\1/p'",
+        "iw dev %s info 2>/dev/null | awk '/channel/{print $2}'",
+        iface);
+
+    fp = popen(cmd, "r");
+    if (fp) {
+        if (fgets(buf, sizeof(buf), fp)) {
+            pclose(fp);
+            int ch = atoi(buf);
+            if (ch >= 1 && ch <= 196) {
+                return ch;
+            }
+        } else {
+            pclose(fp);
+        }
+    }
+
+    // 2. Fallback to iwinfo
+    snprintf(cmd, sizeof(cmd),
+        "iwinfo %s info 2>/dev/null | sed -n 's/.*Channel: \\([0-9]\\+\\).*/\\1/p'",
         iface);
 
     fp = popen(cmd, "r");
@@ -58,7 +80,11 @@ int get_channel_from_cmd(const char *iface)
     }
 
     pclose(fp);
-    return atoi(buf);
+    int ch = atoi(buf);
+    if (ch >= 1 && ch <= 196) {
+        return ch;
+    }
+    return -1;
 }
 
 static int nl80211_parse_wiface(struct nl_msg *msg, void *arg) 
@@ -344,11 +370,11 @@ bool nl80211_stats_radio_get(vif_record_t *record)
 
     strcpy(record->stats.radio[0].band, "BAND2G");
     
-    uint8_t ch = get_channel_from_cmd("phy0-ap0");
-    if (!ch) {
-        ch = 6;
+    int ch = get_channel_from_cmd("phy0-ap0");
+    if (ch < 1 || ch > 196) {
+        ch = 1;
     } 
-    uint8_t channel_2g = ch;
+    uint8_t channel_2g = (uint8_t)ch;
 
     // Fill stats - channel utilization
     record->stats.radio[0].channel_utilization = get_channel_utilization("BAND2G", channel_2g);
@@ -360,10 +386,10 @@ bool nl80211_stats_radio_get(vif_record_t *record)
     strcpy(record->stats.radio[1].band, "BAND5G");
 
     ch = get_channel_from_cmd("phy1-ap0");
-    if (!ch) {
+    if (ch < 1 || ch > 196) {
         ch = 36;
     } 
-    uint8_t channel_5g = ch;
+    uint8_t channel_5g = (uint8_t)ch;
     
     // Fill stats - channel utilization
     record->stats.radio[1].channel_utilization = get_channel_utilization("BAND5G", channel_5g);

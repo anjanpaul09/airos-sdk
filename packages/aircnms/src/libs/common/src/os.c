@@ -344,6 +344,7 @@ typedef struct s_outbuf
 } outbuf_t;
 
 static outbuf_t outbuf;
+static pthread_mutex_t g_cmd_buf_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void log_line(const char *line)
 {
@@ -364,12 +365,15 @@ static void capture_cout(const char *line)
 
 int cmd_buf(const char *shell_cmd, char *buf, size_t bufsize)
 {
+    pthread_mutex_lock(&g_cmd_buf_mutex);
     buf[0] = 0; // terminate buf just in case
     outbuf.buf = buf;
     outbuf.size = bufsize;
     outbuf.slen = 0;
 
-    return exec_cmd_capture_output(shell_cmd, &capture_cout);
+    int rc = exec_cmd_capture_output(shell_cmd, &capture_cout);
+    pthread_mutex_unlock(&g_cmd_buf_mutex);
+    return rc;
 }
 
 /*

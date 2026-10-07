@@ -119,6 +119,28 @@ enable_wpa3_hostapd() {
     echo 'CONFIG_PACKAGE_hostapd-openssl=y' >> .config
 }
 
+apply_hostapd_csa_patch() {
+    echo "Applying hostapd.uc CSA live-reload patch..."
+    local target_uc="${SDK_DIR}/package/network/services/hostapd/files/hostapd.uc"
+    local patch_file="${SCRIPT_DIR}/patches/packages/hostapd/mt7621/999-hostapd-csa-reload.patch"
+    local src_uc="${SCRIPT_DIR}/patches/packages/hostapd/mt7621/files/hostapd.uc"
+
+    if [ -f "${target_uc}" ]; then
+        if grep -q "match_csa" "${target_uc}"; then
+            echo "hostapd.uc CSA patch already present in OpenWrt SDK: ${target_uc}"
+        elif [ -f "${patch_file}" ] && patch -d "${SDK_DIR}" -p1 -N --dry-run < "${patch_file}" >/dev/null 2>&1; then
+            echo "Applying hostapd.uc patch to ${target_uc}..."
+            patch -d "${SDK_DIR}" -p1 -N < "${patch_file}"
+        elif [ -f "${src_uc}" ]; then
+            echo "Copying patched hostapd.uc directly to ${target_uc}..."
+            cp -f "${src_uc}" "${target_uc}"
+        fi
+    elif [ -f "${src_uc}" ]; then
+        mkdir -p "$(dirname "${target_uc}")"
+        cp -f "${src_uc}" "${target_uc}"
+    fi
+}
+
 ensure_diagnostic_packages() {
     echo "Ensuring diagnostic packages: iperf3, tcpdump, libpcap..."
 
@@ -300,6 +322,7 @@ mkdir -p $OUTPUT_DIR/images $OUTPUT_DIR/logs $OUTPUT_DIR/cloud
 if [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
     enable_airui_luci_packages
     enable_wpa3_hostapd
+    apply_hostapd_csa_patch
     ensure_diagnostic_packages || exit 1
 fi
 
@@ -315,11 +338,17 @@ if [ "$BOARD_NAME" = "mt76" ] || [ "$BOARD_NAME" = "mt7621" ]; then
 fi
 
 echo "Running make..."
+set -o pipefail
 make -j$(nproc) V=s 2>&1 | tee $OUTPUT_DIR/logs/build-${BUILD_DATETIME}.log
+MAKE_STATUS="${PIPESTATUS[0]}"
 
-# =============================================================================
-# COPY OUTPUT FILES
-# =============================================================================
+if [ "$MAKE_STATUS" -ne 0 ]; then
+    echo "=========================================="
+    echo "ERROR: Build failed with exit code $MAKE_STATUS!"
+    echo "Check log: $OUTPUT_DIR/logs/build-${BUILD_DATETIME}.log"
+    echo "=========================================="
+    exit "$MAKE_STATUS"
+fi
 
 echo "Copying output files..."
 

@@ -635,7 +635,7 @@ static void add_client_identities(struct blob_buf *b,
 
         blob_buf_init(&request, 0);
         blobmsg_add_string(&request, "macaddr", mac);
-        if (!airui_ubus_call_json(ctx, "stamond", "client.identity", &request, &result)) {
+        if (!airui_ubus_call_json(ctx, "stamond", "get_stainfo", &request, &result)) {
             add_json_or_table(b, mac, result.json);
             airui_ubus_result_free(&result);
         }

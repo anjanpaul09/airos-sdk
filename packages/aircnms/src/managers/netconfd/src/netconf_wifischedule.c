@@ -274,7 +274,7 @@ static void check_schedules(void)
     char       ts[64];
     strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S IST", tm_info);
 
-    LOG(INFO, "wifischedule: checking schedules at %s", ts);
+    LOG(DEBUG, "wifischedule: checking schedules at %s", ts);
 
     for (int i = 0; i < g_iface_count; i++) {
         ws_iface_t *iface       = &g_ifaces[i];

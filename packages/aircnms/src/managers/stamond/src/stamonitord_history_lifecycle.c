@@ -259,6 +259,17 @@ bool stamonitord_history_is_station_associated(const uint8_t *mac) {
     return false;
 }
 
+void stamonitord_history_foreach_station(void (*cb)(const uint8_t mac[6], void *ctx),
+                                         void *ctx) {
+    if (!g_hist || !cb)
+        return;
+
+    for (size_t i = 0; i < STATION_BUCKETS; i++) {
+        for (station_t *s = g_hist->app.stations[i]; s; s = s->next)
+            cb(s->mac.b, ctx);
+    }
+}
+
 void stamonitord_history_stop(void) {
     if (!g_hist)
         return;

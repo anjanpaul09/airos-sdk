@@ -8,6 +8,7 @@ UNIT_SRC += src/stamonitord_info_events.c
 UNIT_SRC += src/stamonitord_ubus_tx.c
 UNIT_SRC += src/stamonitord_client_events.c
 UNIT_SRC += src/stamonitord_vif_info.c
+UNIT_SRC += src/stamonitord_vif_monitor.c
 UNIT_SRC += src/stamonitord_device_info.c
 UNIT_SRC += src/stamonitord_client_cap.c
 UNIT_SRC += src/nl_client_check.c

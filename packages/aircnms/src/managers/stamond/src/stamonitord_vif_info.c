@@ -2,26 +2,57 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <pthread.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include <ev.h>
+
 #include "log.h"
+#include "os.h"
 #include "info_events.h"
+#include "stamonitord.h"
 #include "stamonitord_info_events.h"
+#include "stamonitord_vif_info.h"
 
 // Forward declaration - target_info_vif_get is defined in platform/mtk/target/target_stats.c
 bool target_info_vif_get(vif_info_event_t *vif_info);
-#define SETTLE_TIME_MS 6000  // Wait 5 seconds for changes to settle
 
-/* Static cache and delayed send state */
+static bool is_radio_band_configured(const char *band)
+{
+    char buf[32] = {0};
+    char dev[16] = {0};
+
+    if (cmd_buf("uci -q get wireless.wifi0.band", buf, sizeof(buf)) == 0) {
+        buf[strcspn(buf, "\r\n \t")] = '\0';
+        if (strcasecmp(buf, band) == 0) {
+            strcpy(dev, "wifi0");
+        } else {
+            strcpy(dev, "wifi1");
+        }
+    } else {
+        strcpy(dev, strcmp(band, "2g") == 0 ? "wifi1" : "wifi0");
+    }
+
+    char cmd[64];
+    snprintf(cmd, sizeof(cmd), "uci -q get wireless.%s.disabled", dev);
+    if (cmd_buf(cmd, buf, sizeof(buf)) == 0) {
+        buf[strcspn(buf, "\r\n \t")] = '\0';
+        if (strcmp(buf, "1") == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+#define VIF_INFO_RETRY_INTERVAL_SEC 5.0
+
+/* Static cache and libev retry state */
 static vif_info_event_t g_vif_info_cache = {0};
 static bool g_vif_info_cache_valid = false;
-static vif_info_event_t g_vif_info_pending = {0};
-static bool g_vif_info_pending_valid = false;
-static uint64_t g_pending_timer_expiry = 0;
-static pthread_mutex_t g_vif_info_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_t g_timer_thread = 0;
-static bool g_timer_thread_running = false;
+
+static struct ev_loop *g_vif_loop = NULL;
+static ev_timer g_vif_retry_timer;
+static bool g_vif_retry_timer_active = false;
 
 /* Comparison functions for qsort */
 static int radio_compare(const void *a, const void *b)
@@ -30,8 +61,8 @@ static int radio_compare(const void *a, const void *b)
     const radio_info_t *rb = (const radio_info_t *)b;
     int cmp = strcmp(ra->band, rb->band);
     if (cmp != 0) return cmp;
-    if (ra->channel != rb->channel) return ra->channel - rb->channel;
-    return ra->txpower - rb->txpower;
+    if (ra->channel != rb->channel) return (int)ra->channel - (int)rb->channel;
+    return (int)ra->txpower - (int)rb->txpower;
 }
 
 static int vif_compare(const void *a, const void *b)
@@ -98,163 +129,138 @@ static bool vif_info_equal(const vif_info_event_t *a, const vif_info_event_t *b)
     return true;
 }
 
-/* Timer thread that sends pending VIF info after settle time */
-static void *vif_info_timer_thread(void *arg)
+/* Retry callback executed on libev event loop */
+static void vif_retry_timer_cb(EV_P_ ev_timer *w, int revents)
 {
-    (void)arg;
+    (void)loop;
+    (void)w;
+    (void)revents;
 
-    while (g_timer_thread_running) {
-        usleep(100000); // Check every 100ms
-
-        pthread_mutex_lock(&g_vif_info_mutex);
-
-        if (g_vif_info_pending_valid && g_pending_timer_expiry > 0) {
-            uint64_t now = get_timestamp_ms();
-
-            if (now >= g_pending_timer_expiry) {
-                // Timer expired, send the pending info
-                vif_info_event_t info_to_send;
-                memcpy(&info_to_send, &g_vif_info_pending, sizeof(vif_info_event_t));
-
-                // Clear pending state before sending
-                g_vif_info_pending_valid = false;
-                g_pending_timer_expiry = 0;
-
-                pthread_mutex_unlock(&g_vif_info_mutex);
-
-                // Send event (outside mutex to avoid blocking)
-                if (stamonitord_send_vif_info_event(&info_to_send, now)) {
-                    // Update cache after successful send
-                    pthread_mutex_lock(&g_vif_info_mutex);
-                    memcpy(&g_vif_info_cache, &info_to_send, sizeof(vif_info_event_t));
-                    g_vif_info_cache_valid = true;
-                    pthread_mutex_unlock(&g_vif_info_mutex);
-
-                    LOG(INFO, "Sent VIF info event: n_radio=%d n_vif=%d n_ethernet=%d",
-                        info_to_send.n_radio, info_to_send.n_vif, info_to_send.n_ethernet);
-                } else {
-                    LOG(ERR, "Failed to send delayed VIF info event");
-                }
-
-                pthread_mutex_lock(&g_vif_info_mutex);
-            }
-        }
-
-        pthread_mutex_unlock(&g_vif_info_mutex);
-    }
-
-    return NULL;
+    LOG(DEBUG, "VIF_INFO: Retry timer triggered");
+    stamonitord_send_vif_info();
 }
 
-/* Initialize the timer thread */
-static bool init_vif_info_timer(void)
-{
-    if (g_timer_thread_running) {
-        return true; // Already running
-    }
-
-    g_timer_thread_running = true;
-
-    if (pthread_create(&g_timer_thread, NULL, vif_info_timer_thread, NULL) != 0) {
-        LOG(ERR, "Failed to create VIF info timer thread");
-        g_timer_thread_running = false;
-        return false;
-    }
-
-    pthread_detach(g_timer_thread);
-    LOG(INFO, "VIF info timer thread started");
-    return true;
-}
-
-/* Invalidate VIF info cache (optional utility function) */
+/* Invalidate VIF info cache */
 void stamonitord_invalidate_vif_cache(void)
 {
-    pthread_mutex_lock(&g_vif_info_mutex);
     g_vif_info_cache_valid = false;
-    g_vif_info_pending_valid = false;
-    g_pending_timer_expiry = 0;
     memset(&g_vif_info_cache, 0, sizeof(vif_info_event_t));
-    memset(&g_vif_info_pending, 0, sizeof(vif_info_event_t));
-    pthread_mutex_unlock(&g_vif_info_mutex);
     LOG(DEBUG, "VIF info cache invalidated");
 }
 
-/* Cleanup function to stop timer thread */
-void stamonitord_cleanup_vif_timer(void)
+/* Initialize VIF info subsystem with libev loop */
+bool stamonitord_vif_info_init(struct ev_loop *loop)
 {
-    g_timer_thread_running = false;
-    // Give thread time to exit
-    usleep(200000);
+    g_vif_loop = loop ? loop : EV_DEFAULT;
+
+    ev_timer_init(&g_vif_retry_timer, vif_retry_timer_cb,
+                  VIF_INFO_RETRY_INTERVAL_SEC, VIF_INFO_RETRY_INTERVAL_SEC);
+    g_vif_retry_timer_active = false;
+
+    LOG(INFO, "VIF_INFO: Initialized with libev loop");
+
+    // Perform initial sync attempt
+    if (stamonitord_is_cloud_enrolled()) {
+        stamonitord_send_vif_info();
+    }
+
+    return true;
 }
 
-/* Send VIF info event by calling target_info_vif_get */
+/* Cleanup function */
+void stamonitord_vif_info_cleanup(void)
+{
+    if (g_vif_retry_timer_active && g_vif_loop) {
+        ev_timer_stop(g_vif_loop, &g_vif_retry_timer);
+        g_vif_retry_timer_active = false;
+    }
+    g_vif_loop = NULL;
+}
+
+/* Send VIF info event: compares against cache and publishes if changed */
 bool stamonitord_send_vif_info(void)
 {
+    if (!stamonitord_is_cloud_enrolled()) {
+        LOG(DEBUG, "VIF_INFO: Not cloud enrolled, skipping");
+        return false;
+    }
+
     vif_info_event_t vif_info = {0};
     uint64_t timestamp_ms = get_timestamp_ms();
 
-    // Ensure timer thread is running
-    if (!g_timer_thread_running) {
-        if (!init_vif_info_timer()) {
-            LOG(ERR, "Failed to initialize VIF info timer");
-            return false;
-        }
-    }
-
     // Call target function to fill VIF info
     if (!target_info_vif_get(&vif_info)) {
-        LOG(ERR, "Failed to get VIF info from target");
+        LOG(ERR, "VIF_INFO: Failed to get VIF info from target");
         return false;
     }
 
     // Normalize the VIF info (sort arrays for consistent comparison)
     normalize_vif_info(&vif_info);
 
-    pthread_mutex_lock(&g_vif_info_mutex);
+    // If 5GHz radio is enabled in UCI but active VIFs have not appeared yet, wait for MT7915 settle
+    static int settle_retries = 0;
+    bool need_5g = is_radio_band_configured("5g");
+    bool has_5g = false;
+    for (int i = 0; i < vif_info.n_vif; i++) {
+        if (strcmp(vif_info.vif[i].radio, "BAND5G") == 0) {
+            has_5g = true;
+            break;
+        }
+    }
+
+    if (need_5g && !has_5g && settle_retries < 3) {
+        settle_retries++;
+        LOG(INFO, "VIF_INFO: 5GHz radio interfaces still initializing (retry %d/3), waiting 2.0s", settle_retries);
+        if (g_vif_loop) {
+            ev_timer_stop(g_vif_loop, &g_vif_retry_timer);
+            ev_timer_set(&g_vif_retry_timer, 2.0, 0.0);
+            ev_timer_start(g_vif_loop, &g_vif_retry_timer);
+            g_vif_retry_timer_active = true;
+        }
+        return false;
+    }
+    settle_retries = 0;
 
     // Check if VIF info has changed from last sent version
     bool info_changed = !g_vif_info_cache_valid || !vif_info_equal(&vif_info, &g_vif_info_cache);
 
     if (!info_changed) {
-        pthread_mutex_unlock(&g_vif_info_mutex);
-        LOG(DEBUG, "VIF info unchanged from last sent, skipping");
+        LOG(DEBUG, "VIF_INFO: Info unchanged from last sent, skipping");
+
+        // If retry timer was running, stop it since cache is valid and unchanged
+        if (g_vif_retry_timer_active && g_vif_loop) {
+            ev_timer_stop(g_vif_loop, &g_vif_retry_timer);
+            g_vif_retry_timer_active = false;
+        }
         return true;
     }
 
-    // Info has changed - update pending and reset timer
-    memcpy(&g_vif_info_pending, &vif_info, sizeof(vif_info_event_t));
-    g_vif_info_pending_valid = true;
-    g_pending_timer_expiry = timestamp_ms + SETTLE_TIME_MS;
+    // Attempt to publish
+    bool sent = stamonitord_send_vif_info_event(&vif_info, timestamp_ms);
+    if (sent) {
+        // Update cache only after successful send
+        memcpy(&g_vif_info_cache, &vif_info, sizeof(vif_info_event_t));
+        g_vif_info_cache_valid = true;
 
-    pthread_mutex_unlock(&g_vif_info_mutex);
+        if (g_vif_retry_timer_active && g_vif_loop) {
+            ev_timer_stop(g_vif_loop, &g_vif_retry_timer);
+            g_vif_retry_timer_active = false;
+        }
 
-    LOG(DEBUG, "VIF info changed, timer reset. Will send after %d ms settle time", SETTLE_TIME_MS);
-
-    return true;
-}
-
-#if 0
-/* Send VIF info event by calling target_info_vif_get */
-bool stamonitord_send_vif_info(void)
-{
-    vif_info_event_t vif_info = {0};
-    uint64_t timestamp_ms = get_timestamp_ms();
-    
-    // Call target function to fill VIF info
-    if (!target_info_vif_get(&vif_info)) {
-        LOG(ERR, "Failed to get VIF info from target");
-        return false;
+        LOG(INFO, "Sent VIF info event: n_radio=%d n_vif=%d n_ethernet=%d",
+            vif_info.n_radio, vif_info.n_vif, vif_info.n_ethernet);
+        return true;
     }
-    
-    // Send VIF info event
-    if (!stamonitord_send_vif_info_event(&vif_info, timestamp_ms)) {
-        LOG(ERR, "Failed to send VIF info event");
-        return false;
+
+    // Send failed (likely offline on startup or ubus/cgwd busy)
+    LOG(INFO, "VIF_INFO: Publish failed (device may be offline), will retry in %0.0fs",
+        VIF_INFO_RETRY_INTERVAL_SEC);
+
+    if (!g_vif_retry_timer_active && g_vif_loop) {
+        ev_timer_set(&g_vif_retry_timer, VIF_INFO_RETRY_INTERVAL_SEC, VIF_INFO_RETRY_INTERVAL_SEC);
+        ev_timer_start(g_vif_loop, &g_vif_retry_timer);
+        g_vif_retry_timer_active = true;
     }
-    
-    LOG(INFO, "Sent VIF info event: n_radio=%d n_vif=%d n_ethernet=%d", 
-        vif_info.n_radio, vif_info.n_vif, vif_info.n_ethernet);
-    
-    return true;
+
+    return false;
 }
-#endif

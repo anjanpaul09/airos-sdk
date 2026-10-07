@@ -129,6 +129,7 @@ typedef struct netconf_item
     void *buf;
     time_t timestamp;
     char job_id[NETCONF_JOB_ID_LEN];
+    char config_hash[NETCONF_JOB_HASH_LEN];
     ds_dlist_node_t qnode;
 } netconf_item_t;
 

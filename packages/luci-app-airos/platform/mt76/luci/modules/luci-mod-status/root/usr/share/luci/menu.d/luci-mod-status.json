@@ -4,7 +4,7 @@
 		"order": 1,
 		"action": {
 			"type": "view",
-			"path": "status/airui_dashboard_v14"
+			"path": "status/airui_dashboard_v21"
 		},
 		"depends": {
 			"acl": [ "airui-status" ]

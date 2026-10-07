@@ -2047,6 +2047,63 @@ function bindWirelessSearch(root) {
 	});
 }
 
+function switchWirelessTab(root, targetId) {
+	if (!targetId) targetId = 'ssid-list';
+	if (targetId.charAt(0) === '#') targetId = targetId.substring(1);
+	if (targetId !== 'ssid-list' && targetId !== 'radio-configuration')
+		targetId = 'ssid-list';
+
+	var tabs = root.querySelectorAll('.wireless-tabs a');
+	Array.prototype.forEach.call(tabs, function(item) {
+		var href = item.getAttribute('href') || '';
+		var active = href === ('#' + targetId);
+		item.classList.toggle('is-active', active);
+		item.setAttribute('aria-selected', active ? 'true' : 'false');
+	});
+
+	var ssidPanel = root.querySelector('#ssid-list');
+	var radioPanel = root.querySelector('#radio-configuration');
+	if (ssidPanel) {
+		var showSsid = (targetId === 'ssid-list');
+		ssidPanel.classList.toggle('is-active', showSsid);
+		ssidPanel.hidden = !showSsid;
+		ssidPanel.style.display = showSsid ? '' : 'none';
+	}
+	if (radioPanel) {
+		var showRadio = (targetId === 'radio-configuration');
+		radioPanel.classList.toggle('is-active', showRadio);
+		radioPanel.hidden = !showRadio;
+		radioPanel.style.display = showRadio ? '' : 'none';
+	}
+}
+
+function bindWirelessTabs(root) {
+	var tabs = root.querySelectorAll('.wireless-tabs a');
+	Array.prototype.forEach.call(tabs, function(link) {
+		link.addEventListener('click', function(ev) {
+			ev.preventDefault();
+			var href = link.getAttribute('href') || '';
+			var targetId = href.replace(/^#/, '');
+			switchWirelessTab(root, targetId);
+			if (window.history && window.history.replaceState) {
+				window.history.replaceState(null, '', href);
+			}
+		});
+	});
+
+	var initialHash = (window.location.hash || '').replace(/^#/, '');
+	if (initialHash === 'radio-configuration') {
+		switchWirelessTab(root, 'radio-configuration');
+	} else {
+		switchWirelessTab(root, 'ssid-list');
+	}
+
+	window.addEventListener('hashchange', function() {
+		var hash = (window.location.hash || '').replace(/^#/, '');
+		switchWirelessTab(root, hash);
+	});
+}
+
 return view.extend({
 	load: function() {
 		return Promise.all([
@@ -2106,6 +2163,7 @@ return view.extend({
 			])
 			]);
 
+		bindWirelessTabs(root);
 		bindSsidAccordion(root);
 		bindWirelessSearch(root);
 		lockCloudManagedControls(root);

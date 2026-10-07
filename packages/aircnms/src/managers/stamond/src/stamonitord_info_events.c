@@ -87,9 +87,7 @@ static bool stamonitord_send_info_event(info_event_t *event)
 
     // Send via ubus to cgwd (similar to how netstatsd sends stats)
     LOG(DEBUG, "Sending info event type=%d size=%zu", event->type, event_size);
-    stamonitord_publish_info_event(stamonitord_info_buf, event_size);
-    
-    return true;
+    return stamonitord_publish_info_event(stamonitord_info_buf, event_size);
 }
 
 

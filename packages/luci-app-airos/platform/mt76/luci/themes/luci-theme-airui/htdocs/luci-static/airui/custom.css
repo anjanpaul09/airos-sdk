@@ -3649,6 +3649,51 @@ header > .fill > .container > .status {
 	text-transform: none !important;
 }
 
+/* The Dashboard owns automatic refresh; the stock activity badge is not useful. */
+#xhr_poll_status {
+	display: none !important;
+}
+
+header > .fill > .container > .status {
+	display: none !important;
+}
+
+#xhr_poll_status.airui-auto-refresh-toggle {
+	cursor: pointer !important;
+}
+
+#xhr_poll_status.airui-auto-refresh-toggle.is-off {
+	border-color: rgba(255, 255, 255, .38) !important;
+	background: rgba(255, 255, 255, .18) !important;
+	color: #ffffff !important;
+}
+
+#airui_dashboard_auto_refresh {
+	position: absolute !important;
+	top: 1rem !important;
+	right: 1rem !important;
+	z-index: 1 !important;
+	min-height: 0 !important;
+	border: 1px solid rgba(255, 255, 255, .22) !important;
+	border-radius: 999px !important;
+	background: var(--airpro-orange) !important;
+	box-shadow: none !important;
+	color: var(--airpro-navy) !important;
+	cursor: pointer !important;
+	font-size: .72rem !important;
+	font-weight: 700 !important;
+	letter-spacing: 0 !important;
+	padding: .42rem .75rem !important;
+	text-shadow: none !important;
+	text-transform: none !important;
+}
+
+#airui_dashboard_auto_refresh.is-off {
+	border-color: #d9c9bc !important;
+	background: #f1ede8 !important;
+	color: var(--airpro-navy) !important;
+}
+
 [data-indicator]:not([data-style="inactive"]),
 #modemenu > li > a.active {
 	background: var(--airpro-orange) !important;
@@ -4091,6 +4136,8 @@ body.node-main-login #maincontent {
 body.node-main-login #maincontent > .container,
 body.node-main-login > .main .container {
 	display: block !important;
+	overflow: hidden !important;
+	isolation: isolate !important;
 	width: 100% !important;
 	margin: 0 !important;
 	border: 1px solid rgba(255, 255, 255, .32) !important;
@@ -4421,8 +4468,100 @@ footer {
 }
 
 .airdash .kpis {
-	grid-template-columns: repeat(5, minmax(0, 1fr));
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	margin-bottom: 22px;
+}
+
+.airdash .dashboard-mode-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 32px;
+	border: 1px solid var(--dash-border);
+	border-radius: 15px;
+	background: #fff;
+	box-shadow: none;
+	padding: 18px 28px;
+	margin-bottom: 22px;
+}
+
+.airdash .dashboard-mode-title {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 180px;
+}
+
+.airdash .dashboard-mode-label,
+.airdash .dashboard-mode-detail-label {
+	color: #8d8885;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+}
+
+.airdash .dashboard-mode-title strong {
+	color: var(--dash-navy);
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.airdash .dashboard-mode-details {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 48px;
+	flex: 1;
+	justify-content: flex-start;
+	padding-left: 20px;
+	border-left: 1px solid #f0eae4;
+}
+
+.airdash .dashboard-mode-detail {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.airdash .dashboard-mode-detail-value {
+	color: #39323e;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.airdash .dashboard-mode-pill {
+	flex-shrink: 0;
+	align-self: center;
+	white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+	.airdash .kpis {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.airdash .dashboard-mode-card {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 16px;
+		padding: 18px 20px;
+	}
+
+	.airdash .dashboard-mode-details {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 12px;
+		width: 100%;
+		padding-left: 0;
+		border-left: none;
+	}
+
+	.airdash .dashboard-mode-pill {
+		align-self: flex-start;
+	}
 }
 
 .airdash .metrics,
@@ -10639,7 +10778,7 @@ body.node-main-login > .main .container {
 	width: 100% !important;
 	margin: 0 !important;
 	border: 1px solid rgba(23, 8, 77, .10) !important;
-	border-radius: 10px !important;
+	border-radius: 0 !important;
 	background: #FFFFFF !important;
 	box-shadow: 0 24px 54px rgba(23, 8, 77, .10) !important;
 	padding: 2.15rem 2rem 2rem !important;
@@ -14437,11 +14576,17 @@ body.logged-in #maincontent :is(.air-page-updated, .status-page-actions small) {
 
 /* System Maintenance uses real tab panels and a compact workflow layout. */
 .air-system-maintenance .air-maintenance-group[hidden],
-.air-system-maintenance .air-maintenance-group:not(.is-active) {
+.air-system-maintenance .air-maintenance-group:not(.is-active),
+.wireless-ref-console .wireless-ref-ssid-management[hidden],
+.wireless-ref-console .wireless-ref-ssid-management:not(.is-active),
+.wireless-ref-console .wireless-advanced-panel[hidden],
+.wireless-ref-console .wireless-advanced-panel:not(.is-active) {
 	display: none !important;
 }
 
-.air-system-maintenance .air-maintenance-group.is-active {
+.air-system-maintenance .air-maintenance-group.is-active,
+.wireless-ref-console .wireless-ref-ssid-management.is-active,
+.wireless-ref-console .wireless-advanced-panel.is-active {
 	display: block !important;
 	margin-top: 20px !important;
 }
@@ -14861,4 +15006,22 @@ body.logged-in #maincontent .air-system-maintenance .air-firmware-dropzone input
 	display: none !important;
 }
 
+/* Keep the login surface free of inherited decorative edge layers. */
+body.node-main-login #maincontent,
+body.node-main-login #maincontent > .container,
+body.node-main-login > .main .container {
+	border-radius: 0 !important;
+	clip-path: none !important;
+	mask: none !important;
+}
 
+body.node-main-login #maincontent > .container::after {
+	display: none !important;
+	content: none !important;
+}
+
+html body.node-main-login > .main > .main-right,
+html body.node-main-login > .main > .main-right > #maincontent,
+html body.node-main-login > .main > .main-right > #maincontent > .container {
+	border-radius: 0 !important;
+}

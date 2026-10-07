@@ -6,7 +6,7 @@
 #include "stamonitord.h"
 
 /* Publish info event to cgwd */
-void stamonitord_publish_info_event(void *buf, size_t size);
+bool stamonitord_publish_info_event(void *buf, size_t size);
 
 /* Initialize ubus TX service */
 bool stamonitord_ubus_tx_service_init(void);

@@ -60,7 +60,7 @@ int call_netconfd_method_timeout(const char *method, struct blob_buf *b, int tim
 
 int call_netconfd_method(const char *method, struct blob_buf *b)
 {
-    return call_netconfd_method_timeout(method, b, 3000);
+    return call_netconfd_method_timeout(method, b, 30000);
 }
 
 int call_netconfd_sync(const char *method, struct blob_buf *b)

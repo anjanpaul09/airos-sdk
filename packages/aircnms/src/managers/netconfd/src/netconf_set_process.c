@@ -3,6 +3,7 @@
 #include "portal_manager.h"
 #include "dpp_types.h"
 #include "netconf_payload_validate.h"
+#include "target_apply.h"
 #include <jansson.h>
 
 int current_roaming_status = false;
@@ -100,20 +101,13 @@ static int json_get_int(json_t *obj, const char *key, int def)
     return (int)json_integer_value(v);
 }
 
-bool netconf_process_vif_list(json_t *vif_list)
+bool netconf_parse_vif_list(json_t *vif_list, vif_record_t *record)
 {
-    bool ret;
     size_t i;
     int n_vif = 0;
 
-    if (!vif_list || !json_is_array(vif_list)) {
-        LOG(ERR, "vif_list is NULL or not an array");
-        return false;
-    }
-
-    vif_record_t *record = calloc(1, sizeof(vif_record_t));
-    if (!record) {
-        LOG(ERR, "Failed to allocate vif_record_t");
+    if (!vif_list || !json_is_array(vif_list) || !record) {
+        LOG(ERR, "vif_list or record is invalid");
         return false;
     }
 
@@ -197,6 +191,9 @@ bool netconf_process_vif_list(json_t *vif_list)
 
         int enable = json_get_bool(vif, "enable", 0);
         sprintf(record->vif_param[i].enable, "%d", enable);
+        snprintf(record->vif_param[i].disabled,
+                 sizeof(record->vif_param[i].disabled),
+                 "%d", enable ? 0 : 1);
 
         int auth = json_get_bool(vif, "isAuth", 0);
         record->vif_param[i].is_auth = auth;
@@ -335,7 +332,7 @@ bool netconf_process_vif_list(json_t *vif_list)
     record->n_vif = n_vif;
 
     /* ---------- Logging ---------- */
-    LOG(INFO, "SET_VIF params n_vif=%d", n_vif);
+    LOG(INFO, "PARSED_VIF params n_vif=%d", n_vif);
     for (int j = 0; j < n_vif; j++) {
         LOG(INFO,
             "SET_VIF[%d] recordId=%s ssid=%s enc=%s status=%d enable=%s vlanId=%s device=%s is_auth=%d portal_id=%s net=%s/%s radius=%s auth_port=%s acct_port=%s",
@@ -356,26 +353,16 @@ bool netconf_process_vif_list(json_t *vif_list)
             record->vif_param[j].acct_port);
     }
 
-    ret = target_config_vif_set(record);
-    free(record);
-    return ret;
+    return true;
 }
 
-bool netconf_process_radio_list(json_t *radio_list)
+bool netconf_parse_radio_list(json_t *radio_list, radio_record_t *record)
 {
-    bool ret;
     int n_radio = 0;
     size_t i;
 
-    radio_record_t *record = (radio_record_t *)calloc(1, sizeof(radio_record_t));
-    if (!record) {
-        LOG(ERR, "Failed to allocate memory for radio_record_t");
-        return false;
-    }
-
-    if (!radio_list || !json_is_array(radio_list)) {
-        LOG(ERR, "radio_list is NULL or not array");
-        free(record);
+    if (!radio_list || !json_is_array(radio_list) || !record) {
+        LOG(ERR, "radio_list or record is invalid");
         return false;
     }
 
@@ -392,7 +379,7 @@ bool netconf_process_radio_list(json_t *radio_list)
 
         if (!json_is_object(radio))
             continue;
-        
+
         /* ---------------- radioType ---------------- */
         json_t *j_radioType = json_object_get(radio, "radioType");
         if (j_radioType && json_is_string(j_radioType)) {
@@ -422,45 +409,82 @@ bool netconf_process_radio_list(json_t *radio_list)
 
         /* ---------------- channel ---------------- */
         json_t *j_channel = json_object_get(radio, "channel");
-        if (j_channel && json_is_string(j_channel)) {
-            const char *ch = json_string_value(j_channel);
-            if (ch && ch[0]) {
+        if (j_channel) {
+            if (json_is_string(j_channel)) {
+                const char *ch = json_string_value(j_channel);
+                if (ch && ch[0]) {
+                    snprintf(record->radio_param[i].channel,
+                             sizeof(record->radio_param[i].channel),
+                             "%s", ch);
+                    record->radio_param[i].status = RADIO_SETTING_SECONDARY;
+                }
+            } else if (json_is_integer(j_channel)) {
                 snprintf(record->radio_param[i].channel,
                          sizeof(record->radio_param[i].channel),
-                         "%s", ch);
+                         "%lld", (long long)json_integer_value(j_channel));
                 record->radio_param[i].status = RADIO_SETTING_SECONDARY;
             }
         }
 
         /* ---------------- txpower ---------------- */
         json_t *j_txp = json_object_get(radio, "txpower");
-        if (j_txp && json_is_string(j_txp)) {
-            const char *txp = json_string_value(j_txp);
-            int txpower = atoi(txp);
-            if (txpower > 0) {
-                snprintf(record->radio_param[i].txpower,
-                         sizeof(record->radio_param[i].txpower),
-                         "%s", txp);
-                record->radio_param[i].status = RADIO_SETTING_SECONDARY;
+        if (j_txp) {
+            if (json_is_string(j_txp)) {
+                const char *txp = json_string_value(j_txp);
+                int txpower = atoi(txp);
+                if (txpower > 0) {
+                    snprintf(record->radio_param[i].txpower,
+                             sizeof(record->radio_param[i].txpower),
+                             "%s", txp);
+                    record->radio_param[i].status = RADIO_SETTING_SECONDARY;
+                }
+            } else if (json_is_integer(j_txp)) {
+                int txpower = (int)json_integer_value(j_txp);
+                if (txpower > 0 && txpower <= 35) {
+                    snprintf(record->radio_param[i].txpower,
+                             sizeof(record->radio_param[i].txpower),
+                             "%u", (unsigned int)(txpower & 0x7F));
+                    record->radio_param[i].status = RADIO_SETTING_SECONDARY;
+                }
             }
         }
 
         /* ---------------- disabled ---------------- */
-        int disabled = 1;   /* default = enabled */
+        int disabled = 0;   /* default = enabled (UCI 0=enabled, 1=disabled) */
 
         json_t *j_disabled = json_object_get(radio, "disabled");
-
         if (j_disabled) {
-            if (json_is_boolean(j_disabled)) {
             /* Compatibility contract: cloud's historical `disabled=true`
-             * means the radio is enabled; UCI uses the opposite polarity. */
-            disabled = json_boolean_value(j_disabled) ? 0 : 1;
-        } else if (json_is_string(j_disabled)) {
-            const char *ds = json_string_value(j_disabled);
-            if (ds && (!strcasecmp(ds, "true") || !strcmp(ds, "1")))
-                disabled = 0;
-            else
-                disabled = 1;
+             * means the radio is enabled; UCI uses the opposite polarity (0=enabled, 1=disabled). */
+            if (json_is_boolean(j_disabled)) {
+                disabled = json_boolean_value(j_disabled) ? 0 : 1;
+            } else if (json_is_string(j_disabled)) {
+                const char *ds = json_string_value(j_disabled);
+                if (ds && (!strcasecmp(ds, "true") || !strcmp(ds, "1")))
+                    disabled = 0;
+                else
+                    disabled = 1;
+            } else if (json_is_integer(j_disabled)) {
+                disabled = json_integer_value(j_disabled) ? 0 : 1;
+            }
+        }
+
+        /* Check for explicit enable/enabled field if disabled wasn't present */
+        if (!j_disabled) {
+            json_t *j_enable = json_object_get(radio, "enable");
+            if (!j_enable) j_enable = json_object_get(radio, "enabled");
+            if (j_enable) {
+                if (json_is_boolean(j_enable)) {
+                    disabled = json_boolean_value(j_enable) ? 0 : 1;
+                } else if (json_is_string(j_enable)) {
+                    const char *es = json_string_value(j_enable);
+                    if (es && (!strcasecmp(es, "true") || !strcmp(es, "1")))
+                        disabled = 0;
+                    else
+                        disabled = 1;
+                } else if (json_is_integer(j_enable)) {
+                    disabled = json_integer_value(j_enable) ? 0 : 1;
+                }
             }
         }
 
@@ -488,12 +512,20 @@ bool netconf_process_radio_list(json_t *radio_list)
                      "%d", cw);
         }
 
-        /* ---------------- userlimit ---------------- */
+        /* ---------------- userlimit / max_sta ---------------- */
         json_t *j_ul = json_object_get(radio, "userlimit");
-        if (j_ul && json_is_string(j_ul)) {
-            snprintf(record->radio_param[i].user_limit,
-                     sizeof(record->radio_param[i].user_limit),
-                     "%s", json_string_value(j_ul));
+        if (!j_ul) j_ul = json_object_get(radio, "max_sta");
+        if (j_ul) {
+            if (json_is_string(j_ul)) {
+                snprintf(record->radio_param[i].user_limit,
+                         sizeof(record->radio_param[i].user_limit),
+                         "%s", json_string_value(j_ul));
+            } else if (json_is_integer(j_ul)) {
+                snprintf(record->radio_param[i].user_limit,
+                         sizeof(record->radio_param[i].user_limit),
+                         "%lld", (long long)json_integer_value(j_ul));
+            }
+            strlcpy(record->radio_param[i].max_sta, record->radio_param[i].user_limit, sizeof(record->radio_param[i].max_sta));
         }
 
         /* ---------------- hwmode ---------------- */
@@ -510,10 +542,10 @@ bool netconf_process_radio_list(json_t *radio_list)
     record->n_radio = n_radio;
 
     /* ---------------- logging ---------------- */
-    LOG(INFO, "SET_RADIO params n_radio=%d", n_radio);
+    LOG(INFO, "PARSED_RADIO params n_radio=%d", n_radio);
     for (int j = 0; j < n_radio; j++) {
         LOG(INFO,
-            "SET_RADIO[%d] recordId=%s radioType=%s channel=%s txpower=%s disabled=%s country=%s channelWidth=%s",
+            "SET_RADIO[%d] recordId=%s radioType=%s channel=%s txpower=%s disabled=%s country=%s channelWidth=%s hwmode=%s",
             j,
             record->radio_param[j].record_id,
             record->radio_param[j].radio_type,
@@ -521,12 +553,116 @@ bool netconf_process_radio_list(json_t *radio_list)
             record->radio_param[j].txpower,
             record->radio_param[j].disabled,
             record->radio_param[j].country,
-            record->radio_param[j].channel_width);
+            record->radio_param[j].channel_width,
+            record->radio_param[j].hwmode);
     }
 
-    ret = target_config_radio_set(record);
-    free(record);
-    return ret;
+    return true;
+}
+
+bool netconf_process_wireless_transaction(json_t *vif_list, json_t *radio_list)
+{
+    vif_record_t *vif_rec = NULL;
+    radio_record_t *radio_rec = NULL;
+    bool success = true;
+
+    if (vif_list) {
+        vif_rec = calloc(1, sizeof(vif_record_t));
+        if (!vif_rec || !netconf_parse_vif_list(vif_list, vif_rec)) {
+            LOG(ERR, "Failed to parse VIF list");
+            if (vif_rec) free(vif_rec);
+            return false;
+        }
+    }
+
+    if (radio_list) {
+        radio_rec = calloc(1, sizeof(radio_record_t));
+        if (!radio_rec || !netconf_parse_radio_list(radio_list, radio_rec)) {
+            LOG(ERR, "Failed to parse radio list");
+            if (vif_rec) free(vif_rec);
+            if (radio_rec) free(radio_rec);
+            return false;
+        }
+    }
+
+    /* 1. Read current UCI configuration state */
+    target_current_state_t current;
+    target_read_current_state(&current);
+
+    /* 2. Build deterministic apply plan */
+    target_apply_plan_t plan;
+    int plan_rc = target_build_apply_plan(&current, vif_rec, radio_rec, &plan);
+
+    /* 3. Pre-validation safety gate: reject before ANY mutation */
+    if (plan_rc != 0 || plan.unsupported_change) {
+        LOG(ERR, "[NETCONF] Configuration rejected: %s",
+            plan.unsupported_reason[0] ? plan.unsupported_reason : "Unsupported settings requested");
+        if (vif_rec) free(vif_rec);
+        if (radio_rec) free(radio_rec);
+        return false;
+    }
+
+    target_dump_apply_plan(&plan);
+
+    /* If plan has no deltas, nothing to do (no-op) */
+    if (plan.num_deltas == 0) {
+        if (vif_rec) free(vif_rec);
+        if (radio_rec) free(radio_rec);
+        return true;
+    }
+
+    /* 4. Set up scoped apply context */
+    target_apply_ctx_t ctx = {
+        .plan = &plan,
+        .scoped_apply_enabled = true
+    };
+
+    /* 5. Stage UCI parameters without triggering global reload */
+    if (radio_rec) {
+        if (!target_config_radio_set_scoped(radio_rec, &ctx)) {
+            LOG(ERR, "[NETCONF] Failed to update radio UCI settings");
+            success = false;
+        }
+    }
+
+    if (success && vif_rec) {
+        if (!target_config_vif_set_scoped(vif_rec, &ctx)) {
+            LOG(ERR, "[NETCONF] Failed to update wireless interface UCI settings");
+            success = false;
+        }
+    }
+
+    /* 6. Execute apply plan centrally */
+    if (success) {
+        target_exec_result_t res;
+        int exec_rc = target_execute_apply_plan_live(&plan, &res);
+        if (exec_rc != TARGET_EXEC_OK || res.status != TARGET_EXEC_OK) {
+            LOG(ERR, "[NETCONF] Failed to apply settings (%s on %s): %s",
+                res.stage, res.object, res.reason);
+            success = false;
+        }
+    }
+
+    /* 7. Post-actions (rate limits, portals) after interfaces are verified */
+    if (success && vif_rec) {
+        if (!target_config_vif_post_apply(vif_rec)) {
+            LOG(WARNING, "Post-apply actions (rate limiting/portal) reported failure");
+        }
+    }
+
+    if (vif_rec) free(vif_rec);
+    if (radio_rec) free(radio_rec);
+    return success;
+}
+
+bool netconf_process_vif_list(json_t *vif_list)
+{
+    return netconf_process_wireless_transaction(vif_list, NULL);
+}
+
+bool netconf_process_radio_list(json_t *radio_list)
+{
+    return netconf_process_wireless_transaction(NULL, radio_list);
 }
 
 bool netconf_process_blacklist(json_t *blackList)
@@ -792,14 +928,14 @@ int netconf_process_set_msg(char* buf)
     }
 
     json_t *vif_list = json_object_get(json_object_get(root, "vif"), "vifList");      
-    if (vif_list && json_is_array(vif_list)) {
-        step_ret = netconf_process_vif_list(vif_list);
-        ret = ret && step_ret;
-    }
-    
     json_t *radio_list = json_object_get(json_object_get(root, "radio"), "radioList");
-    if (radio_list && json_is_array(radio_list)) {
-        step_ret = netconf_process_radio_list(radio_list);
+    bool has_vifs = (vif_list && json_is_array(vif_list));
+    bool has_radios = (radio_list && json_is_array(radio_list));
+
+    if (has_vifs || has_radios) {
+        step_ret = netconf_process_wireless_transaction(
+            has_vifs ? vif_list : NULL,
+            has_radios ? radio_list : NULL);
         ret = ret && step_ret;
     }
 

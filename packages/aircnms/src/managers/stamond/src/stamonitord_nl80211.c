@@ -15,6 +15,7 @@
 #include "log.h"
 #include "stamonitord_client_events.h"
 #include "stamonitord_history.h"
+#include "stamonitord_vif_monitor.h"
 #include "ds_tree.h"
 
 /* Netlink attribute macros (no libnl dependency) */
@@ -130,6 +131,41 @@ bool stamonitord_nl80211_is_sta_connected(const uint8_t *mac) {
     return ds_tree_find(&g_sta_table, (void *)mac) != NULL;
 }
 
+bool stamonitord_nl80211_get_sta(const uint8_t *mac,
+                                 char *ifname,
+                                 size_t ifname_len,
+                                 int *link_id,
+                                 time_t *connect_time) {
+    struct sta_info *sta;
+
+    if (!mac)
+        return false;
+
+    sta = ds_tree_find(&g_sta_table, (void *)mac);
+    if (!sta)
+        return false;
+
+    if (ifname && ifname_len > 0)
+        snprintf(ifname, ifname_len, "%s", sta->ifname);
+    if (link_id)
+        *link_id = sta->link_id;
+    if (connect_time)
+        *connect_time = sta->connect_time;
+
+    return true;
+}
+
+void stamonitord_nl80211_foreach_sta(void (*cb)(const uint8_t mac[6], void *ctx),
+                                     void *ctx) {
+    struct sta_info *sta;
+
+    if (!cb)
+        return;
+
+    ds_tree_foreach(&g_sta_table, sta)
+        cb(sta->mac, ctx);
+}
+
 /* Send CTRL_CMD_GETFAMILY request to resolve nl80211 family ID */
 static int nl_send_ctrl_getfamily(int fd) {
     struct {
@@ -218,18 +254,26 @@ static void sta_nl_handle_msg(struct nlmsghdr *hdr)
     int mac_len = 0;
     int ifindex = 0;
     int link_id = -1;
+    uint32_t freq = 0;
     char ifname[IFNAMSIZ] = {0};
 
     if (hdr->nlmsg_type != g_nl80211_family_id || !gnlh)
         return;
     if (gnlh->cmd != NL80211_CMD_NEW_STATION &&
         gnlh->cmd != NL80211_CMD_DEL_STATION &&
-        gnlh->cmd != NL80211_CMD_FRAME_TX_STATUS)
+        gnlh->cmd != NL80211_CMD_FRAME_TX_STATUS &&
+        gnlh->cmd != NL80211_CMD_CH_SWITCH_NOTIFY &&
+        gnlh->cmd != NL80211_CMD_CH_SWITCH_STARTED_NOTIFY &&
+        gnlh->cmd != NL80211_CMD_RADAR_DETECT &&
+        gnlh->cmd != NL80211_CMD_NEW_INTERFACE &&
+        gnlh->cmd != NL80211_CMD_DEL_INTERFACE)
         return;
 
     for (; NLA_OK(na, attr_len); na = NLA_NEXT(na, attr_len)) {
         if (na->nla_type == NL80211_ATTR_IFINDEX && NLA_PAYLOAD(na->nla_len) >= 4) {
             ifindex = *(int *)NLA_DATA(na);
+        } else if (na->nla_type == NL80211_ATTR_WIPHY_FREQ && NLA_PAYLOAD(na->nla_len) >= 4) {
+            freq = *(uint32_t *)NLA_DATA(na);
         } else if (na->nla_type == NL80211_ATTR_MAC) {
             mac = (uint8_t *)NLA_DATA(na);
             mac_len = NLA_PAYLOAD(na->nla_len);
@@ -244,6 +288,31 @@ static void sta_nl_handle_msg(struct nlmsghdr *hdr)
         return;
     if (!if_indextoname((unsigned int)ifindex, ifname))
         return;
+
+    /* Handle RF/VIF events (channel switch / CSA, radar, interface add/del) */
+    if (gnlh->cmd == NL80211_CMD_CH_SWITCH_NOTIFY ||
+        gnlh->cmd == NL80211_CMD_CH_SWITCH_STARTED_NOTIFY ||
+        gnlh->cmd == NL80211_CMD_RADAR_DETECT ||
+        gnlh->cmd == NL80211_CMD_NEW_INTERFACE ||
+        gnlh->cmd == NL80211_CMD_DEL_INTERFACE) {
+
+        uint8_t ch = 0;
+        if (freq > 0) {
+            ch = stamonitord_freq_to_channel(freq);
+            if (ch > 0 && ifname[0] != '\0') {
+                stamonitord_vif_monitor_update_channel(ifname, ch);
+            }
+        }
+
+        LOG(INFO, "nl80211: RF/VIF event cmd=%d on %s (freq=%u MHz, ch=%u)",
+            gnlh->cmd, ifname, freq, ch);
+
+        char reason[64];
+        snprintf(reason, sizeof(reason), "nl80211: cmd=%d %s ch=%u", gnlh->cmd, ifname, ch);
+        stamonitord_vif_monitor_trigger(reason);
+        return;
+    }
+
     if (!is_sta_event_ifname(ifname))
         return;
     if (link_id < 0)

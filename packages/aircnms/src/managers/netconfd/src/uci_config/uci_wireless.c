@@ -11,32 +11,6 @@
 
 #include "uci_ops.h"
 #include <radio_vif.h>
-static struct uci_context *ctx;
-
-int uciGetSectionName(const char *pkg, char *sec_type, struct airpro_mgr_get_all_uci_section_names *sec_arr_names)
-{
-    struct uci_element *elm = NULL;
-    struct uci_package *p;
-    struct uci_ptr ptr;
-    int num_entry = 0;
-
-    if (uci_lookup_ptr(ctx, &ptr, (char *)pkg, true) != UCI_OK) {
-        return 1;
-    }
-
-    elm = ptr.last;
-    p = ptr.p;
-    uci_foreach_element(&p->sections, elm) {
-        struct uci_section *s = uci_to_section(elm);
-        if (!strcmp(s->type, sec_type)) {
-            strcpy(sec_arr_names->sec_name[num_entry], s->e.name);
-            num_entry++;
-        }
-    }
-    sec_arr_names->num_entry = num_entry;
-
-    return SUCCESS;
-}
 
 int uci_get_all_section_names(char *pkg, char *sec_type, struct airpro_mgr_get_all_uci_section_names *sec_arr_names)
 {
@@ -100,6 +74,24 @@ int uci_get_radio_params(char *radio_name, struct airpro_mgr_wlan_radio_params *
     } while(0);
 
     uciDestroy();
+
+    if (radio_params->channel_width[0] == '\0' && radio_params->htmode[0] != '\0') {
+        if (strstr(radio_params->htmode, "160")) strlcpy(radio_params->channel_width, "160", sizeof(radio_params->channel_width));
+        else if (strstr(radio_params->htmode, "80")) strlcpy(radio_params->channel_width, "80", sizeof(radio_params->channel_width));
+        else if (strstr(radio_params->htmode, "40")) strlcpy(radio_params->channel_width, "40", sizeof(radio_params->channel_width));
+        else if (strstr(radio_params->htmode, "20") || strstr(radio_params->htmode, "NOHT")) strlcpy(radio_params->channel_width, "20", sizeof(radio_params->channel_width));
+    }
+
+    if (radio_params->hwmode[0] == '\0' && radio_params->htmode[0] != '\0') {
+        if (strstr(radio_params->htmode, "HE")) {
+            strlcpy(radio_params->hwmode, (!strcmp(radio_name, "wifi0") ? "11NA_11AC_11AX" : "11BGN_11AX"), sizeof(radio_params->hwmode));
+        } else if (strstr(radio_params->htmode, "VHT")) {
+            strlcpy(radio_params->hwmode, "11AC", sizeof(radio_params->hwmode));
+        } else {
+            strlcpy(radio_params->hwmode, (!strcmp(radio_name, "wifi0") ? "11NA" : "11BGN"), sizeof(radio_params->hwmode));
+        }
+    }
+
     return status;
 }
 
@@ -131,6 +123,7 @@ int uci_get_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_pa
         status += uciGet(pkg, sec, "acct_port", vap_params->acct_port);
         status += uciGet(pkg, sec, "macfilter", vap_params->macfilter);
         status += uciGetList(pkg, sec, "maclist", vap_params->maclist);
+        status += uciGet(pkg, sec, "forward_type", vap_params->forward_type);
         // status += uciGet(pkg, sec, "ifname", vap_params->ifname);
         status += uciGet(pkg, sec, "device", vap_params->device);
         if (status)
@@ -160,6 +153,7 @@ int uci_set_radio_params(char *radio_name, struct airpro_mgr_wlan_radio_params *
         status += strlen(radio_params->max_sta) ? uciSet(pkg, sec, "max_sta", radio_params->max_sta) : 0;
         status += strlen(radio_params->txpower) ? uciSet(pkg, sec, "txpower", radio_params->txpower) : 0;
         status += strlen(radio_params->user_limit) ? uciSet(pkg, sec, "user_limit", radio_params->user_limit) : 0;
+        status += strlen(radio_params->hwmode) ? uciSet(pkg, sec, "hwmode", radio_params->hwmode) : 0;
         status += strlen(radio_params->noscan) ? uciSet(pkg, sec, "noscan", radio_params->noscan) : 0;
         if (status)
             break;
@@ -203,9 +197,24 @@ int uci_set_vap_params(char *vap_name, struct airpro_mgr_wlan_vap_params *vap_pa
     if (status != SUCCESS)
         return status;
 
+    /* Ensure section exists if newly added */
+    uciAddSection(pkg, "wifi-iface", sec);
+
+    if (!vap_params->opmode[0])
+        strlcpy(vap_params->opmode, "ap", sizeof(vap_params->opmode));
+    if (!vap_params->network[0])
+        strlcpy(vap_params->network, "lan", sizeof(vap_params->network));
+    if (!vap_params->wifi_device[0]) {
+        if (strstr(vap_params->device, "5G") || strstr(vap_params->device, "wifi0"))
+            strlcpy(vap_params->wifi_device, "wifi0", sizeof(vap_params->wifi_device));
+        else if (vap_params->device[0])
+            strlcpy(vap_params->wifi_device, "wifi1", sizeof(vap_params->wifi_device));
+    }
+
     do {
         status += strlen(vap_params->wifi_device) ? uciSet(pkg, sec, "device", vap_params->wifi_device) : 0;
         status += strlen(vap_params->network) ? uciSet(pkg, sec, "network", vap_params->network) : 0;
+        status += strlen(vap_params->forward_type) ? uciSet(pkg, sec, "forward_type", vap_params->forward_type) : 0;
         status += strlen(vap_params->opmode) ? uciSet(pkg, sec, "mode", vap_params->opmode) : 0;
         status += strlen(vap_params->ssid) ? uciSet(pkg, sec, "ssid", vap_params->ssid) : 0;
         status += strlen(vap_params->mobility_id) ? uciSet(pkg, sec, "mobility_domain", vap_params->mobility_id) : 0;

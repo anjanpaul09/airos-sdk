@@ -294,9 +294,9 @@ body.logged-in #maincontent :is(
 	color: #7a718d !important;
 }
 
-/* Live Status pages own their refresh feedback in the hero. */
+/* The Dashboard exposes its poll control in the global status area. */
 body[data-page="admin-status-overview"] #xhr_poll_status {
-	display: none !important;
+	display: inline-flex !important;
 }
 
 /* Use one source of vertical rhythm; legacy margins must not compound the gap. */

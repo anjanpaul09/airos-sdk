@@ -29,6 +29,37 @@ b6=$(echo "$RAW_MAC" | cut -c11-12)
 BASE_FORMATTED="$b1:$b2:$b3:$b4:$b5:$b6"
 echo "Base MAC: $BASE_FORMATTED"
 
+# Explicitly pin br-lan MAC from /sys/class/net/wan/address to prevent bridge MAC shifting
+WAN_MAC=""
+if [ -r "/sys/class/net/wan/address" ]; then
+    WAN_MAC=$(cat "/sys/class/net/wan/address" 2>/dev/null | tr 'A-F' 'a-f' | tr -d ' \t\r\n')
+fi
+if [ -z "$WAN_MAC" ] && [ -n "$BASE_FORMATTED" ]; then
+    WAN_MAC=$(echo "$BASE_FORMATTED" | tr 'A-F' 'a-f')
+fi
+
+if [ -n "$WAN_MAC" ]; then
+    dev_sec=$(uci show network 2>/dev/null | grep "\.name='br-lan'" | cut -d. -f2 | cut -d= -f1)
+    net_mod=0
+    if [ -n "$dev_sec" ] && [ "$(uci -q get network.$dev_sec.macaddr)" != "$WAN_MAC" ]; then
+        echo "Setting br-lan device MAC -> $WAN_MAC"
+        uci set network.$dev_sec.macaddr="$WAN_MAC"
+        net_mod=1
+    fi
+    if [ "$(uci -q get network.lan.macaddr)" != "$WAN_MAC" ]; then
+        echo "Setting lan interface MAC -> $WAN_MAC"
+        uci set network.lan.macaddr="$WAN_MAC"
+        net_mod=1
+    fi
+    if [ "$net_mod" = "1" ]; then
+        uci commit network
+    fi
+    cur_br_mac=$(cat /sys/class/net/br-lan/address 2>/dev/null | tr 'A-F' 'a-f')
+    if [ -n "$cur_br_mac" ] && [ "$cur_br_mac" != "$WAN_MAC" ]; then
+        ip link set dev br-lan address "$WAN_MAC" 2>/dev/null || true
+    fi
+fi
+
 # Convert last byte to decimal
 last=$(printf "%d" 0x$b6)
 
@@ -36,7 +67,13 @@ index=0
 changed=0
 
 for iface in $(uci show wireless 2>/dev/null | grep "=wifi-iface" | cut -d. -f2 | cut -d= -f1); do
-    new_last=$(printf "%02x" $(( (last + index) % 256 )))
+    slot=$(echo "$iface" | tr -dc '0-9')
+    if [ -n "$slot" ] && [ "$slot" -ge 1 ] 2>/dev/null; then
+        idx=$((slot - 1))
+    else
+        idx=$index
+    fi
+    new_last=$(printf "%02x" $(( (last + idx) % 256 )))
     NEW_MAC="$(echo "$b1:$b2:$b3:$b4:$b5:$new_last" | tr 'A-F' 'a-f')"
 
     if [ "$(uci -q get wireless.$iface.macaddr)" != "$NEW_MAC" ]; then

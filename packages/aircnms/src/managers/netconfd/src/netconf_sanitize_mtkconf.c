@@ -178,11 +178,16 @@ static bool is_valid_key(const char *key, const char *encryption)
 
 bool sanitize_and_validate_vif_params(struct airpro_mgr_wlan_vap_params *p)
 {
-    struct airpro_mgr_wlan_vap_params clean;
-    memset(&clean, 0, sizeof(clean));
+    if (!p)
+        return false;
+
+    struct airpro_mgr_wlan_vap_params clean = *p;
 
     // Sanitize all strings first
     sanitize_string(clean.record_id, p->record_id, sizeof(clean.record_id));
+    sanitize_string(clean.wifi_device, p->wifi_device, sizeof(clean.wifi_device));
+    sanitize_string(clean.device, p->device, sizeof(clean.device));
+    sanitize_string(clean.opmode, p->opmode, sizeof(clean.opmode));
     sanitize_string(clean.mobility_id, p->mobility_id, sizeof(clean.mobility_id));
     sanitize_string(clean.ssid, p->ssid, sizeof(clean.ssid));
     sanitize_string(clean.key, p->key, sizeof(clean.key));
